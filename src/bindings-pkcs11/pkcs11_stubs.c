@@ -906,7 +906,7 @@ void camlidl_ml2c_pkcs11_struct_ck_attribute(value _v1,
   _c5 = Wosize_val(_v4);
   /* Endianness transformations for 
      CKA_CLASS, CKA_CERTIFICATE_TYPE, CKA_KEY_TYPE, 
-     CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS, 
+     CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS, CKA_VALUE_LEN,
      CKA_MECHANISM_TYPE */
   switch ((*_c2).type_) {
   case 0x0:
@@ -914,6 +914,7 @@ void camlidl_ml2c_pkcs11_struct_ck_attribute(value _v1,
   case 0x88:
   case 0x100:
   case 0x121:
+  case 0x161:
   case 0x166:
   case 0x201:
   case 0x400:
@@ -995,7 +996,7 @@ value camlidl_c2ml_pkcs11_struct_ck_attribute(struct ck_attribute *_c1,
   if ((long)(*temp).value_len >= 0) {
     /* Endianness transformations for 
        CKA_CLASS, CKA_CERTIFICATE_TYPE, CKA_KEY_TYPE,
-       CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS,
+       CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS, CKA_VALUE_LEN,
        CKA_MECHANISM_TYPE */
 
 #ifdef SERVER_ROLE
@@ -1005,6 +1006,7 @@ value camlidl_c2ml_pkcs11_struct_ck_attribute(struct ck_attribute *_c1,
     case 0x88:
     case 0x100:
     case 0x121:
+    case 0x161:
     case 0x166:
     case 0x201:
     case 0x400:

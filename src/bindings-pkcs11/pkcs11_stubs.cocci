@@ -171,7 +171,7 @@ identifier _v3, _v5, _c1, _c4;
 +    if ((long)(*temp).value_len >= 0) {
 +    /* Endianness transformations for 
 +    CKA_CLASS, CKA_CERTIFICATE_TYPE, CKA_KEY_TYPE,
-+    CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS,
++    CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS, CKA_VALUE_LEN,
 +    CKA_MECHANISM_TYPE */
 +
 +#ifdef SERVER_ROLE
@@ -181,6 +181,7 @@ identifier _v3, _v5, _c1, _c4;
 +        case 0x88: 
 +        case 0x100: 
 +        case 0x121: 
++        case 0x161: 
 +        case 0x166: 
 +        case 0x201: 
 +        case 0x400: 
@@ -252,7 +253,7 @@ identifier _ctx, _c2, _v4, _c5, _c6, _v7;
 -  (*_c2).value_len = _c5;
 +  /* Endianness transformations for 
 +    CKA_CLASS, CKA_CERTIFICATE_TYPE, CKA_KEY_TYPE, 
-+    CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS, 
++    CKA_KEY_GEN_MECHANISM, CKA_AUTH_PIN_FLAGS, CKA_VALUE_LEN,
 +    CKA_MECHANISM_TYPE */
 +  switch ((*_c2).type_) {
 +    case 0x0: 
@@ -260,6 +261,7 @@ identifier _ctx, _c2, _v4, _c5, _c6, _v7;
 +    case 0x88: 
 +    case 0x100: 
 +    case 0x121: 
++    case 0x161: 
 +    case 0x166: 
 +    case 0x201: 
 +    case 0x400: 
