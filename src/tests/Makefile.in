@@ -1,0 +1,10 @@
+ocaml_tests = ./ocaml
+#c_tests = ./c-based
+
+all:
+	@MAKEPROG@ -C $(ocaml_tests)
+	#@MAKEPROG@ -C $(c_tests)
+
+clean:
+	@MAKEPROG@ clean -C $(ocaml_tests)
+	#@MAKEPROG@ clean -C $(c_tests)

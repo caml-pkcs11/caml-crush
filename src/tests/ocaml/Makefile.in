@@ -1,0 +1,35 @@
+bindings_dir = ../../bindings-pkcs11
+CFLAGS = -I $(bindings_dir)
+LDFLAGS = -cclib -lcamlidl -cclib -L$(bindings_dir)
+
+all: build_bindings_standalone p11_common complete_test digest_test encdec_test wrap_unwrap_test destroy_objects
+
+build_bindings_standalone:
+	cd $(bindings_dir) && make -f Makefile.standalone && cd -
+
+p11_common:
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c p11_common.ml
+
+complete_test:
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c test_pkcs11.ml
+	ocamlfind ocamlopt -package "config-file" -linkpkg $(bindings_dir)/pkcs11_standalone.cmxa p11_common.cmx test_pkcs11.cmx $(LDFLAGS) -o pkcs11.opt
+
+destroy_objects:
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c destroy.ml
+	ocamlfind ocamlopt -package "config-file" -linkpkg $(bindings_dir)/pkcs11_standalone.cmxa p11_common.cmx destroy.cmx $(LDFLAGS) -o destroy_objects.opt
+
+digest_test:
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c digest_test.ml
+	ocamlfind ocamlopt -package "config-file" -linkpkg $(bindings_dir)/pkcs11_standalone.cmxa p11_common.cmx digest_test.cmx $(LDFLAGS) -o digest_test.opt
+
+encdec_test:
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c encdec_test.ml
+	ocamlfind ocamlopt -package "config-file" -linkpkg $(bindings_dir)/pkcs11_standalone.cmxa p11_common.cmx encdec_test.cmx $(LDFLAGS) -o encdec_test.opt
+
+wrap_unwrap_test:
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c wrap_unwrap.ml
+	ocamlfind ocamlopt -package "config-file" -linkpkg $(bindings_dir)/pkcs11_standalone.cmxa p11_common.cmx wrap_unwrap.cmx $(LDFLAGS) -o wrap_unwrap_test.opt
+
+
+clean:
+	@rm -f *.cmi *.cmx *.o *.cmo *~ *.opt *.cmxa *.a *.cma *.so
