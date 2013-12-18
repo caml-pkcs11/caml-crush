@@ -1,0 +1,34 @@
+filter_filter_dir = ../filter/filter
+filter_backend_dir = ../filter/backend
+filter_frontend_dir = ../filter/frontend
+caml_link_dirs = -cclib -lcamlidl -cclib -L$(bindings_dir)
+bindings_dir =  ../bindings-pkcs11
+mem_prot_opt_caml=-ccopt -fPIC -ccopt -fPIE -ccopt -Wl,-z,relro,-z,now -ccopt -fstack-protector
+
+all:	@caml_rpc_gen@
+	#Compile RPC files
+	ocamlfind ocamlopt -package "rpc" -c pkcs11_rpc_aux.mli pkcs11_rpc_aux.ml
+	ocamlfind ocamlopt -package "rpc" -c pkcs11_rpc_clnt.mli pkcs11_rpc_clnt.ml
+	ocamlfind ocamlopt -package "rpc" -c pkcs11_rpc_srv.mli pkcs11_rpc_srv.ml
+	#Build RPC helpers
+	ocamlopt -I ../bindings-pkcs11 -c rpc_helpers.ml
+	#Build a library from RPC files
+	ocamlopt -o pkcs11_rpclib.cmxa -a pkcs11_rpc_aux.cmx pkcs11_rpc_clnt.cmx pkcs11_rpc_srv.cmx rpc_helpers.cmx
+
+rpc:
+	#Ocaml RPC Generation
+	ocamlrpcgen -aux -int unboxed -hyper int64 pkcs11_rpc.x
+	ocamlrpcgen -clnt -int unboxed -hyper int64 pkcs11_rpc.x
+	ocamlrpcgen -srv2 -int unboxed -hyper int64 pkcs11_rpc.x
+
+#test:
+#	#Compile Test file
+#	ocamlopt $(include_dirs) -c test_pkcs11.ml
+#	ocamlfind ocamlopt -package "rpc" -linkpkg $(bindings_dir)/pkcs11.cmxa pkcs11_rpclib.cmxa client.cmx test_pkcs11.cmx $(caml_link_dirs) -o test_pkcs11_rpc
+
+clean_rpc:
+	# Rmove old RPC generated files
+	@rm -f @caml_rpc_clean@
+
+clean:
+	@rm -f *.cmi *.cmo *.cma *.cmx *.o *.a *.cmxa dll* packlist-* ocamldoc.dump META *.astamp *.cstamp *.s2stamp test_pkcs11_rpc

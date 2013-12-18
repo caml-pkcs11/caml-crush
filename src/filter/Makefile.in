@@ -1,0 +1,17 @@
+backend_dir = backend
+filter_dir = filter
+frontend_dir = frontend
+
+all:
+	@MAKEPROG@ -C $(backend_dir)
+	@MAKEPROG@ -C $(filter_dir)
+	@MAKEPROG@ -C $(frontend_dir)
+	
+
+clean:
+	@MAKEPROG@ clean -C $(backend_dir)
+	@MAKEPROG@ clean -C $(filter_dir)
+	@MAKEPROG@ clean -C $(frontend_dir)
+	@rm -f *.cmi *.cmx *.o *.cmo *~ *.opt 
+	
+	

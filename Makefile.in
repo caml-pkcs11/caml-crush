@@ -1,0 +1,52 @@
+bindings_dir = src/bindings-pkcs11
+rpc_dir = src/rpc-pkcs11
+server_dir = src/pkcs11proxyd
+client_dir = src/client-lib
+filter_dir = src/filter
+tests_dir = src/tests
+
+.PHONY: all bindings rpc server client filter install uninstall tests
+
+all:	bindings rpc @with_filter@ server client
+
+bindings:
+	@MAKEPROG@ @debug_mode@ -C $(bindings_dir)
+rpc:
+	@MAKEPROG@ -C $(rpc_dir)
+server:
+	@MAKEPROG@ -C $(server_dir)
+client:
+	@MAKEPROG@ @debug_mode@ -C $(client_dir)
+filter:
+	@MAKEPROG@ -C $(filter_dir)
+tests:
+	@MAKEPROG@ -C $(tests_dir)
+
+install:
+	@MAKEPROG@ install -C $(server_dir)
+	@MAKEPROG@ install -C $(client_dir)
+
+uninstall:
+	@MAKEPROG@ uninstall -C $(server_dir)
+	@MAKEPROG@ uninstall -C $(client_dir)
+
+
+clean:	bindings_clean rpc_clean server_clean client_clean @with_filter_clean@ tests_clean
+
+bindings_clean:
+	@MAKEPROG@ clean -C $(bindings_dir)
+
+rpc_clean:
+	@MAKEPROG@ clean -C $(rpc_dir)
+
+server_clean:
+	@MAKEPROG@ clean -C $(server_dir)
+
+client_clean:
+	@MAKEPROG@ clean -C $(client_dir)
+
+filter_clean:
+	@MAKEPROG@ clean -C $(filter_dir)
+
+tests_clean:
+	@MAKEPROG@ clean -C $(tests_dir)

@@ -1,0 +1,29 @@
+filter_filter_dir = ../filter/filter
+filter_backend_dir = ../filter/backend
+filter_frontend_dir = ../filter/frontend
+caml_link_dirs = -cclib -lpthread -cclib -lcamlidl -cclib -L$(bindings_dir)
+bindings_dir =  ../bindings-pkcs11
+rpc-pkcs11_dir =  ../rpc-pkcs11
+mem_prot_opt_caml=-ccopt -fPIC -ccopt -fPIE -ccopt -Wl,-z,relro,-z,now -ccopt -fstack-protector
+server_name = pkcs11proxyd
+prefix=@prefix@
+
+all:
+	#Compile Server
+	ocamlfind ocamlopt -pp "camlp4o pa_macro.cmo @caml_server_daemonize_define@ @caml_server_ssl_define@ @filter_define@" -package "netplex" @filter_include@ @caml_server_ssl_package@ -I $(bindings_dir) -I $(rpc-pkcs11_dir)  -c server.ml
+	ocamlfind ocamlopt @filter_include@ -package "str,netplex,config-file" @caml_server_ssl_package@ -linkpkg $(bindings_dir)/pkcs11.cmxa @filter_files@ $(rpc-pkcs11_dir)/pkcs11_rpclib.cmxa server.cmx $(caml_link_dirs) $(mem_prot_opt_caml) -o $(server_name)
+
+install:
+	echo "Installing $(server_name) to ${prefix}/usr/bin/$(server_name)"
+	install -D $(server_name) ${prefix}/usr/bin/$(server_name)
+	echo "Installing $(server_name).conf to ${prefix}/etc/$(server_name)/$(server_name).conf"
+	install -D $(server_name).conf ${prefix}/etc/$(server_name)/$(server_name).conf
+
+uninstall:
+	echo "Removing $(server_name) to ${prefix}/usr/bin/$(server_name)"
+	rm ${prefix}/usr/bin/$(server_name)
+	echo "Removing $(server_name).conf to ${prefix}/etc/$(server_name)/$(server_name).conf"
+	rm ${prefix}/etc/$(server_name)/$(server_name).conf
+
+clean:
+	@rm -f *.cmi *.cmo *.cma *.cmx *.o *.a *.cmxa dll* packlist-* ocamldoc.dump META depend $(server_name) *.astamp *.cstamp *.s2stamp

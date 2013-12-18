@@ -1,0 +1,42 @@
+CC=gcc
+CFLAGS_OPT = -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wuninitialized
+CFLAGS = -fPIC $(CFLAGS_OPT) -I@OCAMLLIB@
+CFLAGS_DBG = -g -fPIC -I@OCAMLLIB@ $(CFLAGS_OPT)
+caml_link_dirs = @OCAMLLIB@
+LDFLAGS = -cclib -L$(caml_link_dirs) -cclib -lcamlidl
+
+all:	@idl_gen@
+	$(CC) pkcs11_stubs.c -c $(CFLAGS)
+	$(CC) pkcs11_functions.c @aliasing_def@ -c $(CFLAGS)
+	ocamlopt -c pkcs11.mli pkcs11.ml
+	ocamlmklib -o pkcs11_standalone pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
+
+debug:	@idl_gen@
+	$(CC) pkcs11_stubs.c -DDEBUG -c $(CFLAGS_DBG)
+	$(CC) pkcs11_functions.c @aliasing_def@ -DDEBUG -c $(CFLAGS_DBG)
+	ocamlopt -c pkcs11.mli pkcs11.ml
+	ocamlmklib -o pkcs11_standalone pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
+
+idl:	
+	@rm -f @idl_clean@
+	camlidl -header pkcs11.idl
+	cat pkcs11_stubs.c | sed -e 's/Begin_roots_block(\(.*\)).*/Begin_roots_block(\1);/g' | sed -e 's/Begin_root(\(.*\)).*/Begin_root(\1);/g' | sed -e 's/End_roots(\(.*\)).*/End_roots(\1);/g' > ./tmp
+	mv ./tmp ./pkcs11_stubs.c
+	#New sed to patch (GetSlotList/GetMechList/FindObjects/GetObjectSize), related to nativeint miragration
+	sed -i "s/* int/\* nativeint/g" pkcs11.mli
+	sed -i "s/* int/\* nativeint/g" pkcs11.ml
+	spatch --no-show-diff --in-place --sp-file ./pkcs11_stubs.cocci ./pkcs11_stubs.c
+	#Sed because spatch is not able to preprocess
+	sed -i 's/^_CAMLIDL_EXTERN_C/extern/g' pkcs11.h
+	spatch --no-show-diff --in-place --sp-file ./pkcs11.cocci ./pkcs11.h
+	#Sed to force the produced idl variable context and some values to be tagged 'unused'
+	sed -i 's/\(.*\), camlidl_ctx _ctx)$$/#ifdef __GNUC__\n\1, __attribute__((unused)) camlidl_ctx _ctx)\n#else\n\1, camlidl_ctx _ctx)\n#endif/g' pkcs11_stubs.c
+	sed -i 's/\(.*\)value _unit)$$/#ifdef __GNUC__\n\1__attribute__((unused))value _unit)\n#else\n\1value _unit)\n#endif/g' pkcs11_stubs.c
+	#Sed to disable the warnings on shadowing caml__roots_block
+	sed -i 's/\(.*\)Begin_root(\(.*\)/\/* We add this because of possible shadow warning  *\/\n\/* (this is not our code: these are camlidl macros)*\/\n#if GCC_VERSION > 40600\n#pragma GCC diagnostic push\n#pragma GCC diagnostic ignored \"-Wshadow\"\n#endif\n\1Begin_root(\2\n#if GCC_VERSION > 40600\n#pragma GCC diagnostic pop\n#endif/g' pkcs11_stubs.c
+	sed -i 's/\(.*\)Begin_roots_block(\(.*\)/\/* We add this because of possible shadow warning  *\/\n\/* (this is not our code: these are camlidl macros)*\/\n#if GCC_VERSION > 40600\n#pragma GCC diagnostic push\n#pragma GCC diagnostic ignored \"-Wshadow\"\n#endif\n\1Begin_roots_block(\2\n#if GCC_VERSION > 40600\n#pragma GCC diagnostic pop\n#endif/g' pkcs11_stubs.c
+
+clean_idl:
+	@rm -f pkcs11.h pkcs11_stubs.c pkcs11.mli pkcs11.ml
+clean:
+	@rm -f *.cmi *.cmx *.o *.cmo *~ *.opt *.cmxa *.a *.cma *.so

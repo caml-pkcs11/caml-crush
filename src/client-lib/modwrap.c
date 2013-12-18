@@ -1,0 +1,1571 @@
+/*------------------------ CeCILL-B HEADER ------------------------------------
+    Copyright ANSSI (2013)
+    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr] and
+    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+
+    This software is a computer program whose purpose is to implement
+    a PKCS#11 proxy as well as a PKCS#11 filter with security features
+    in mind. The project source tree is subdivided in six parts.
+    There are five main parts:
+      1] OCaml/C PKCS#11 bindings (using OCaml IDL).
+      2] XDR RPC generators (to be used with ocamlrpcgen and/or rpcgen).
+      3] A PKCS#11 RPC server (daemon) in OCaml using a Netplex RPC basis.
+      4] A PKCS#11 filtering module used as a backend to the RPC server.
+      5] A PKCS#11 client module that comes as a dynamic library offering
+         the PKCS#11 API to the software.
+    There is one "optional" part:
+      6] Tests in C and OCaml to be used with client module 5] or with the
+         bindings 1]
+
+    Here is a big picture of how the PKCS#11 proxy works:
+
+ ----------------------   --------  socket (TCP or Unix)  --------------------
+| 3] PKCS#11 RPC server|-|2] RPC  |<+++++++++++++++++++> | 5] Client library  |
+ ----------------------  |  Layer | [SSL/TLS optional]   |  --------          |
+           |              --------                       | |2] RPC  | PKCS#11 |
+ ----------------------                                  | |  Layer |functions|
+| 4] PKCS#11 filter    |                                 |  --------          |
+ ----------------------                                   --------------------
+           |                                                        |
+ ----------------------                                             |
+| 1] PKCS#11 OCaml     |                                  { PKCS#11 INTERFACE }
+|       bindings       |                                            |
+ ----------------------                                       APPLICATION
+           |
+           |
+ { PKCS#11 INTERFACE }
+           |
+ REAL PKCS#11 MIDDLEWARE
+    (shared library)
+
+    This software is governed by the CeCILL-B license under French law and
+    abiding by the rules of distribution of free software.  You can  use,
+    modify and/ or redistribute the software under the terms of the CeCILL-B
+    license as circulated by CEA, CNRS and INRIA at the following URL
+    "http://www.cecill.info".
+
+    As a counterpart to the access to the source code and  rights to copy,
+    modify and redistribute granted by the license, users are provided only
+    with a limited warranty  and the software's author,  the holder of the
+    economic rights,  and the successive licensors  have only  limited
+    liability.
+
+    In this respect, the user's attention is drawn to the risks associated
+    with loading,  using,  modifying and/or developing or reproducing the
+    software by the user in light of its specific status of free software,
+    that may mean  that it is complicated to manipulate,  and  that  also
+    therefore means  that it is reserved for developers  and  experienced
+    professionals having in-depth computer knowledge. Users are therefore
+    encouraged to load and test the software's suitability as regards their
+    requirements in conditions enabling the security of their systems and/or
+    data to be ensured and,  more generally, to use and operate it in the
+    same conditions as regards security.
+
+    The fact that you are presently reading this means that you have had
+    knowledge of the CeCILL-B license and that you accept its terms.
+
+    The current source code is part of the client library 5] source tree:
+                                                          --------------------
+                                                         | 5] Client library  |
+                                                         |  --------          |
+                                                         | |        | PKCS#11 |
+                                                         | |        |functions|
+                                                         |  --------          |
+                                                          --------------------
+                                                                    |
+                                                                    |
+                                                          { PKCS#11 INTERFACE }
+                                                                    |
+                                                              APPLICATION
+
+    Project: PKCS#11 Filtering Proxy
+    File:    src/client-lib/modwrap.c
+
+-------------------------- CeCILL-B HEADER ----------------------------------*/
+/* bindings include                                      */
+/* We only redefine the custom allocs if we are building */
+/* the C client (in the case of the OCaml client, we use */
+/* the bindings).                                        */
+#ifdef CRPC
+#define CUSTOM_ALLOC
+#endif
+#include "modwrap.h"
+
+/* -------------------------------- */
+/*      Linked list functions       */
+
+/* Add an element in the linked list */
+p11_request_struct *add_element_to_list(ck_session_handle_t session,
+					unsigned long operation_type,
+					unsigned char *in, unsigned long in_len,
+					unsigned char *out,
+					unsigned long out_len)
+{
+  p11_request_struct *node, *newnode;
+#ifndef CAMLRPC
+  pthread_mutex_lock(&linkedlist_mutex);
+#endif
+  newnode = (p11_request_struct *) custom_malloc(sizeof(p11_request_struct));
+
+  if (request_data == NULL) {
+    request_data = newnode;
+  } else {
+    node = request_data;
+    node->next = newnode;
+  }
+  newnode->session = session;
+  newnode->operation_type = operation_type;
+  newnode->in = in;
+  newnode->in_len = in_len;
+  newnode->out = out;
+  newnode->out_len = out_len;
+
+  newnode->next = NULL;
+
+#ifndef CAMLRPC
+  pthread_mutex_unlock(&linkedlist_mutex);
+#endif
+
+  return newnode;
+}
+
+/* Remove a node from the linked list */
+int
+remove_elements_from_filtering_list(ck_session_handle_t session,
+				    unsigned long operation_type,
+				    unsigned char *in, unsigned long in_len)
+{
+  p11_request_struct *node, *prevnode;
+  unsigned int tremove = 0;
+  node = request_data;
+  prevnode = NULL;
+
+#ifndef CAMLRPC
+  pthread_mutex_lock(&linkedlist_mutex);
+#endif
+
+  while (node != NULL) {
+    tremove = 0;
+    if (node->session == session) {
+      tremove++;
+    }
+    if (node->operation_type == operation_type) {
+      tremove++;
+    }
+    if (node->in == in) {
+      tremove++;
+    }
+    if (node->in_len == in_len) {
+      tremove++;
+    }
+    if (tremove == 4) {
+      /* Head case */
+      if (prevnode == NULL) {
+	request_data = node->next;
+	/* Let's free our local output buffer if allocated */
+	if (node->out != NULL) {
+	  custom_free((void **)(&node->out));
+	}
+	custom_free((void **)(&node));
+	node = request_data;
+      }
+      /* Non-head case */
+      else {
+	prevnode->next = node->next;
+	/* Let's free our local output buffer if allocated */
+	if (node->out != NULL) {
+	  custom_free((void **)(&node->out));
+	}
+	custom_free((void **)(&node));
+	node = prevnode->next;
+      }
+    } else {
+      prevnode = node;
+      node = node->next;
+    }
+  }
+#ifndef CAMLRPC
+  pthread_mutex_unlock(&linkedlist_mutex);
+#endif
+
+  return 0;
+}
+
+/* Remove a node from the linked list */
+int remove_all_elements_from_filtering_list()
+{
+  p11_request_struct *node, *currnode;
+  node = request_data;
+
+#ifndef CAMLRPC
+  pthread_mutex_lock(&linkedlist_mutex);
+#endif
+
+  while (node != NULL) {
+    /* Let's free our local output buffer if allocated */
+    currnode = node->next;
+    if (node->out != NULL) {
+      custom_free((void **)(&node->out));
+    }
+    custom_free((void **)(&node));
+    node = currnode;
+  }
+#ifndef CAMLRPC
+  pthread_mutex_unlock(&linkedlist_mutex);
+#endif
+
+  return 0;
+}
+
+/* Check if a node is inside the linked list according to matching criteria */
+p11_request_struct *check_element_in_filtering_list(ck_session_handle_t session,
+						    unsigned long
+						    operation_type,
+						    unsigned char *in,
+						    unsigned long in_len)
+{
+  p11_request_struct *node;
+  unsigned long found = 0;
+  node = request_data;
+
+#ifndef CAMLRPC
+  pthread_mutex_lock(&linkedlist_mutex);
+#endif
+
+  while (node != NULL) {
+    found = 0;
+    if (node->session == session) {
+      found++;
+    }
+    if (node->operation_type == operation_type) {
+      found++;
+    }
+    if (node->in == in) {
+      found++;
+    }
+    if (node->in_len == in_len) {
+      found++;
+    }
+    if (found == 4) {
+#ifndef CAMLRPC
+      pthread_mutex_unlock(&linkedlist_mutex);
+#endif
+      return node;
+    }
+    node = node->next;
+  }
+#ifndef CAMLRPC
+  pthread_mutex_unlock(&linkedlist_mutex);
+#endif
+
+  return NULL;
+}
+
+/* Check if a node is inside the linked list according to session/op type,
+ * this is needed to check if a result was given and the client has not
+ * yet fetched it.
+*/
+p11_request_struct *check_operation_active_in_filtering_list(ck_session_handle_t
+							     session,
+							     unsigned long
+							     operation_type)
+{
+  p11_request_struct *node;
+  unsigned long found = 0;
+  node = request_data;
+
+#ifndef CAMLRPC
+  pthread_mutex_lock(&linkedlist_mutex);
+#endif
+
+  while (node != NULL) {
+    found = 0;
+    if (node->session == session) {
+      found++;
+    }
+    if (node->operation_type == operation_type) {
+      found++;
+    }
+    if (found == 2) {
+#ifndef CAMLRPC
+      pthread_mutex_unlock(&linkedlist_mutex);
+#endif
+      return node;
+    }
+    node = node->next;
+  }
+#ifndef CAMLRPC
+  pthread_mutex_unlock(&linkedlist_mutex);
+#endif
+
+  return NULL;
+}
+
+/* -------------------------------- */
+/*   Common sanitization function   */
+
+void custom_sanitize_ck_mechanism(struct ck_mechanism *mech)
+{
+  switch ((*mech).mechanism) {
+  case CKM_RSA_PKCS:
+  case CKM_RSA_9796:
+  case CKM_RSA_X_509:
+  case CKM_MD2_RSA_PKCS:
+  case CKM_MD5_RSA_PKCS:
+  case CKM_SHA1_RSA_PKCS:
+  case CKM_RIPEMD128_RSA_PKCS:
+  case CKM_RIPEMD160_RSA_PKCS:
+  case CKM_RSA_PKCS_OAEP:
+  case CKM_RSA_X9_31:
+  case CKM_SHA1_RSA_X9_31:
+  case CKM_RSA_PKCS_PSS:
+  case CKM_SHA1_RSA_PKCS_PSS:
+  case CKM_DSA:
+  case CKM_DSA_SHA1:
+  case CKM_SHA256_RSA_PKCS:
+  case CKM_SHA384_RSA_PKCS:
+  case CKM_SHA512_RSA_PKCS:
+  case CKM_SHA256_RSA_PKCS_PSS:
+  case CKM_SHA384_RSA_PKCS_PSS:
+  case CKM_SHA512_RSA_PKCS_PSS:
+    {
+      (*mech).parameter = NULL;
+      (*mech).parameter_len = 0;
+    }
+  default:
+    {
+      if ((*mech).parameter_len > MAX_BUFF_LEN) {
+#ifdef DEBUG
+	fprintf(stderr,
+		"Detected garbage mech_params passing NULL,0 instead\n");
+#endif
+	(*mech).parameter_len = 0;
+	(*mech).parameter = NULL;
+      }
+    }
+  }
+}
+
+/* Init function is called when loading library */
+__attribute__ ((constructor))
+void init()
+{
+  ck_rv_t ret;
+  /* Initialize global variables */
+  pthread_mutex_init(&mutex, NULL);
+#ifndef CAMLRPC
+  pthread_mutex_init(&linkedlist_mutex, NULL);
+#endif
+  is_Blocking = 0;
+  request_data = NULL;
+
+  /* Initialize architecture detection */
+  peer_arch = 0;
+  my_arch = 0;
+
+#ifdef CAMLRPC
+  ret = init_ml(xstr(LIBNAME));
+#else
+  ret = init_c(xstr(LIBNAME));
+#endif
+  if (ret != CKR_OK) {
+    fprintf(stderr, "Init failed, EXITING\n");
+    exit(-1);
+  }
+
+  /* Did we manage to detect arch ? */
+  if ((peer_arch == 0 || peer_arch == 5) || (my_arch == 0 || my_arch == 5)) {
+    fprintf(stderr, "C_SetupArch: failed detecting architecture\n");
+    exit(-1);
+  }
+
+  if (ret != CKR_OK) {
+#ifdef DEBUG
+#ifdef CAMLRPC
+    fprintf(stderr,
+	    "C_LoadModule: failed loading PKCS#11 module %s from CAML\n",
+	    xstr(LIBNAME));
+#else
+    fprintf(stderr, "C_LoadModule: failed loading PKCS#11 module %s from C\n",
+	    xstr(LIBNAME));
+#endif
+#endif
+    exit(-1);
+  }
+  return;
+}
+
+/* Disconnect all stuff */
+__attribute__ ((destructor))
+void destroy()
+{
+#ifdef CAMLRPC
+  destroy_ml();
+#else
+  destroy_c();
+#endif
+  /* destroy all remaining elements in linked list */
+  remove_all_elements_from_filtering_list();
+  return;
+}
+
+/* -------------------------------- */
+/*   Trampoline PKCS#11 functions   */
+
+struct ck_function_list function_list = {
+  {2, 20},
+  C_Initialize,
+  C_Finalize,
+  C_GetInfo,
+  C_GetFunctionList,
+  C_GetSlotList,
+  C_GetSlotInfo,
+  C_GetTokenInfo,
+  C_GetMechanismList,
+  C_GetMechanismInfo,
+  C_InitToken,
+  C_InitPIN,
+  C_SetPIN,
+  C_OpenSession,
+  C_CloseSession,
+  C_CloseAllSessions,
+  C_GetSessionInfo,
+  C_GetOperationState,
+  C_SetOperationState,
+  C_Login,
+  C_Logout,
+  C_CreateObject,
+  C_CopyObject,
+  C_DestroyObject,
+  C_GetObjectSize,
+  C_GetAttributeValue,
+  C_SetAttributeValue,
+  C_FindObjectsInit,
+  C_FindObjects,
+  C_FindObjectsFinal,
+  C_EncryptInit,
+  C_Encrypt,
+  C_EncryptUpdate,
+  C_EncryptFinal,
+  C_DecryptInit,
+  C_Decrypt,
+  C_DecryptUpdate,
+  C_DecryptFinal,
+  C_DigestInit,
+  C_Digest,
+  C_DigestUpdate,
+  C_DigestKey,
+  C_DigestFinal,
+  C_SignInit,
+  C_Sign,
+  C_SignUpdate,
+  C_SignFinal,
+  C_SignRecoverInit,
+  C_SignRecover,
+  C_VerifyInit,
+  C_Verify,
+  C_VerifyUpdate,
+  C_VerifyFinal,
+  C_VerifyRecoverInit,
+  C_VerifyRecover,
+  C_DigestEncryptUpdate,
+  C_DecryptDigestUpdate,
+  C_SignEncryptUpdate,
+  C_DecryptVerifyUpdate,
+  C_GenerateKey,
+  C_GenerateKeyPair,
+  C_WrapKey,
+  C_UnwrapKey,
+  C_DeriveKey,
+  C_SeedRandom,
+  C_GenerateRandom,
+  C_GetFunctionStatus,
+  C_CancelFunction,
+  C_WaitForSlotEvent
+};
+
+ck_rv_t C_Initialize(void *init_args)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Initialize(init_args);
+#else
+  ret = myC_Initialize_C(init_args);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_Finalize(void *init_args)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Finalize(init_args);
+#else
+  ret = myC_Finalize_C(init_args);
+#endif
+  if (ret == CKR_OK) {
+    /* If some thread are blocking, signal them that we've finalized */
+    if (is_Blocking == 1) {
+      is_Blocking = 2;
+    }
+  }
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GetSlotList(CK_BBOOL input0, ck_slot_id_t * output2, unsigned long *output3)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetSlotList(input0, output2, output3);
+#else
+  ret = myC_GetSlotList_C(input0, output2, output3);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_GetInfo(struct ck_info * output0)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetInfo(output0);
+#else
+  ret = myC_GetInfo_C(output0);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_WaitForSlotEvent(ck_flags_t input0, ck_slot_id_t * output1, void *reserved)
+{
+  ck_rv_t ret;
+
+  if (input0 == CKF_DONT_BLOCK) {
+#ifdef DEBUG
+    fprintf(stderr, "\nC_WaitForSlotEvent called with non block\n");
+#endif
+    pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+    ret = myC_WaitForSlotEvent(input0, output1, reserved);
+#else
+    ret = myC_WaitForSlotEvent_C(input0, output1, reserved);
+#endif
+    pthread_mutex_unlock(&mutex);
+    return ret;
+  } else {
+#ifdef DEBUG
+    fprintf(stderr, "\nC_WaitForSlotEvent called with block, return\n");
+#endif
+    while (1) {
+      /* FIXME: usleep migth be deprecated in favor of nanosleep */
+      usleep(50000);
+      pthread_mutex_lock(&mutex);
+      /* Did we C_Finalize? */
+      if (is_Blocking == 2) {
+	pthread_mutex_unlock(&mutex);
+#ifdef DEBUG
+	printf
+	    ("\nC_WaitForSlotEvent RETURN because someone called C_Finalize\n");
+#endif
+	return CKR_CRYPTOKI_NOT_INITIALIZED;
+      }
+#ifdef CAMLRPC
+      ret = myC_WaitForSlotEvent(CKF_DONT_BLOCK, output1, reserved);
+#else
+      ret = myC_WaitForSlotEvent_C(CKF_DONT_BLOCK, output1, reserved);
+#endif
+      /* No event, we'll block some more */
+      if (ret == CKR_NO_EVENT) {
+	is_Blocking = 1;
+#ifdef DEBUG
+	fprintf(stderr, "\nC_WaitForSlotEvent NO EVENT, keep BLOCKING\n");
+#endif
+      }
+      /* Got an event, we'll return */
+      else {
+	is_Blocking = 0;
+#ifdef DEBUG
+	fprintf(stderr, "\nC_WaitForSlotEvent GOT EVENT\n");
+#endif
+      }
+      pthread_mutex_unlock(&mutex);
+      if (ret != CKR_NO_EVENT) {
+	return ret;
+      }
+    }
+  }
+}
+
+ck_rv_t C_GetSlotInfo(ck_slot_id_t input0, struct ck_slot_info * output1)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetSlotInfo(input0, output1);
+#else
+  ret = myC_GetSlotInfo_C(input0, output1);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_GetTokenInfo(ck_slot_id_t input0, struct ck_token_info * output1)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetTokenInfo(input0, output1);
+#else
+  ret = myC_GetTokenInfo_C(input0, output1);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_InitToken(ck_slot_id_t input0, unsigned char *input1,
+	    unsigned long input1_len, unsigned char *input2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_InitToken(input0, input1, input1_len, input2);
+#else
+  ret = myC_InitToken_C(input0, input1, input1_len, input2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_OpenSession(ck_slot_id_t input0, ck_flags_t input1, void *application,
+	      ck_notify_t notify, ck_session_handle_t * output2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_OpenSession(input0, input1, application, notify, output2);
+#else
+  ret = myC_OpenSession_C(input0, input1, application, notify, output2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_CloseSession(ck_session_handle_t input0)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_CloseSession(input0);
+#else
+  ret = myC_CloseSession_C(input0);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_CloseAllSessions(ck_slot_id_t input0)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_CloseAllSessions(input0);
+#else
+  ret = myC_CloseAllSessions_C(input0);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GetSessionInfo(ck_session_handle_t input0, struct ck_session_info * output1)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetSessionInfo(input0, output1);
+#else
+  ret = myC_GetSessionInfo_C(input0, output1);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_Login(ck_session_handle_t input0, ck_user_type_t input1,
+	unsigned char *input2, unsigned long input2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Login(input0, input1, input2, input2_len);
+#else
+  ret = myC_Login_C(input0, input1, input2, input2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_Logout(ck_session_handle_t input0)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Logout(input0);
+#else
+  ret = myC_Logout_C(input0);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GetMechanismList(ck_slot_id_t input0, ck_mechanism_type_t * output2,
+		   unsigned long *output3)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetMechanismList(input0, output2, output3);
+#else
+  ret = myC_GetMechanismList_C(input0, output2, output3);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GetMechanismInfo(ck_slot_id_t input0, ck_mechanism_type_t input1,
+		   struct ck_mechanism_info * output2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetMechanismInfo(input0, input1, output2);
+#else
+  ret = myC_GetMechanismInfo_C(input0, input1, output2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_InitPIN(ck_session_handle_t input0, unsigned char *input1,
+	  unsigned long input1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_InitPIN(input0, input1, input1_len);
+#else
+  ret = myC_InitPIN_C(input0, input1, input1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SetPIN(ck_session_handle_t input0, unsigned char *input1,
+	 unsigned long input1_len, unsigned char *input2,
+	 unsigned long input2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SetPIN(input0, input1, input1_len, input2, input2_len);
+#else
+  ret = myC_SetPIN_C(input0, input1, input1_len, input2, input2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SeedRandom(ck_session_handle_t input0, unsigned char *input1,
+	     unsigned long input1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SeedRandom(input0, input1, input1_len);
+#else
+  ret = myC_SeedRandom_C(input0, input1, input1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GenerateRandom(ck_session_handle_t input0, unsigned char *output2,
+		 unsigned long output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GenerateRandom(input0, output2, output2_len);
+#else
+  ret = myC_GenerateRandom_C(input0, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GetOperationState(ck_session_handle_t input0, unsigned char *output1,
+		    unsigned long *output1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetOperationState(input0, output1, output1_len);
+#else
+  ret = myC_GetOperationState_C(input0, output1, output1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SetOperationState(ck_session_handle_t input0, unsigned char *input1,
+		    unsigned long input1_len, ck_object_handle_t input2,
+		    ck_object_handle_t input3)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SetOperationState(input0, input1, input1_len, input2, input3);
+#else
+  ret = myC_SetOperationState_C(input0, input1, input1_len, input2, input3);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_FindObjectsInit(ck_session_handle_t input0, CK_ATTRIBUTE * input1,
+		  unsigned long count)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_FindObjectsInit(input0, input1, count);
+#else
+  ret = myC_FindObjectsInit_C(input0, input1, count);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_FindObjects(ck_session_handle_t input0, ck_object_handle_t * output2,
+	      unsigned long input1, unsigned long *output3)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_FindObjects(input0, output2, input1, output3);
+#else
+  ret = myC_FindObjects_C(input0, output2, input1, output3);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_FindObjectsFinal(ck_session_handle_t input0)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_FindObjectsFinal(input0);
+#else
+  ret = myC_FindObjectsFinal_C(input0);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GenerateKey(ck_session_handle_t input0, struct ck_mechanism * input1,
+	      CK_ATTRIBUTE * input2, unsigned long count,
+	      ck_object_handle_t * output3)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GenerateKey(input0, input1, input2, count, output3);
+#else
+  ret = myC_GenerateKey_C(input0, input1, input2, count, output3);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GenerateKeyPair(ck_session_handle_t input0, struct ck_mechanism * input1,
+		  CK_ATTRIBUTE * input2, unsigned long count,
+		  CK_ATTRIBUTE * input3, unsigned long count2,
+		  ck_object_handle_t * output4, ck_object_handle_t * output5)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret =
+      myC_GenerateKeyPair(input0, input1, input2, count, input3, count2,
+			  output4, output5);
+#else
+  ret =
+      myC_GenerateKeyPair_C(input0, input1, input2, count, input3, count2,
+			    output4, output5);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_CreateObject(ck_session_handle_t input0, CK_ATTRIBUTE * input1,
+	       unsigned long count, ck_object_handle_t * output2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_CreateObject(input0, input1, count, output2);
+#else
+  ret = myC_CreateObject_C(input0, input1, count, output2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_CopyObject(ck_session_handle_t input0, ck_object_handle_t input1,
+	     CK_ATTRIBUTE * input2, unsigned long count,
+	     ck_object_handle_t * output3)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_CopyObject(input0, input1, input2, count, output3);
+#else
+  ret = myC_CopyObject_C(input0, input1, input2, count, output3);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_DestroyObject(ck_session_handle_t input0, ck_object_handle_t input1)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DestroyObject(input0, input1);
+#else
+  ret = myC_DestroyObject_C(input0, input1);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GetAttributeValue(ck_session_handle_t input0, ck_object_handle_t input1,
+		    struct ck_attribute * input2, unsigned long input3)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetAttributeValue(input0, input1, input2, input3);
+#else
+  ret = myC_GetAttributeValue_C(input0, input1, input2, input3);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SetAttributeValue(ck_session_handle_t input0, ck_object_handle_t input1,
+		    CK_ATTRIBUTE * input2, unsigned long count)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SetAttributeValue(input0, input1, input2, count);
+#else
+  ret = myC_SetAttributeValue_C(input0, input1, input2, count);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_GetObjectSize(ck_session_handle_t input0, ck_object_handle_t input1,
+		unsigned long *output2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetObjectSize(input0, input1, output2);
+#else
+  ret = myC_GetObjectSize_C(input0, input1, output2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_WrapKey(ck_session_handle_t input0, struct ck_mechanism * input1,
+	  ck_object_handle_t input2, ck_object_handle_t input3,
+	  unsigned char *output4, unsigned long *output4_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_WrapKey(input0, input1, input2, input3, output4, output4_len);
+#else
+  ret = myC_WrapKey_C(input0, input1, input2, input3, output4, output4_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_UnwrapKey(ck_session_handle_t input0, struct ck_mechanism * input1,
+	    ck_object_handle_t input2, unsigned char *input3,
+	    unsigned long input3_len, CK_ATTRIBUTE * input4,
+	    unsigned long count, ck_object_handle_t * output5)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret =
+      myC_UnwrapKey(input0, input1, input2, input3, input3_len, input4, count,
+		    output5);
+#else
+  ret =
+      myC_UnwrapKey_C(input0, input1, input2, input3, input3_len, input4,
+		      count, output5);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DeriveKey(ck_session_handle_t input0, struct ck_mechanism * input1,
+	    ck_object_handle_t input2, CK_ATTRIBUTE * input3,
+	    unsigned long count, ck_object_handle_t * output4)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DeriveKey(input0, input1, input2, input3, count, output4);
+#else
+  ret = myC_DeriveKey_C(input0, input1, input2, input3, count, output4);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_DigestInit(ck_session_handle_t input0, struct ck_mechanism * input1)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DigestInit(input0, input1);
+#else
+  ret = myC_DigestInit_C(input0, input1);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_Digest(ck_session_handle_t input0, unsigned char *input1,
+	 unsigned long input1_len, unsigned char *output2,
+	 unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Digest(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_Digest_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DigestUpdate(ck_session_handle_t input0, unsigned char *input1,
+	       unsigned long input1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DigestUpdate(input0, input1, input1_len);
+#else
+  ret = myC_DigestUpdate_C(input0, input1, input1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DigestFinal(ck_session_handle_t input0, unsigned char *output1,
+	      unsigned long *output1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DigestFinal(input0, output1, output1_len);
+#else
+  ret = myC_DigestFinal_C(input0, output1, output1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_DigestKey(ck_session_handle_t input0, ck_object_handle_t input1)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DigestKey(input0, input1);
+#else
+  ret = myC_DigestKey_C(input0, input1);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SignInit(ck_session_handle_t input0, struct ck_mechanism * input1,
+	   ck_object_handle_t input2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SignInit(input0, input1, input2);
+#else
+  ret = myC_SignInit_C(input0, input1, input2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_Sign(ck_session_handle_t input0, unsigned char *input1,
+       unsigned long input1_len, unsigned char *output2,
+       unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Sign(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_Sign_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SignUpdate(ck_session_handle_t input0, unsigned char *input1,
+	     unsigned long input1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SignUpdate(input0, input1, input1_len);
+#else
+  ret = myC_SignUpdate_C(input0, input1, input1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SignFinal(ck_session_handle_t input0, unsigned char *output1,
+	    unsigned long *output1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SignFinal(input0, output1, output1_len);
+#else
+  ret = myC_SignFinal_C(input0, output1, output1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SignRecoverInit(ck_session_handle_t input0, struct ck_mechanism * input1,
+		  ck_object_handle_t input2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SignRecoverInit(input0, input1, input2);
+#else
+  ret = myC_SignRecoverInit_C(input0, input1, input2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SignRecover(ck_session_handle_t input0, unsigned char *input1,
+	      unsigned long input1_len, unsigned char *output2,
+	      unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SignRecover(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_SignRecover_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_VerifyRecoverInit(ck_session_handle_t input0, struct ck_mechanism * input1,
+		    ck_object_handle_t input2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_VerifyRecoverInit(input0, input1, input2);
+#else
+  ret = myC_VerifyRecoverInit_C(input0, input1, input2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_VerifyInit(ck_session_handle_t input0, struct ck_mechanism * input1,
+	     ck_object_handle_t input2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_VerifyInit(input0, input1, input2);
+#else
+  ret = myC_VerifyInit_C(input0, input1, input2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_Verify(ck_session_handle_t input0, unsigned char *input1,
+	 unsigned long input1_len, unsigned char *input2,
+	 unsigned long input2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Verify(input0, input1, input1_len, input2, input2_len);
+#else
+  ret = myC_Verify_C(input0, input1, input1_len, input2, input2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_VerifyUpdate(ck_session_handle_t input0, unsigned char *input1,
+	       unsigned long input1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_VerifyUpdate(input0, input1, input1_len);
+#else
+  ret = myC_VerifyUpdate_C(input0, input1, input1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_VerifyFinal(ck_session_handle_t input0, unsigned char *input1,
+	      unsigned long input1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_VerifyFinal(input0, input1, input1_len);
+#else
+  ret = myC_VerifyFinal_C(input0, input1, input1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_VerifyRecover(ck_session_handle_t input0, unsigned char *input1,
+		unsigned long input1_len, unsigned char *output2,
+		unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_VerifyRecover(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_VerifyRecover_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_EncryptInit(ck_session_handle_t input0, struct ck_mechanism * input1,
+	      ck_object_handle_t input2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_EncryptInit(input0, input1, input2);
+#else
+  ret = myC_EncryptInit_C(input0, input1, input2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_Encrypt(ck_session_handle_t input0, unsigned char *input1,
+	  unsigned long input1_len, unsigned char *output2,
+	  unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Encrypt(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_Encrypt_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_EncryptUpdate(ck_session_handle_t input0, unsigned char *input1,
+		unsigned long input1_len, unsigned char *output2,
+		unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_EncryptUpdate(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_EncryptUpdate_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_EncryptFinal(ck_session_handle_t input0, unsigned char *output1,
+	       unsigned long *output1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_EncryptFinal(input0, output1, output1_len);
+#else
+  ret = myC_EncryptFinal_C(input0, output1, output1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DigestEncryptUpdate(ck_session_handle_t input0, unsigned char *input1,
+		      unsigned long input1_len, unsigned char *output2,
+		      unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret =
+      myC_DigestEncryptUpdate(input0, input1, input1_len, output2, output2_len);
+#else
+  ret =
+      myC_DigestEncryptUpdate_C(input0, input1, input1_len, output2,
+				output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_SignEncryptUpdate(ck_session_handle_t input0, unsigned char *input1,
+		    unsigned long input1_len, unsigned char *output2,
+		    unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_SignEncryptUpdate(input0, input1, input1_len, output2, output2_len);
+#else
+  ret =
+      myC_SignEncryptUpdate_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DecryptInit(ck_session_handle_t input0, struct ck_mechanism * input1,
+	      ck_object_handle_t input2)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DecryptInit(input0, input1, input2);
+#else
+  ret = myC_DecryptInit_C(input0, input1, input2);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_Decrypt(ck_session_handle_t input0, unsigned char *input1,
+	  unsigned long input1_len, unsigned char *output2,
+	  unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_Decrypt(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_Decrypt_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DecryptUpdate(ck_session_handle_t input0, unsigned char *input1,
+		unsigned long input1_len, unsigned char *output2,
+		unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DecryptUpdate(input0, input1, input1_len, output2, output2_len);
+#else
+  ret = myC_DecryptUpdate_C(input0, input1, input1_len, output2, output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DecryptFinal(ck_session_handle_t input0, unsigned char *output1,
+	       unsigned long *output1_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_DecryptFinal(input0, output1, output1_len);
+#else
+  ret = myC_DecryptFinal_C(input0, output1, output1_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DecryptDigestUpdate(ck_session_handle_t input0, unsigned char *input1,
+		      unsigned long input1_len, unsigned char *output2,
+		      unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret =
+      myC_DecryptDigestUpdate(input0, input1, input1_len, output2, output2_len);
+#else
+  ret =
+      myC_DecryptDigestUpdate_C(input0, input1, input1_len, output2,
+				output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t
+C_DecryptVerifyUpdate(ck_session_handle_t input0, unsigned char *input1,
+		      unsigned long input1_len, unsigned char *output2,
+		      unsigned long *output2_len)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret =
+      myC_DecryptVerifyUpdate(input0, input1, input1_len, output2, output2_len);
+#else
+  ret =
+      myC_DecryptVerifyUpdate_C(input0, input1, input1_len, output2,
+				output2_len);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_GetFunctionStatus(ck_session_handle_t input0)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_GetFunctionStatus(input0);
+#else
+  ret = myC_GetFunctionStatus_C(input0);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_CancelFunction(ck_session_handle_t input0)
+{
+  ck_rv_t ret;
+  pthread_mutex_lock(&mutex);
+#ifdef CAMLRPC
+  ret = myC_CancelFunction(input0);
+#else
+  ret = myC_CancelFunction_C(input0);
+#endif
+  pthread_mutex_unlock(&mutex);
+  return ret;
+}
+
+ck_rv_t C_GetFunctionList(struct ck_function_list ** ppFunctionList)
+{
+
+  if (ppFunctionList == NULL) {
+#ifdef DEBUG
+    fprintf(stderr,
+	    "C_GetFunctionList: ppFunctionList must not be a NULL_PTR\n");
+#endif
+    return CKR_ARGUMENTS_BAD;
+  }
+#ifdef DEBUG
+  fprintf(stderr, "Got ppFunctionList = 0x%p\n", (void *)(&function_list));
+#endif
+  *ppFunctionList = &function_list;
+
+  return CKR_OK;
+}
