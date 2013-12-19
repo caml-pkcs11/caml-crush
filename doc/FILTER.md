@@ -296,7 +296,7 @@ Please note that the PKCS#11 way of segregating normal users and SO users is to 
 SO PIN can be bruteforced (for example if there is no bad PIN counter as this can be the case on some Hardware Security 
 Modules), a normal user would be able to perform SO operations by guessing the SO PIN. This filter option can be seen 
 as a "barrier" blocking such attacks whenever one is sure that a token has no reason to be administrated. The possible 
-values to express the boolean decision of enforcing or not RO sessions are: **yes** and **no** or **true** and **false**.
+values to express the boolean decision of enforcing or not admin blocking are: **yes** and **no** or **true** and **false**.
 
 Syntax example:
     
@@ -307,19 +307,67 @@ Syntax example:
 > (thanks to the regexp ".\*" matching all the modules).
 
 ## Adding user defined actions
+### The filter\_actions option syntax and usage
   * **filter\_actions** (*list of couples of [string_regexp x list of couples of [PKCS#11_function x custom_function]]*):
     * This option is a way to **extend** the filter features as the user can provide its own hooks on every PKCS#11 
-function. In order to apply an action "Action" triggered by a call to a PKCS#11 function, says C\_Login, a couple 
-(C\_Login, Action) is defined in the filter\_actions option. For the sake of simplicity, these hooks have been 
-gathered inside one file in the filter source tree (*src/filter/filter/filter_actions.ml*).
+function. In order to apply an action "Action" triggered by a call to a PKCS#11 function, say C\_Login for example, 
+a couple (C\_Login, Action) is defined in the filter\_actions option. For the sake of simplicity, these hooks have been 
+gathered inside one file in the filter source tree [src/filter/filter/filter_actions.ml](../src/filter/filter/filter_actions.ml).
 
 Syntax example:
     
     filter_actions = [ (".*", [(C_Login, c_Login_hook), (C_Initialize, c_Initialize_hook)]),
-                       ("soft.*", [(C_CloseSession, identity)]) ]
+                       ("soft.*", [(C_CloseSession, identity), (C_Login, c_Login_hook2)]) ]
 
-> There is no default value for filter\_actions. The previous rule will execute the user defined c\_Login\_hook when 
+> There is no default value for filter\_actions: if **no rule** is defined for a given PKCS#11 function, **no hook** will be 
+> executed for this function. If **many rules** concern the same PKCS#11 function, the hooks are executed **in the order they are declared**. 
+> The previous rule will execute the user defined c\_Login\_hook and then c\_Login\_hook2 when 
 > C\_Login is called for all the modules, the identity user defined function when C\_CloseSession is called for 
-> "soft.\*" regexp module aliases ("softhsm" for instance), and so on ...
+> "soft.\*" regexp module aliases ("softhsm" for instance), and so on ... Please beware that the user defined hooks are 
+> executed **prior** to any other filtering rule. In addition, depending on the hooking function return value, the other 
+> filtering rule might or might not be enforced: this is a way to **override** the original filtering rules and replace 
+> them with custom ones (see below for details on how this works).
 
-**TODO**: explain the details of how to add a custom function.
+### Adding a new user defined action in the code
+
+In order to add a new defined action, the user must edit the [src/filter/filter/filter_actions.ml](../src/filter/filter/filter_actions.ml) 
+file where there are already some very simple examples of hooking functions:
+ 
+  * identity is designed to hook pretty much anything: it prints " ######### Identity hook called!"
+  * c\_Initialize\_hook is designed to hook C\_Initialize, it prints the " ########## Hooking C_Initialize!" string at log level 1
+  * c\_Login\_hook is designed to hook C\_Login, it prints the " ######### Passthrough C_Login with pin %s!" string with the C\_Login 
+given PIN. If PIN is "1234", the hooks returns and lets C\_Login continue its normal execution. If PIN is not "1234", C\_Login 
+is interrupted and the PKCS#11 error CKR\_PIN\_LOCKED is returned. Though this action is kind of useless, it shows the main advantage 
+of user defined routines: one can completely customize the filter since input and output values can be handled here. One can also 
+make "real" PKCS#11 calls to the Backend and decide of the filtering action depending on the result.
+
+The PKCS#11 functions hooking system uses OCaml [marshaling module](http://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html).
+The user defined functions **must take exactly one argument** that corresponds to the marshaled string of the original PKCS#11 function 
+original arguments tuple (this argument is therefore of type string). Similarly, the output values of custom hooks are strings that are 
+the **marshaled versions** of couples whose first element is a boolean value, and the second element is a PKCS#11 return value. If the 
+first element is "false", then the hooked PKCS#11 function will **continue its execution** after the hook execution, ignoring 
+the second element of the couple. This means that in this case, all the other filtering options are applied after the hook execution. 
+On the contrary, if the first element of the couple is "true", the second element of the couple is considered to be the hooked function 
+**return value**: this means that the hooked PKCS#11 function will return with this value just after the hook execution.
+
+If more than one hooking routine are defined for the same PKCS#11 function, the hooks are executed **in the order they are defined** inside 
+the filter\_actions option. In this case, **only the return value of the last hook** is used as the PKCS#11 return value: the other hooks 
+return values are discarded.
+
+If a "state" is necessary to keep track of actions of different hooks on the same PKCS#11 function, one will have to implement it through 
+global variables for instance.
+
+### The user defined actions limitations
+
+Though the custom hooks system has been designed to be very flexible, its main issues come from this flexibility. The OCaml 
+[marshaling module](http://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html) is indeed very powerful since it provides 
+an easy way to define general purpose functions where the arguments and return values are evaluated at runtime. The two 
+drawbacks are that:
+
+  * The default OCaml marshaling module  is **not type-safe** since no type is carried with the marshaled data, meaning that 
+no type-checking is performed during the unmarshaling. This can lead to uncaught exceptions during the unmarshal.
+  * The user defined functions input and output values **must be handled with care**: there is no safety net if 
+the user fails to properly write his function. The program might compile, but the function will - eventually silently - 
+fail at runtime. This is usually not the expected behaviour for OCaml written programs!
+
+Improving the user defined hooks to be type-safe and avoid the use of marshaling is a work in pogress.
