@@ -333,9 +333,9 @@ Syntax example:
 In order to add a new defined action, the user must edit the [src/filter/filter/filter_actions.ml](../src/filter/filter/filter_actions.ml) 
 file where there are already some very simple examples of hooking functions:
  
-  * identity is designed to hook pretty much anything: it prints " ######### Identity hook called!"
-  * c\_Initialize\_hook is designed to hook C\_Initialize, it prints the " ########## Hooking C_Initialize!" string at log level 1
-  * c\_Login\_hook is designed to hook C\_Login, it prints the " ######### Passthrough C_Login with pin %s!" string with the C\_Login 
+  * `identity` is designed to hook pretty much anything: it prints " ######### Identity hook called!"
+  * `c_Initialize_hook` is designed to hook C\_Initialize, it prints the " ########## Hooking C_Initialize!" string at log level 1
+  * `c_Login_hook` is designed to hook C\_Login, it prints the " ######### Passthrough C_Login with pin %s!" string with the C\_Login 
 given PIN. If PIN is "1234", the hooks returns and lets C\_Login continue its normal execution. If PIN is not "1234", C\_Login 
 is interrupted and the PKCS#11 error CKR\_PIN\_LOCKED is returned. Though this action is kind of useless, it shows the main advantage 
 of user defined routines: one can completely customize the filter since input and output values can be handled here. One can also 
@@ -356,6 +356,62 @@ return values are discarded.
 
 If a "state" is necessary to keep track of actions of different hooks on the same PKCS#11 function, one will have to implement it through 
 global variables for instance.
+
+### Code example
+
+In order to add a custom hook, say `c_Login_hook`, one must first add the name of the hook in the **two custom action wrappers** 
+defined in [src/filter/filter/filter_actions.ml](../src/filter/filter/filter_actions.ml):
+
+```ocaml
+(********* CUSTOM actions wrappers for the configuration file ******)
+let execute_action action argument = match action with
+  "c_Initialize_hook" -> c_Initialize_hook argument
+| "c_Login_hook" -> c_Login_hook argument
+| "identity" -> identity argument
+| _ -> identity argument
+
+let string_check_action a = match a with
+  "c_Initialize_hook" -> a
+| "c_Login_hook" -> a
+| "identity" -> a
+| _ -> let error_string = Printf.sprintf "Error: unknown action option '%s'!" a in 
+                          netplex_log_critical error_string; raise Config_file_wrong_type
+```
+
+Then, the user must define the `c_Login_hook` **above** these custom wrappers so that it is define at this point of the 
+source file. One could also add the custom hooks inside another OCaml module that would be included in 
+[filter\_actions.ml](../src/filter/filter/filter_actions.ml).
+
+```ocaml
+let c_Login_hook arg =
+  let (cksessionhandlet_, ckusertypet_, pin) = (deserialize arg) in
+  if compare (Pkcs11.byte_array_to_string pin) "1234" = 0 then
+    (* Passtrhough if pin is 1234 *)
+    let s = Printf.sprintf " ######### Passthrough C_Login with pin %s!" 
+            (Pkcs11.byte_array_to_string pin) in print_debug s 1;
+    (serialize (false, ()))
+  else
+  begin
+    (* Hook the call if pin != 1234 *)
+    let s = Printf.sprintf " ######### Hooking C_Login with pin %s!" 
+            (Pkcs11.byte_array_to_string pin) in print_debug s 1;
+    let return_value = serialize (true, Pkcs11.cKR_PIN_LOCKED) in
+    (return_value)
+  end
+```
+
+Here are the important parts to notice for `c_Login_hook`:
+
+  * It has exactly **one argument** `arg` that is unmarshaled through the `deserialize` function
+  * The unmarshaled `arg` is then affected to the tuple `(cksessionhandlet_, ckusertypet_, pin)` whose elements 
+exactly correspond to what the hooked PKCS#11 function C\_Login expects as arguments. These are the raw (meaning 
+untouched) arguments received from the filter Frontend
+  * Then, depending on the value of the PIN, either the couple `(false, ())` or the couple `(true, Pkcs11.cKR_PIN_LOCKED)`
+are returned:
+      * The couple `(false, ())` means that we do not want to override C\_Login return value: the PKCS#11 function will 
+continue its execution and execute other elements of the filter
+      * The couple `(true, Pkcs11.cKR_PIN_LOCKED)` means that we want C\_Login to stop its execution at the hook call 
+while returning `Pkcs11.cKR_PIN_LOCKED` 
 
 ### The user defined actions limitations
 
