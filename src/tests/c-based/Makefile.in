@@ -1,0 +1,16 @@
+CC = gcc
+#CFLAGS_OPT = -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wuninitialized
+CFLAGS_OPT = -g -Wall
+
+c_include_dirs = -I$(bindings_dir)
+bindings_dir = ../../bindings-pkcs11
+rpc_dir = ../rpc-pkcs11
+
+
+all : mainshared
+
+mainshared: 
+	$(CC) -g -o main-shared.opt main-shared.c -ldl $(c_include_dirs)
+
+clean:
+	@rm -f *.o *~ *.opt
