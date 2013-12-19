@@ -119,7 +119,9 @@ filtered labels, filtered ids, ...)
 
 Syntax example:
 
-    debug = 3
+```ocaml
+debug = 3
+```
 
   * **log\_subchanel** (*string*):
     * Netplex allows the use of **subchannels** to split the logging file.
@@ -144,8 +146,10 @@ Syntax example:
 
 Syntax example:
  
-    modules = [ ("softhsm", "/usr/lib/libsofthsm.so"), 
-                ("opensc", "/usr/lib/opensc-pkcs11.so") ]
+```ocaml
+modules = [ ("softhsm", "/usr/lib/libsofthsm.so"), 
+            ("opensc", "/usr/lib/opensc-pkcs11.so") ]
+```
 
 > This will alias "softhsm" to the library "/usr/lib/libsofthsm.so", and "opensc" to "/usr/lib/opensc-pkcs11.so".
 > Please note that you can also use an empty string "" as an alias. On the client side, the compiled client library 
@@ -171,8 +175,10 @@ objects not matching will **not** be visible to the application.
 
 Syntax example:
 
-    allowed_labels = [ ("\\(sofths.*\\|opencryptoki\\)", ["MYLABEL.*", "LABEL_EXACT"]), 
-                       ("softhsm", [".*THE_LABEL", "mytes.*"]) ]
+```ocaml
+allowed_labels = [ ("\\(sofths.*\\|opencryptoki\\)", ["MYLABEL.*", "LABEL_EXACT"]), 
+                   ("softhsm", [".*THE_LABEL", "mytes.*"]) ]
+```
 
 > The first rule of the above example will allow any "MYLABEL.\*" regular expression, or a "LABEL\_EXACT" for any module 
 > alias matching the "(sofths.\*|opencryptoki)" regular expression (please note the escaping characters for regexps). 
@@ -188,7 +194,9 @@ a raw binary format)
 
 Syntax example:
 
-    allowed_ids = [ ("softhsm.*", ["0123.*"]) ]
+```ocaml
+allowed_ids = [ ("softhsm.*", ["0123.*"]) ]
+```
 
 > The allowed\_ids filtering patterns follow the same rules as the one explained in the allowed\_labels section.
 
@@ -219,8 +227,10 @@ element.
 
 Syntax example:
 
-    forbidden_mechanisms = [ ("sof.*", [CKM_RSA_PKCS, CKM_MD5_RSA_PKCS]), 
-                             ("softhsm", [CKM_DES_ECB]) ]
+```ocaml
+forbidden_mechanisms = [ ("sof.*", [CKM_RSA_PKCS, CKM_MD5_RSA_PKCS]), 
+                         ("softhsm", [CKM_DES_ECB]) ]
+```
 
 > There is no default value for forbidden\_mechanisms. Please note that the mechanisms **are not** regexps, they 
 > must correspond to **exact** PKCS#11 mechanism names as they are listed in the standard. If a module alias name 
@@ -241,15 +251,19 @@ weaknesses.
 
 The potentially dangerous mechanisms (with PKCS#1 v1.5 or CBC paddings) that are harcoded inside the filter are:
 
-    [CKM_RSA_PKCS; CKM_MD2_RSA_PKCS; CKM_MD5_RSA_PKCS; CKM_SHA1_RSA_PKCS; CKM_RIPEMD128_RSA_PKCS; 
-     CKM_RIPEMD160_RSA_PKCS; CKM_SHA256_RSA_PKCS; CKM_SHA384_RSA_PKCS; CKM_SHA512_RSA_PKCS; CKM_RC2_CBC_PAD; 
-     CKM_DES_CBC_PAD; CKM_DES3_CBC_PAD; CKM_CDMF_CBC_PAD; CKM_CAST_CBC_PAD; CKM_CAST3_CBC_PAD; 
-     CKM_CAST5_CBC_PAD; CKM_CAST128_CBC_PAD; CKM_RC5_CBC_PAD; CKM_IDEA_CBC_PAD; CKM_AES_CBC_PAD]
+```ocaml
+[CKM_RSA_PKCS; CKM_MD2_RSA_PKCS; CKM_MD5_RSA_PKCS; CKM_SHA1_RSA_PKCS; CKM_RIPEMD128_RSA_PKCS; 
+ CKM_RIPEMD160_RSA_PKCS; CKM_SHA256_RSA_PKCS; CKM_SHA384_RSA_PKCS; CKM_SHA512_RSA_PKCS; CKM_RC2_CBC_PAD; 
+ CKM_DES_CBC_PAD; CKM_DES3_CBC_PAD; CKM_CDMF_CBC_PAD; CKM_CAST_CBC_PAD; CKM_CAST3_CBC_PAD; 
+ CKM_CAST5_CBC_PAD; CKM_CAST128_CBC_PAD; CKM_RC5_CBC_PAD; CKM_IDEA_CBC_PAD; CKM_AES_CBC_PAD]
+```
 
 Syntax example:
 
-    remove_padding_oracles = [ (".*", [wrap, unwrap, encrypt]), 
-                               ("softhsm", [sign]) ]
+```ocaml
+remove_padding_oracles = [ (".*", [wrap, unwrap, encrypt]), 
+                           ("softhsm", [sign]) ]
+```
 
 > There is no default value for remove\_padding\_oracles. As for the forbidden\_mechanisms option, a logical 
 > **AND** is applied when a module is covered by different rules: the "softhsm" module will have "wrap", "unwrap" 
@@ -263,8 +277,10 @@ The PKCS#11 function names must **exactly correspond** to the ones used in the s
 
 Syntax example:
 
-    forbidden_functions  = [ ("soft.*", [C_Login, C_Logout]), 
-                             ("softhsm", [C_Sign]) ]
+```ocaml
+forbidden_functions  = [ ("soft.*", [C_Login, C_Logout]), 
+                         ("softhsm", [C_Sign]) ]
+```
 
 > There is no default value for forbidden\_functions. As for the forbidden\_mechanisms option, a logical 
 > **AND** is applied when a module is covered by different rules: the "softhsm" module will have C\_Login and 
@@ -282,8 +298,10 @@ per module alias. The possible values to express the boolean decision of enforci
 
 Syntax example:
 
-    enforce_ro_sessions  = [ ("soft.*", no), 
-                             ("opencryptoki", yes) ]
+```ocaml
+enforce_ro_sessions  = [ ("soft.*", no), 
+                         ("opencryptoki", yes) ]
+```
 
 > The default value for enforce\_ro\_sessions is "no" (meaning that if there is no rule associated to a module, 
 > the RO sessions are **not** enforced). The previous rule will **not enforce** RO sessions for "softhsm", but 
@@ -299,8 +317,10 @@ as a "barrier" blocking such attacks whenever one is sure that a token has no re
 values to express the boolean decision of enforcing or not admin blocking are: **yes** and **no** or **true** and **false**.
 
 Syntax example:
-    
-    forbid_admin_operations = [ (".*", yes) ]
+
+```ocaml    
+forbid_admin_operations = [ (".*", yes) ]
+```
 
 > The default value for forbid\_admin\_operations is "no" (meaning that if there is no rule associated to a module,
 > the SO operations are **allowed**). The previous rule enforces **blocking the SO operations** on all the modules 
@@ -316,8 +336,10 @@ gathered inside one file in the filter source tree [src/filter/filter/filter_act
 
 Syntax example:
     
-    filter_actions = [ (".*", [(C_Login, c_Login_hook), (C_Initialize, c_Initialize_hook)]),
-                       ("soft.*", [(C_CloseSession, identity), (C_Login, c_Login_hook2)]) ]
+```ocaml
+filter_actions = [ (".*", [(C_Login, c_Login_hook), (C_Initialize, c_Initialize_hook)]),
+                   ("soft.*", [(C_CloseSession, identity), (C_Login, c_Login_hook2)]) ]
+```
 
 > There is no default value for filter\_actions: if **no rule** is defined for a given PKCS#11 function, **no hook** will be 
 > executed for this function. If **many rules** concern the same PKCS#11 function, the hooks are executed **in the order they are declared**. 

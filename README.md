@@ -76,9 +76,11 @@ have it point to the PKCS#11 middleware you want to use.
 
 Example using the OpenSC middleware:
 
-    ...
-    modules = [("foo", "/usr/lib/opensc-pkcs11.so")]
-    ...
+```ocaml
+...
+modules = [("foo", "/usr/lib/opensc-pkcs11.so")]
+...
+```
 
 
 ### Run the proxy server
