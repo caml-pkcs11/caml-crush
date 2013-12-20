@@ -105,7 +105,7 @@ This potentially reduces performance and could be improved in future releases.
 
 ### Server and filter limitations library
 
-#### PFS support <a name="PFS"></a>
+#### [PFS][] (Perfect Forward Secrecy) support <a name="PFS"></a>
 The up-to-date package of [ocaml-ssl][] is only able to do TLS 1.0 sessions
 establishment. This means that the ciphersuites available do not include newer
 algorithms (such as AES-GCM).
@@ -113,9 +113,10 @@ algorithms (such as AES-GCM).
 
 The second issue is that the code (up to 0.4.6) does not support initializing a
 Diffie-Hellman context for OpenSSL. Meaning that even on TLS 1.0, DHE-suites
-are not available. With binary versions of [ocaml-ssl][] and [ocamlnet][], PFS 
+are not available. With binary versions of [ocaml-ssl][] and [ocamlnet][], [PFS][] 
 is therefore **not** available.
 [ocamlnet]: http://projects.camlcity.org/projects/ocamlnet.html
+[PFS]: http://en.wikipedia.org/wiki/Forward_secrecy
 
 We strongly recommend using PFS, this is why we pushed modifications 
 to [ocaml-ssl][] to support TLS 1.2 and to add code to initialize a DH context 

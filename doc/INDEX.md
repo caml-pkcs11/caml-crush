@@ -363,7 +363,7 @@ daemon. It is possible to run it as a foreground process for debugging purposes.
 
 For debugging purpose, you can start the server process with the following command line:
 
-  * pkcs11proxyd -fg -conf /etc/pkcs11proxy/server.conf -debug-pkcs11
+    pkcs11proxyd -fg -conf /etc/pkcs11proxy/server.conf -debug-pkcs11
 
 This will start the daemon in foreground mode and turn on the tracing of PKCS#11 RPC calls.
 
@@ -383,7 +383,7 @@ Once the server is running, you can use a PKCS#11 compliant application with the
 
 For instance, you could use "pkcs11-tool" from the [OpenSC][] suite to query slot information from the client library.
 
-  * pkcs11-tool --module ./libp11clientopensc.so -L
+    pkcs11-tool --module ./libp11clientopensc.so -L
 
 [OpenSC]: https://www.opensc-project.org/opensc/
 
@@ -394,9 +394,75 @@ when starting a process. We plan to provide a *sandboxing* launcher that
 can be used to bootstrap our server process in another project.
 This is needed because the necessary APIs to drop privileges and harden the process
 are not available from OCaml. In the meantime, you can still use already
-available launcher such as **capsh**.
+available launchers such as [capsh](http://man7.org/linux/man-pages/man1/capsh.1.html).
 
-### Augmenting the sandbox
+If one wants to manually implement sandboxing features, here are some starting points:
 
-**FIXME**: Document C\_Daemonize() function call that can be use to finalize
-privilege reduction.
+  * changing the id of the process if it is launched as **root**
+  * chrooting the process, or using BSD Jails when available
+  * dropping capabilities, see [libcap-ng](http://people.redhat.com/sgrubb/libcap-ng)
+  * limiting possible system calls, see [libseccomp](http://sourceforge.net/projects/libseccomp)
+  * ... and so on
+
+### Augmenting the sandbox with user defined actions
+
+Since there are no straightforward privilege reduction and sandboxing helpers in OCaml, 
+we have implemented a specific `c_Daemonize` function in the Netplex RPC server 
+([src/pkcs11proxyd/server.ml](../src/pkcs11proxyd/server.ml), see below). This function is of 
+course **not** exposed in the RPC layer to the clients, it can only be called inside 
+the server code. 
+
+This function is called inside the `post_add_hook` method of the Netplex server, meaning 
+that the socket is already created and bound to its given port at this point of the program, 
+which implies that all the privileges can be dropped here (especially allowing listening on 
+the _well-known ports_ < 1024).
+
+```ocaml
+let c_Daemonize (param) =
+  debug_print_call "C_Daemonize";
+  (* To keep things consistent c_Daemonize can pass through filter as well *)
+  let ret = Pkcs11.c_Daemonize param in
+  debug_print_ret "C_Daemonize" ret;
+  (Int64.of_nativeint ret)
+...
+
+let custom_hooks =
+...
+      method post_add_hook _ ctrl =
+...
+        (* Call C_Daemonize *)
+        if !ref_daemonize_args = "" then
+          begin
+          let param = (Pkcs11.string_to_byte_array "") in
+          let _ = c_Daemonize param in
+          ()
+          end
+        else
+          begin
+          let param = (Pkcs11.string_to_byte_array !ref_daemonize_args) in
+          let _ = c_Daemonize param in
+          ()
+          end
+...
+```
+
+The `c_Daemonize` OCaml function is in fact a wrapper to the `ML_CK_C_Daemonize` C function 
+defined in [src/bindings-pkcs11/pkcs11_functions.c](../src/bindings-pkcs11/pkcs11_functions.c).
+This allows to inject custom native C code here (see below) to overcome OCaml's existing 
+libraries limitations. For now, `ML_CK_C_Daemonize` **does not do anything**, it is rather 
+an "empty shell" that you will have to fill in.
+
+```C
+CK_RV ML_CK_C_Daemonize(unsigned char *param, unsigned long param_len)
+{
+  CK_RV rv = 0;
+  DEBUG_CALL(ML_CK_C_Daemonize, " calling\n");
+  /* TODO: If you decide so, it is possible to implement some privilege
+   * reduction primitives here. The advantage of doing it here is that you
+   * would not need the "sandbox" launcher.
+   * This is called after the OCaml netplex binds the socket.
+   */
+  ...
+  return rv;
+}
+```
