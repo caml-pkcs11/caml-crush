@@ -677,6 +677,7 @@ identifier session, data, data_len, _res, _ctx;
 + unsigned long tmp_data_len;
 + unsigned long *data_len = &tmp_data_len; /*in*/
   ...
+- data = camlidl_malloc(*data_len * sizeof(unsigned char ), _ctx);
 - _res = ML_CK_C_GetOperationState(session, data, data_len);
 + _res = ML_CK_C_GetOperationState(session, &data, data_len);
   ...
