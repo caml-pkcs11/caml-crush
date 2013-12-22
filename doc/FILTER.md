@@ -12,6 +12,23 @@ uses the OCaml [config-file][] package).
 
 Back to [INDEX.md](INDEX.md).
 
+## Disclaimer: on the filter possible side effects
+
+Though the filter has been designed to be as transparent as possible regarding 
+the PKCS#11 standard as well as the underlying PKCS#11 middleware, some side 
+effects might appear due to the filtering implementation choices. If you use PKCS#11 
+conforming tests with ot without the filter (for example with the --without-filter 
+option in the configure script), you will most likely see some minor differences.
+
+This is mainly due to the fact that some PKCS#11 functions in the filter use **local caches** to 
+check mechanisms and objects when they are listed. This can interfere with what the genuine underlying 
+middleware would normally respond, especially when PKCS#11 **tricky cases** are 
+tested (trying to use non existant mechanisms, ...). 
+
+However, one should keep in mind that in "normal" cases (meaning with standard 
+PKCS#11 applications), the filter should not introduce glitches. If it does, 
+please report the issue.
+
 ## The filter architecture
 <pre>
          ----------------------  
