@@ -391,9 +391,14 @@ let filter_c_GetMechanismList ret mechanism_list count =
   else
   begin
     let filtered_mechanism_list = Array.of_list (apply_blacklist_all_lists (Array.to_list mechanism_list) !forbidden_mechanisms) in
-    (* If the resulting mechanism list is bigger thant the count, return CKR_BUFFER_TOO_SMALL *)
+    (* If the resulting mechanism list is bigger thant the count, return the real count if count was 0 or CKR_BUFFER_TOO_SMALL *)
     if Array.length filtered_mechanism_list > (Nativeint.to_int count) then
-      (Pkcs11.cKR_BUFFER_TOO_SMALL, [| |], Nativeint.of_int (Array.length filtered_mechanism_list))
+    begin
+      if compare count 0n = 0 then
+        (Pkcs11.cKR_OK, [| |], Nativeint.of_int (Array.length filtered_mechanism_list))
+      else
+        (Pkcs11.cKR_BUFFER_TOO_SMALL, [| |], Nativeint.of_int (Array.length filtered_mechanism_list))
+    end
     else
       (ret, filtered_mechanism_list, Nativeint.of_int (Array.length filtered_mechanism_list))
   end
@@ -521,18 +526,25 @@ let c_GetMechanismList ckslotidt_ count =
       let _ = print_debug "Blocking function C_GetMechanismList" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |], 0n)
     else
-      (* We always want to ask for the real number of mechanisms *)
-      let mycount = 
+      (* Do we filter mechanisms? *)
+      if List.length !forbidden_mechanisms > 0 then
+        begin
+        (* We always want to ask for the real number of mechanisms *)
+        let mycount = 
 	  let (ret, _, newcount) = Backend.c_GetMechanismList ckslotidt_ 0n in 
 	  if compare ret Pkcs11.cKR_OK = 0 then newcount else count
-      in
-      let (ret, mechanism_list, count) = Backend.c_GetMechanismList ckslotidt_ mycount in
-      (* We filter the list if everything were OK *)
-      if compare ret Pkcs11.cKR_OK = 0 then
-	let (filtered_ret, filtered_list, filtered_count) = filter_c_GetMechanismList ret mechanism_list count in
-	(filtered_ret, filtered_list, filtered_count)
+        in
+        let (ret, mechanism_list, _) = Backend.c_GetMechanismList ckslotidt_ mycount in
+        (* We filter the list if everything were OK *)
+        if compare ret Pkcs11.cKR_OK = 0 then
+	  let (filtered_ret, filtered_list, filtered_count) = filter_c_GetMechanismList ret mechanism_list count in
+	  (filtered_ret, filtered_list, filtered_count)
+        else
+	  (ret, mechanism_list, count)
+        end
       else
-	(ret, mechanism_list, count)
+        (* If we don't filter mechanisms, passthrough to the backend *)
+        (Backend.c_GetMechanismList ckslotidt_ count)
 
 (*************************************************************************)
 let c_GetMechanismInfo ckslotidt_ ckmechanismtypet_ =
