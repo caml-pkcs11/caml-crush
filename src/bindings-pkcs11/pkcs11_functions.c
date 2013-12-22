@@ -107,6 +107,7 @@ CK_RV ML_CK_C_Daemonize(unsigned char *param, unsigned long param_len)
    * would not need the "sandbox" launcher.
    * This is called after the OCaml netplex binds the socket.
    */
+  /* Dummy stuff below */
   if (param != NULL) {
     param = NULL;
   }
@@ -258,7 +259,9 @@ CK_RV ML_CK_C_WaitForSlotEvent( /*in */ CK_FLAGS flags,	/* out */
   /* ALIASING */
   if (rv == CKR_OK) {
     /* alias the slot ID */
-    *pSlot = alias(*pSlot, SLOTID);
+    if (pSlot != NULL) {
+      *pSlot = alias(*pSlot, SLOTID);
+    }
   }
   /*------------*/
 #endif
@@ -272,6 +275,16 @@ CK_RV ML_CK_C_GetSlotList( /*in */ unsigned int token_present,	/*out */
 {
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_GetSlotList);
+  
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(real_count == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
 
   /* Initialize the returned number to zero */
   *real_count = 0UL;
@@ -304,9 +317,11 @@ CK_RV ML_CK_C_GetSlotList( /*in */ unsigned int token_present,	/*out */
   /* ALIASING */
   if (rv == CKR_OK) {
     unsigned int i;
-    for (i = 0; i < *real_count; i++) {
-      /* alias the slot ID */
-      slot_list[i] = alias(slot_list[i], SLOTID);
+    if (slot_list != NULL) {
+      for (i = 0; i < *real_count; i++) {
+        /* alias the slot ID */
+        slot_list[i] = alias(slot_list[i], SLOTID);
+      }
     }
   }
   /*------------*/
@@ -410,7 +425,9 @@ CK_RV ML_CK_C_OpenSession( /*in */ CK_SLOT_ID slot_id, /*in */ CK_FLAGS flags,
 #ifdef USE_ALIASING
   /* ALIASING */
   if (rv == CKR_OK) {
-    *session = alias(*session, SESSION);
+    if (session != NULL) {
+      *session = alias(*session, SESSION);
+    }
   }
   /*------------*/
 #endif
@@ -507,7 +524,9 @@ CK_RV ML_CK_C_GetSessionInfo( /*in */ CK_SESSION_HANDLE session,	/*out */
   /* Alias the result inside tje session info structure */
   /* ALIASING */
   if (rv == CKR_OK) {
-    session_info->slotID = alias(session_info->slotID, SLOTID);
+    if (session_info != NULL) {
+      session_info->slotID = alias(session_info->slotID, SLOTID);
+    }
   }
   /*------------*/
 #endif
@@ -566,6 +585,16 @@ CK_RV ML_CK_C_GetMechanismList( /*in */ CK_SLOT_ID slot_id,	/*out */
   unsigned long local_count;
 
   CHECK_MODULE_FUNCTION(C_GetMechanismList);
+
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(real_count == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
 
 #ifdef USE_ALIASING
   /* UNALIASING */
@@ -889,7 +918,9 @@ CK_RV ML_CK_C_FindObjects( /*in */ CK_SESSION_HANDLE session,	/*out */
 #endif
 
   /* Initialize the object_count to zero */
-  *object_count = 0UL;
+  if (object_count != NULL) {
+    *object_count = 0UL;
+  }
 
   DEBUG_CALL(ML_CK_C_FindObjects,
 	     " called for session %ld and max objects %ld\n", session,
@@ -897,17 +928,21 @@ CK_RV ML_CK_C_FindObjects( /*in */ CK_SESSION_HANDLE session,	/*out */
 
   rv = pkcs11->C_FindObjects(session, object, max_object_count, object_count);
 
-  DEBUG_RET(ML_CK_C_FindObjects, rv,
+  if (object_count != NULL) {
+    DEBUG_RET(ML_CK_C_FindObjects, rv,
 	    " called for session %ld and max objects %ld, got %ld\n",
 	    session, max_object_count, *object_count);
+  }
 
 #ifdef USE_ALIASING
   /* Alias all the returned objects */
   /* ALIASING */
   if (rv == CKR_OK) {
     unsigned int i;
-    for (i = 0; i < *object_count; i++) {
-      object[i] = alias(object[i], OBJECT);
+    if ((object != NULL) && (object_count != NULL)) {
+      for (i = 0; i < *object_count; i++) {
+        object[i] = alias(object[i], OBJECT);
+      }
     }
   }
   /*------------*/
@@ -978,7 +1013,7 @@ CK_RV ML_CK_C_GenerateKey( /*in */ CK_SESSION_HANDLE session,	/*in */
 #ifdef USE_ALIASING
   /* Alias all the returned key object */
   /* ALIASING */
-  if (rv == CKR_OK) {
+  if ((rv == CKR_OK) && (phkey != NULL)) {
     *phkey = alias(*phkey, OBJECT);
   }
   /*------------*/
@@ -1039,8 +1074,12 @@ CK_RV ML_CK_C_GenerateKeyPair( /*in */ CK_SESSION_HANDLE session,	/*in */
   /* Alias all the returned key objects */
   /* ALIASING */
   if (rv == CKR_OK) {
-    *phpubkey = alias(*phpubkey, OBJECT);
-    *phprivkey = alias(*phprivkey, OBJECT);
+    if (phpubkey != NULL) {
+      *phpubkey = alias(*phpubkey, OBJECT);
+    }
+    if (phprivkey != NULL) {
+      *phprivkey = alias(*phprivkey, OBJECT);
+    }
   }
   /*------------*/
 #endif
@@ -1079,7 +1118,7 @@ CK_RV ML_CK_C_CreateObject( /*in */ CK_SESSION_HANDLE session,	/*in */
 #ifdef USE_ALIASING
   /* Alias all the returned object */
   /* ALIASING */
-  if (rv == CKR_OK) {
+  if ((rv == CKR_OK) && (phobject != NULL)) {
     *phobject = alias(*phobject, OBJECT);
   }
   /*------------*/
@@ -1122,7 +1161,7 @@ CK_RV ML_CK_C_CopyObject( /*in */ CK_SESSION_HANDLE session,	/*in */
 #ifdef USE_ALIASING
   /* Alias all the returned object */
   /* ALIASING */
-  if (rv == CKR_OK) {
+  if ((rv == CKR_OK) && (phnewobject != NULL)) {
     *phnewobject = alias(*phnewobject, OBJECT);
   }
   /*------------*/
@@ -1173,6 +1212,11 @@ CK_RV ML_CK_C_GetAttributeValue( /*in */ CK_SESSION_HANDLE session,	/*in */
 	     " called for session %ld and template of %ld size\n", session,
 	     count);
 
+  /* Sanity check */
+  if ((templ == NULL) && (count > 0)) {
+    /* We normally shouldn't end here */
+    return CKR_GENERAL_ERROR;
+  }
   /* Setting NULL_PTR when needed */
   for (i = 0UL; i < count; i++) {
     if (templ[i].ulValueLen == 0) {
@@ -1207,6 +1251,11 @@ CK_RV ML_CK_C_SetAttributeValue( /*in */ CK_SESSION_HANDLE session,	/*in */
 	     " called for session %ld and template of %ld size\n", session,
 	     count);
 
+  /* Sanity check */
+  if ((templ == NULL) && (count > 0)) {
+    /* We normally shouldn't end here */
+    return CKR_GENERAL_ERROR;
+  }
   /* Setting NULL_PTR when needed */
   for (i = 0UL; i < count; i++) {
     if (templ[i].ulValueLen == 0) {
@@ -1247,12 +1296,15 @@ CK_RV ML_CK_C_GetObjectSize( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_GetObjectSize(session, hobject, object_size);
 
   /* Sanity check */
-  if (rv != CKR_OK) {
+  if ((rv != CKR_OK) && (object_size != NULL)) {
     *object_size = 0UL;
   }
-
-  DEBUG_RET(ML_CK_C_GetObjectSize, rv,
+  
+  if (object_size != NULL) {
+    DEBUG_RET(ML_CK_C_GetObjectSize, rv,
 	    " session %ld and got object_size: %ld\n", session, *object_size);
+  }
+
   return rv;
 }
 
@@ -1283,7 +1335,7 @@ CK_RV ML_CK_C_WrapKey( /*in */ CK_SESSION_HANDLE session,	/*in */
 			 wrapped_key_len);
 
   /* Sanity check */
-  if (rv != CKR_OK) {
+  if ((rv != CKR_OK) && (wrapped_key_len != NULL)) {
     *wrapped_key_len = 0UL;
   }
   DEBUG_RET(ML_CK_C_WrapKey, rv, " session %ld\n", session);
@@ -1326,7 +1378,7 @@ CK_RV ML_CK_C_UnwrapKey( /*in */ CK_SESSION_HANDLE session,	/*in */
 #ifdef USE_ALIASING
   /* Alias all the returned object */
   /* ALIASING */
-  if (rv == CKR_OK) {
+  if ((rv == CKR_OK) && (phunwrappedkey != NULL)) {
     *phunwrappedkey = alias(*phunwrappedkey, OBJECT);
   }
   /*------------*/
@@ -1369,7 +1421,7 @@ CK_RV ML_CK_C_DeriveKey( /*in */ CK_SESSION_HANDLE session,	/*in */
 #ifdef USE_ALIASING
   /* Alias all the returned object */
   /* ALIASING */
-  if (rv == CKR_OK) {
+  if ((rv == CKR_OK) && (phkey != NULL)) {
     *phkey = alias(*phkey, OBJECT);
   }
   /*------------*/
@@ -1415,13 +1467,13 @@ CK_RV ML_CK_C_Digest( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (digest != NULL) {
+  if ((digest != NULL) && (digest_len != NULL)) {
     memset(digest, 0, *digest_len);
   }
   rv = pkcs11->C_Digest(session, data, data_len, digest, digest_len);
 
   /* Sanity check */
-  if (rv != CKR_OK) {
+  if ((rv != CKR_OK) && (digest_len != NULL)) {
     *digest_len = 0UL;
   }
 
@@ -1487,13 +1539,13 @@ CK_RV ML_CK_C_DigestFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
 
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (digest != NULL) {
+  if ((digest != NULL) && (digest_len != NULL)) {
     memset(digest, 0, *digest_len);
   }
 
   rv = pkcs11->C_DigestFinal(session, digest, digest_len);
 
-  if (rv != CKR_OK) {
+  if ((rv != CKR_OK) && (digest_len != NULL)) {
     *digest_len = 0UL;
   }
 
@@ -1563,14 +1615,14 @@ ML_CK_C_Sign( /*in */ CK_SESSION_HANDLE session, /*in */ unsigned char *data,
 
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (signature != NULL) {
+  if ((signature != NULL) && (signed_len != NULL)) {
     memset(signature, 0, *signed_len);
   }
 
   rv = pkcs11->C_Sign(session, data, data_len, signature, signed_len);
 
   /* Sanity check */
-  if (rv != CKR_OK) {
+  if ((rv != CKR_OK) && (signed_len != NULL)) {
     *signed_len = 0UL;
   }
 
@@ -1597,14 +1649,14 @@ CK_RV ML_CK_C_SignRecover( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (signature != NULL) {
+  if ((signature != NULL) && (signed_len != NULL)) {
     memset(signature, 0, *signed_len);
   }
 
   rv = pkcs11->C_SignRecover(session, data, data_len, signature, signed_len);
 
   /* Sanity check */
-  if (rv != CKR_OK) {
+  if ((rv != CKR_OK) && (signed_len != NULL)) {
     *signed_len = 0UL;
   }
 
@@ -1649,13 +1701,13 @@ CK_RV ML_CK_C_SignFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
 
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (signature != NULL) {
+  if ((signature != NULL) && (signed_len != NULL)) {
     memset(signature, 0, *signed_len);
   }
 
   rv = pkcs11->C_SignFinal(session, signature, signed_len);
 
-  if (rv != CKR_OK) {
+  if ((rv != CKR_OK) && (signed_len != NULL)) {
     *signed_len = 0UL;
   }
 
@@ -1736,6 +1788,16 @@ CK_RV ML_CK_C_VerifyRecover( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_VerifyRecover);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(data == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -1748,17 +1810,20 @@ CK_RV ML_CK_C_VerifyRecover( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_VerifyRecover(session, signature, signature_len, NULL_PTR,
 			       data_len);
   if (rv != CKR_OK) {
-    *data_len = 0UL;
+    if(data_len != NULL){
+      *data_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_VerifyRecover,
+  if (data_len != NULL) {
+    DEBUG_CALL(ML_CK_C_VerifyRecover,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *data_len);
-
-  *data = (unsigned char *)custom_malloc(*data_len * sizeof(char));
+    *data = (unsigned char *)custom_malloc(*data_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*data != NULL) {
+  if ((*data != NULL) && (data_len != NULL)) {
     memset(*data, 0, *data_len);
   }
   rv = pkcs11->C_VerifyRecover(session, signature, signature_len, *data,
@@ -1766,7 +1831,9 @@ CK_RV ML_CK_C_VerifyRecover( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)data);
-    *data_len = 0UL;
+    if(data_len != NULL){
+      *data_len = 0UL;
+    }
     return rv;
   }
 
@@ -1844,6 +1911,16 @@ CK_RV ML_CK_C_Encrypt( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_Encrypt);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(encrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -1855,24 +1932,30 @@ CK_RV ML_CK_C_Encrypt( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   rv = pkcs11->C_Encrypt(session, data, data_len, NULL_PTR, encrypted_len);
   if (rv != CKR_OK) {
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_Encrypt,
+  if (encrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_Encrypt,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *encrypted_len);
 
-  *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+    *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*encrypted != NULL) {
+  if ((*encrypted != NULL) && (encrypted_len != NULL)) {
     memset(*encrypted, 0, *encrypted_len);
   }
   rv = pkcs11->C_Encrypt(session, data, data_len, *encrypted, encrypted_len);
 
   if (rv != CKR_OK) {
     custom_free((void **)encrypted);
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -1889,6 +1972,16 @@ CK_RV ML_CK_C_EncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_EncryptUpdate);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(encrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -1901,17 +1994,21 @@ CK_RV ML_CK_C_EncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_EncryptUpdate(session, data, data_len, NULL_PTR,
 			       encrypted_len);
   if (rv != CKR_OK) {
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_EncryptUpdate,
+  if (encrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_EncryptUpdate,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *encrypted_len);
 
-  *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+    *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*encrypted != NULL) {
+  if ((*encrypted != NULL) && (encrypted_len != NULL)) {
     memset(*encrypted, 0, *encrypted_len);
   }
   rv = pkcs11->C_EncryptUpdate(session, data, data_len, *encrypted,
@@ -1919,7 +2016,9 @@ CK_RV ML_CK_C_EncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)encrypted);
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -1936,6 +2035,16 @@ CK_RV ML_CK_C_DigestEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_DigestEncryptUpdate);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(encrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -1948,17 +2057,21 @@ CK_RV ML_CK_C_DigestEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_DigestEncryptUpdate(session, data, data_len, NULL_PTR,
 				     encrypted_len);
   if (rv != CKR_OK) {
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_DigestEncryptUpdate,
+  if (encrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_DigestEncryptUpdate,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *encrypted_len);
 
-  *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+    *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*encrypted != NULL) {
+  if ((*encrypted != NULL) && (encrypted_len != NULL)) {
     memset(*encrypted, 0, *encrypted_len);
   }
   rv = pkcs11->C_DigestEncryptUpdate(session, data, data_len, *encrypted,
@@ -1966,7 +2079,9 @@ CK_RV ML_CK_C_DigestEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)encrypted);
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -1983,6 +2098,16 @@ CK_RV ML_CK_C_SignEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_SignEncryptUpdate);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(encrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -1995,17 +2120,21 @@ CK_RV ML_CK_C_SignEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_SignEncryptUpdate(session, data, data_len, NULL_PTR,
 				   encrypted_len);
   if (rv != CKR_OK) {
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL){
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_SignEncryptUpdate,
+  if (encrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_SignEncryptUpdate,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *encrypted_len);
 
-  *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+    *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*encrypted != NULL) {
+  if ((*encrypted != NULL) && (encrypted_len != NULL)) {
     memset(*encrypted, 0, *encrypted_len);
   }
 
@@ -2014,7 +2143,9 @@ CK_RV ML_CK_C_SignEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)encrypted);
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -2029,6 +2160,16 @@ CK_RV ML_CK_C_EncryptFinal( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_EncryptFinal);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(encrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -2039,17 +2180,21 @@ CK_RV ML_CK_C_EncryptFinal( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   rv = pkcs11->C_EncryptFinal(session, NULL_PTR, encrypted_len);
   if (rv != CKR_OK) {
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_EncryptFinal,
+  if (encrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_EncryptFinal,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *encrypted_len);
 
-  *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+    *encrypted = (unsigned char *)custom_malloc(*encrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*encrypted != NULL) {
+  if ((*encrypted != NULL) && (encrypted_len != NULL)) {
     memset(*encrypted, 0, *encrypted_len);
   }
 
@@ -2057,7 +2202,9 @@ CK_RV ML_CK_C_EncryptFinal( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)encrypted);
-    *encrypted_len = 0UL;
+    if (encrypted_len != NULL) {
+      *encrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -2095,6 +2242,16 @@ CK_RV ML_CK_C_Decrypt( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_Decrypt);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(decrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -2107,17 +2264,21 @@ CK_RV ML_CK_C_Decrypt( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_Decrypt(session, encrypted, encrypted_len, NULL_PTR,
 			 decrypted_len);
   if (rv != CKR_OK) {
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_Decrypt,
+  if (decrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_Decrypt,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *decrypted_len);
 
-  *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+    *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*decrypted != NULL) {
+  if ((*decrypted != NULL) && (decrypted_len != NULL)) {
     memset(*decrypted, 0, *decrypted_len);
   }
 
@@ -2126,7 +2287,9 @@ CK_RV ML_CK_C_Decrypt( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)decrypted);
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -2143,6 +2306,17 @@ CK_RV ML_CK_C_DecryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_DecryptUpdate);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(decrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -2155,17 +2329,21 @@ CK_RV ML_CK_C_DecryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_DecryptUpdate(session, encrypted, encrypted_len, NULL_PTR,
 			       decrypted_len);
   if (rv != CKR_OK) {
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL){
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_DecryptUpdate,
+  if (decrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_DecryptUpdate,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *decrypted_len);
 
-  *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+    *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*decrypted != NULL) {
+  if ((*decrypted != NULL) && (decrypted_len != NULL)) {
     memset(*decrypted, 0, *decrypted_len);
   }
 
@@ -2174,7 +2352,9 @@ CK_RV ML_CK_C_DecryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)decrypted);
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -2189,6 +2369,16 @@ CK_RV ML_CK_C_DecryptFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_DecryptFinal);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(decrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -2200,17 +2390,21 @@ CK_RV ML_CK_C_DecryptFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
 
   rv = pkcs11->C_DecryptFinal(session, NULL_PTR, decrypted_len);
   if (rv != CKR_OK) {
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_DecryptFinal,
+  if (decrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_DecryptFinal,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *decrypted_len);
 
-  *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+    *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*decrypted != NULL) {
+  if ((*decrypted != NULL) && (decrypted_len != NULL)) {
     memset(*decrypted, 0, *decrypted_len);
   }
 
@@ -2218,7 +2412,9 @@ CK_RV ML_CK_C_DecryptFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
 
   if (rv != CKR_OK) {
     custom_free((void **)decrypted);
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -2235,6 +2431,16 @@ CK_RV ML_CK_C_DecryptDigestUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_DecryptDigestUpdate);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(decrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -2247,17 +2453,21 @@ CK_RV ML_CK_C_DecryptDigestUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_DecryptDigestUpdate(session, encrypted, encrypted_len,
 				     NULL_PTR, decrypted_len);
   if (rv != CKR_OK) {
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_DecryptDigestUpdate,
+  if (decrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_DecryptDigestUpdate,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *decrypted_len);
 
-  *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+    *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*decrypted != NULL) {
+  if ((*decrypted != NULL) && (decrypted_len != NULL)) {
     memset(*decrypted, 0, *decrypted_len);
   }
 
@@ -2266,7 +2476,9 @@ CK_RV ML_CK_C_DecryptDigestUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)decrypted);
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -2283,6 +2495,16 @@ CK_RV ML_CK_C_DecryptVerifyUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_DecryptVerifyUpdate);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(decrypted == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -2295,17 +2517,21 @@ CK_RV ML_CK_C_DecryptVerifyUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   rv = pkcs11->C_DecryptVerifyUpdate(session, encrypted, encrypted_len,
 				     NULL_PTR, decrypted_len);
   if (rv != CKR_OK) {
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_DecryptVerifyUpdate,
+  if (decrypted_len != NULL) {
+    DEBUG_CALL(ML_CK_C_DecryptVerifyUpdate,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *decrypted_len);
 
-  *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+    *decrypted = (unsigned char *)custom_malloc(*decrypted_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*decrypted != NULL) {
+  if ((*decrypted != NULL) && (decrypted_len != NULL)) {
     memset(*decrypted, 0, *decrypted_len);
   }
 
@@ -2314,7 +2540,9 @@ CK_RV ML_CK_C_DecryptVerifyUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
 
   if (rv != CKR_OK) {
     custom_free((void **)decrypted);
-    *decrypted_len = 0UL;
+    if (decrypted_len != NULL) {
+      *decrypted_len = 0UL;
+    }
     return rv;
   }
 
@@ -2367,6 +2595,16 @@ CK_RV ML_CK_C_GetOperationState( /*in */ CK_SESSION_HANDLE session,	/*out */
   CK_RV rv;
   CHECK_MODULE_FUNCTION(C_GetOperationState);
 
+  /****** Safeguard on input values *************/
+  /* By design, some input values can't be NULL */
+  /* (see functions in pkcs11_stubs.c where the */ 
+  /*  functions here are called)                */
+  /* We however check put a safeguard here      */
+  if(data == NULL){
+    return CKR_GENERAL_ERROR;  
+  }
+  /**********************************************/
+
 #ifdef USE_ALIASING
   /* UNALIASING */
   session = unalias(session, SESSION);
@@ -2377,17 +2615,21 @@ CK_RV ML_CK_C_GetOperationState( /*in */ CK_SESSION_HANDLE session,	/*out */
 
   rv = pkcs11->C_GetOperationState(session, NULL_PTR, data_len);
   if (rv != CKR_OK) {
-    *data_len = 0UL;
+    if (data_len != NULL) {
+      *data_len = 0UL;
+    }
     return rv;
   }
-  DEBUG_CALL(ML_CK_C_GetOperationState,
+  if (data_len != NULL) {
+    DEBUG_CALL(ML_CK_C_GetOperationState,
 	     " first call for session %ld returned needed size of %ld\n",
 	     session, *data_len);
 
-  *data = (unsigned char *)custom_malloc(*data_len * sizeof(char));
+    *data = (unsigned char *)custom_malloc(*data_len * sizeof(char));
+  }
   /* Fill the output with default invalid values in case */
   /* the PKCS#11 call fails                              */
-  if (*data != NULL) {
+  if ((*data != NULL) && (data_len != NULL)) {
     memset(*data, 0, *data_len);
   }
 
@@ -2395,7 +2637,9 @@ CK_RV ML_CK_C_GetOperationState( /*in */ CK_SESSION_HANDLE session,	/*out */
 
   if (rv != CKR_OK) {
     custom_free((void **)data);
-    *data_len = 0UL;
+    if (data_len != NULL) {
+      *data_len = 0UL;
+    }
     return rv;
   }
 
@@ -2435,7 +2679,9 @@ void int_to_ulong_byte_array( /*in */ unsigned long input,	/*out */
 			     unsigned char *data)
 {
   /* Handle the endianness */
-  *((unsigned long *)data) = input;
+  if (data != NULL) {
+    *((unsigned long *)data) = input;
+  }
 
   return;
 }
