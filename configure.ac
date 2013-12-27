@@ -170,10 +170,10 @@ AC_REQUIRE([AC_PROG_FINDLIB])
     AC_MSG_CHECKING(OCaml package $1)
     if $OCAMLFIND query $1 >/dev/null 2>/dev/null; then
       AC_MSG_RESULT(found)
-      pkg_$1="$1"
+      pkg_$2="$1"
     else
       AC_MSG_ERROR(not found)
-      unset pkg_$1
+      unset pkg_$2
     fi
 ])
 dnl
@@ -236,13 +236,13 @@ AC_CHECK_HEADERS([pthread.h],,AC_MSG_ERROR(Could not find pthread headers.))
 AC_PROG_CAMLP4
 AC_PROG_FINDLIB
 # CHECK for ocamlnet RPC
-AC_CHECK_OCAML_PKG([rpc])
+AC_CHECK_OCAML_PKG([rpc], rpc)
 # CHECK for ocaml str regexp package
-AC_CHECK_OCAML_PKG([str])
+AC_CHECK_OCAML_PKG([str], rpc)
 # CHECK for the config-file package
-AC_CHECK_OCAML_PKG([config-file])
+AC_CHECK_OCAML_PKG([config-file], configfile)
 # CHECK for the camlidl library
-AC_CHECK_OCAML_PKG([camlidl])
+AC_CHECK_OCAML_PKG([camlidl], camlidl)
 
 
 ############# OCAML RELATED CHECKS #########
@@ -477,8 +477,8 @@ then
 	fi
         AC_MSG_NOTICE([Using OCaml RPC over ssl for server side ...])
 	# We need the ssl and rpc-ssl package for RPC over ssl support
-	AC_CHECK_OCAML_PKG([ssl])
-	AC_CHECK_OCAML_PKG([rpc-ssl])
+	AC_CHECK_OCAML_PKG([ssl], ssl)
+	AC_CHECK_OCAML_PKG([rpc-ssl], rpcssl)
 	# Position the ssl define and linking for the server
         AC_SUBST(caml_server_ssl_define, "-DWITH_SSL")
         AC_SUBST(caml_server_ssl_package, "-package \"ssl\" -package \"rpc-ssl\"")
