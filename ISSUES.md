@@ -176,7 +176,28 @@ Adding support for callback is not an impossible task, but as this is not a
 widely used functionnality we decided to focus on other features. We plan 
 however to add it in a future release.
 
+#### Small "fixmes" <a name="fixmes"></a>
 
+In addition to all the things that have been detailed in the previous sections, 
+other design choices with minor impact can be improved (and might be in future releases). 
+Please note that these elements are **not considered as critical** since they 
+do not break the PKCS#11 conformance: the proxy should work fine as is. 
+Here is a - non exhaustive - list of small "fixmes" and other "todos" that you 
+will find in the current code:
+
+  * In the OCaml/C bindings, some PKCS#11 stubs use fixed length buffers allocated on 
+the stack. This is the case for the Digest functions for instance, where a MAX_BUFF_LEN 
+is used for the hash value buffer. Since digest values should not exceed a fixed known 
+amount of bytes, this fixed size buffer should not break the PKCS#11 standard. However, 
+the proper way to deal with this would be to use dynamic allocation as it is done in 
+Encrypt or Decrypt functions for example. This is left for a future release.
+  * In the RPC layer, when encoding/decoding functions fail they simply **exit**: we should 
+put some sanity checks and/or repair routines there. 
+  * When our custom allocation functions fail, they simply **exit**: we should do something 
+to avoid stopping the execution instead.
+  * The configure script must be improved on some points (such as rpcgen MT support, better 
+OCaml libraries detection, ...)
+ 
 #### OpenBSD <a name="BSD"></a>
 
   - C client cannot be compiled because the RPC "hyper" symbol is missing
