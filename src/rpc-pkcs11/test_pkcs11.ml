@@ -335,7 +335,6 @@ ret_value = Client.c_SeedRandom session rand;;
 
  
 (* GenerateRandom *)
-(* FIXME Pourquoi lorsque je fais un CloseAllSessions avant, j'arrive tjrs a afficher la memoire? *)
 let rand_len = 32;;
 let (ret_value, rand_array) = Client.c_GenerateRandom session rand_len;;
 printf "--------------\n";;
