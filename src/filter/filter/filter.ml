@@ -147,36 +147,42 @@ let check_regexp_element_in_all_lists the_module allowed_list the_label search_t
   
 
 (* Check for a given object if its label is in the allowed list *)
-let check_object_label session object_handle allowed_list_alias =
-  (* Ge the label of the object *)
-  let label_template = [| { Pkcs11.type_ = Pkcs11.cKA_LABEL; Pkcs11.value = [||]} |]  in 
-  let (_, label_template) = Backend.c_GetAttributeValue session object_handle label_template in
-  let (ret_value, label_template) = Backend.c_GetAttributeValue session object_handle label_template in
-  if compare ret_value Pkcs11.cKR_OK = 0 then
-  begin
-    (* We got the label, check it against the regexp *)
-    let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) "allowed" in
-    if check_bool = true then
-      begin
-      (* true = we don't filter the label           *)
-      let info_string = Printf.sprintf "FindObject: label '%s' is not filtered for alias '%s'" (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
-      let _ = print_debug info_string 1 in
-      (check_bool)
-      end
-    else
-      begin
-      (* false = we filter the label *)
-      let info_string = Printf.sprintf "FindObject: label '%s' is FILTERED for alias '%s'" (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
-      let _ = print_debug info_string 1 in
-      (check_bool)
-      end
-  end
+let check_object_label session object_handle allowed_list_alias function_name =
+  (* If we don't filter labels, no need to proceed *)
+  if compare !allowed_labels [] = 0 then
+    (true)
   else
-    (* We couldn't extract the label of the object, we don't return it *)
-    (false)
+  begin
+    (* Get the label of the object *)
+    let label_template = [| { Pkcs11.type_ = Pkcs11.cKA_LABEL; Pkcs11.value = [||]} |]  in 
+    let (_, label_template) = Backend.c_GetAttributeValue session object_handle label_template in
+    let (ret_value, label_template) = Backend.c_GetAttributeValue session object_handle label_template in
+    if compare ret_value Pkcs11.cKR_OK = 0 then
+    begin
+      (* We got the label, check it against the regexp *)
+      let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) "allowed" in
+      if check_bool = true then
+        begin
+        (* true = we don't filter the label            *)
+        let info_string = Printf.sprintf "%s: label '%s' is not filtered for alias '%s'" function_name (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
+        let _ = print_debug info_string 1 in
+        (check_bool)
+        end
+      else
+        begin
+        (* false = we filter the label *)
+        let info_string = Printf.sprintf "%s: label '%s' is FILTERED for alias '%s'" function_name (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
+        let _ = print_debug info_string 1 in
+        (check_bool)
+        end
+    end
+    else
+      (* We couldn't extract the label of the object, we don't return it *)
+      (false)
+  end
    
 let apply_allowed_label_filter session object_handles_array allowed_list_alias = 
-  let filtered_list = List.filter (fun a -> check_object_label session a allowed_list_alias = true) (Array.to_list object_handles_array) in
+  let filtered_list = List.filter (fun a -> check_object_label session a allowed_list_alias "C_FindObjects" = true) (Array.to_list object_handles_array) in
   (Array.of_list filtered_list)
 
 let check_label_on_object_creation ckattributearray_ allowed_list_alias function_name =
@@ -209,36 +215,42 @@ let check_label_on_object_creation ckattributearray_ allowed_list_alias function
     (check_it)
 
 (* Check for a given object if its id is in the allowed list *)
-let check_object_id session object_handle allowed_list_alias =
-  (* Ge the id of the object *)
-  let id_template = [| { Pkcs11.type_ = Pkcs11.cKA_ID; Pkcs11.value = [||]} |]  in 
-  let (_, id_template) = Backend.c_GetAttributeValue session object_handle id_template in
-  let (ret_value, id_template) = Backend.c_GetAttributeValue session object_handle id_template in
-  if compare ret_value Pkcs11.cKR_OK = 0 then
-  begin
-    (* We got the id, check it against the regexp *)
-    let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (print_hex_array_to_string id_template.(0).Pkcs11.value) "allowed" in
-    if check_bool = true then
-    begin
-      (* true = we don't filter the id *)
-      let info_string = Printf.sprintf "FindObject: id '%s' is *not* filtered for alias '%s'" (print_hex_array_to_string id_template.(0).Pkcs11.value) (get !current_module) in
-      let _ = print_debug info_string 2 in
-      (check_bool)
-      end
-    else
-      begin
-      (* false = we filter the id *)
-      let info_string = Printf.sprintf "FindObject: id '%s' is FILTERED for alias '%s'" (print_hex_array_to_string id_template.(0).Pkcs11.value) (get !current_module) in
-      let _ = print_debug info_string 1 in
-      (check_bool)
-      end
-  end
+let check_object_id session object_handle allowed_list_alias function_name =
+  (* If we don't filter ids, no need to proceed *)
+  if compare !allowed_ids [] = 0 then
+    (true)
   else
-    (* We couldn't extract the id of the object, we don't return it *)
-    (false)
-   
+  begin
+    (* Get the id of the object *)
+    let id_template = [| { Pkcs11.type_ = Pkcs11.cKA_ID; Pkcs11.value = [||]} |]  in 
+    let (_, id_template) = Backend.c_GetAttributeValue session object_handle id_template in
+    let (ret_value, id_template) = Backend.c_GetAttributeValue session object_handle id_template in
+    if compare ret_value Pkcs11.cKR_OK = 0 then
+    begin
+      (* We got the id, check it against the regexp *)
+      let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (print_hex_array_to_string id_template.(0).Pkcs11.value) "allowed" in
+      if check_bool = true then
+      begin
+        (* true = we don't filter the id *)
+        let info_string = Printf.sprintf "%s: id '%s' is *not* filtered for alias '%s'" function_name (print_hex_array_to_string id_template.(0).Pkcs11.value) (get !current_module) in
+        let _ = print_debug info_string 2 in
+        (check_bool)
+        end
+      else
+        begin
+        (* false = we filter the id *)
+        let info_string = Printf.sprintf "%s: id '%s' is FILTERED for alias '%s'" function_name (print_hex_array_to_string id_template.(0).Pkcs11.value) (get !current_module) in
+        let _ = print_debug info_string 1 in
+        (check_bool)
+        end
+    end
+    else
+      (* We couldn't extract the id of the object, we don't return it *)
+      (false)
+  end
+
 let apply_allowed_id_filter session object_handles_array allowed_list_alias = 
-  let filtered_list = List.filter (fun a -> check_object_id session a allowed_list_alias = true) (Array.to_list object_handles_array) in
+  let filtered_list = List.filter (fun a -> check_object_id session a allowed_list_alias "C_FindObjects" = true) (Array.to_list object_handles_array) in
   (Array.of_list filtered_list)
 
 let check_id_on_object_creation ckattributearray_ allowed_list_alias function_name =
@@ -801,13 +813,19 @@ let c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
       let _ = print_debug "Blocking function C_CopyObject" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, Pkcs11.cK_INVALID_HANDLE)
     else
-      (* Check for the possible label or id blocking *)
-      let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_CopyObject" in
-      let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_CopyObject") in
-      if check_label_id = true then
-	(Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_CopyObject" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_CopyObject" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, Pkcs11.cK_INVALID_HANDLE)
       else
-	Backend.c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_
+      begin
+        (* Check for the possible label or id blocking *)
+        let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_CopyObject" in
+        let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_CopyObject") in
+        if check_label_id = true then
+	  (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
+        else
+  	  Backend.c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_
+      end
  
 (*************************************************************************)
 let c_DestroyObject cksessionhandlet_ ckobjecthandlet_ =
@@ -822,7 +840,13 @@ let c_DestroyObject cksessionhandlet_ ckobjecthandlet_ =
     let _ = print_debug "Blocking function C_DestroyObject" 1 in
     (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
   else
-    Backend.c_DestroyObject cksessionhandlet_ ckobjecthandlet_
+  begin
+    (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_DestroyObject" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_DestroyObject" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
+      else
+        Backend.c_DestroyObject cksessionhandlet_ ckobjecthandlet_
+  end
 
 (*************************************************************************)
 let c_GetObjectSize cksessionhandlet_ ckobjecthandlet_ =
@@ -837,7 +861,11 @@ let c_GetObjectSize cksessionhandlet_ ckobjecthandlet_ =
       let _ = print_debug "Blocking function C_GetObjectSize" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, -1n)
     else
-      Backend.c_GetObjectSize cksessionhandlet_ ckobjecthandlet_
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_GetObjectSize" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_GetObjectSize" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, -1n)
+      else
+        Backend.c_GetObjectSize cksessionhandlet_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
@@ -852,7 +880,11 @@ let c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
       let _ = print_debug "Blocking function C_GetAttributeValue" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_GetAttributeValue" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_GetAttributeValue" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, [| |])
+      else
+        Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_
  
 (*************************************************************************)
 let c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_  =
@@ -867,14 +899,19 @@ let c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_  =
       let _ = print_debug "Blocking function C_SetAttributeValue" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      (* Check for the possible label or id blocking *)
-      let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_SetAttributeValue" in
-      let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_SetAttributeValue") in
-      if check_label_id = true then
-	(Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID)
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_SetAttributeValue" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_SetAttributeValue" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-	Backend.c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ 
- 
+      begin
+        (* Check for the possible label or id blocking *)
+        let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_SetAttributeValue" in
+        let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_SetAttributeValue") in
+        if check_label_id = true then
+	  (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID)
+        else
+  	  Backend.c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ 
+      end
 
 (*************************************************************************)
 (* Variable holding the filtered handles     *)
@@ -923,7 +960,7 @@ let c_FindObjects cksessionhandlet_ count =
     begin
       if Array.length !current_find_objects_filtered_handles = 0 then
       begin
-	(* This is the fisrt time FindObjetcs is called             *) 
+	(* This is the first time FindObjetcs is called              *) 
 	(* We find all the objects and store them in our local array *)
 	let total_count = ref 1n in
 	try
@@ -986,37 +1023,41 @@ let c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
   (* Early actions before other checks *)
   let (take_ret, ret) =  deserialize (check_trigger_and_action "C_EncryptInit" !filter_actions (cksessionhandlet_, ckmechanism_, ckobjecthandlet_)) in
   if take_ret = true then
-  (ret)
-    else
+    (ret)
+  else
     (* Check the function *)
     let check = check_function_in_forbidden_functions_list "C_EncryptInit" !forbidden_functions in
     if check = true then
       let _ = print_debug "Blocking function C_EncryptInit" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-    begin
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-	begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_EncryptInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID)
-	end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_EncryptInit" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_EncryptInit" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-	(* Check if we forbid padding oracles *)
-	if (check_remove_padding_oracles !remove_padding_oracles "encrypt" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
-	begin
-	  (* If we indeed want to remove the padding oracles   *)
-	  (* we check the mechanism against the dangerous ones *)
-	  if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
-	    (Pkcs11.cKR_MECHANISM_INVALID)
+      begin
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+  	  begin
+	  let s = Printf.sprintf "Mechanism %s has been filtered in C_EncryptInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID)
+	  end
+        else
+	  (* Check if we forbid padding oracles *)
+	  if (check_remove_padding_oracles !remove_padding_oracles "encrypt" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
+	  begin
+	    (* If we indeed want to remove the padding oracles   *)
+	    (* we check the mechanism against the dangerous ones *)
+	    if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
+	      (Pkcs11.cKR_MECHANISM_INVALID)
+	    else
+	      Backend.c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+	  end
 	  else
 	    Backend.c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-	end
-	else
-	  Backend.c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-    end
+      end
 
 (*************************************************************************)
 let c_Encrypt cksessionhandlet_ data =
@@ -1070,16 +1111,26 @@ let c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
   if take_ret = true then
     (ret)
   else
-    (* Check for the asked mechanism against the forbidden list *)
-    let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-    if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-      begin
-      let s = Printf.sprintf "Mechanism %s has been filtered in C_DecryptInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-      print_debug s 1;
-      (Pkcs11.cKR_MECHANISM_INVALID)
-      end
+    (* Check the function *)
+    let check = check_function_in_forbidden_functions_list "C_DecryptInit" !forbidden_functions in
+    if check = true then
+      let _ = print_debug "Blocking function C_DecryptInit" 1 in
+      (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_DecryptInit" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_DecryptInit" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
+      else
+      (* Check for the asked mechanism against the forbidden list *)
+      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+        begin
+        let s = Printf.sprintf "Mechanism %s has been filtered in C_DecryptInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+        print_debug s 1;
+        (Pkcs11.cKR_MECHANISM_INVALID)
+        end
+      else
+        Backend.c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_Decrypt cksessionhandlet_ data =
@@ -1139,7 +1190,6 @@ let c_DigestInit cksessionhandlet_ ckmechanism_ =
       let _ = print_debug "Blocking function C_DigestInit" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-    begin
       (* Check for the asked mechanism against the forbidden list *)
       let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
       if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
@@ -1150,7 +1200,6 @@ let c_DigestInit cksessionhandlet_ ckmechanism_ =
       end
       else
 	Backend.c_DigestInit cksessionhandlet_ ckmechanism_
-    end
 
 (*************************************************************************)
 let c_Digest cksessionhandlet_ data =
@@ -1189,13 +1238,17 @@ let c_DigestKey cksessionhandlet_ ckobjecthandlet_ =
   if take_ret = true then
     (ret)
   else
-  (* Check the function *)
+    (* Check the function *)
     let check = check_function_in_forbidden_functions_list "C_DigestKey" !forbidden_functions in
     if check = true then
       let _ = print_debug "Blocking function C_DigestKey" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_DigestKey cksessionhandlet_ ckobjecthandlet_
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_DigestKey" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_DigestKey" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
+      else
+        Backend.c_DigestKey cksessionhandlet_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_DigestFinal cksessionhandlet =
@@ -1225,29 +1278,31 @@ let c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
       let _ = print_debug "Blocking function C_SignInit" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-    begin
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-	begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_SignInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID)
-	end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_SignInit" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_SignInit" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-	(* Check if we forbid padding oracles *)
-	if (check_remove_padding_oracles !remove_padding_oracles "sign" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
-	begin
-	  (* If we indeed want to remove the padding oracles   *)
-	  (* we check the mechanism against the dangerous ones *)
-	  if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
-	    (Pkcs11.cKR_MECHANISM_INVALID)
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+	  begin
+    	  let s = Printf.sprintf "Mechanism %s has been filtered in C_SignInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+  	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID)
+	  end
+        else
+	  (* Check if we forbid padding oracles *)
+	  if (check_remove_padding_oracles !remove_padding_oracles "sign" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
+	  begin
+	    (* If we indeed want to remove the padding oracles   *)
+	    (* we check the mechanism against the dangerous ones *)
+	    if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
+	      (Pkcs11.cKR_MECHANISM_INVALID)
+	    else
+	      Backend.c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+	  end
 	  else
 	    Backend.c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-	end
-	else
-	  Backend.c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-    end
  
 (*************************************************************************)
 let c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
@@ -1262,18 +1317,20 @@ let c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
       let _ = print_debug "Blocking function C_SignRecoverInit" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-    begin
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-	begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_SignRecoverInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID)
-	end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_SignRecoverInit" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_SignRecoverInit" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-	Backend.c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-    end
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+  	  begin
+	  let s = Printf.sprintf "Mechanism %s has been filtered in C_SignRecoverInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID)
+	  end
+        else
+	  Backend.c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
 
 (*************************************************************************)
 let c_Sign cksessionhandlet_ data =
@@ -1348,18 +1405,20 @@ let c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
       let _ = print_debug "Blocking function C_VerifyInit" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-    begin
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-      begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_VerifyInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID)
-      end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_VerifyInit" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_VerifyInit" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-	Backend.c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-    end
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+        begin
+	  let s = Printf.sprintf "Mechanism %s has been filtered in C_VerifyInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID)
+        end
+        else
+	  Backend.c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_  =
@@ -1374,18 +1433,20 @@ let c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_  =
       let _ = print_debug "Blocking function C_FindObjects" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-    begin
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-	begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_VerifyRecoverInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID)
-	end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_VerifyRecoverInit" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_VerifyRecoverInit" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-	Backend.c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_ 
-    end
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+  	  begin
+	  let s = Printf.sprintf "Mechanism %s has been filtered in C_VerifyRecoverInit" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID)
+	  end
+        else
+	  Backend.c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_ 
 
 (*************************************************************************)
 let c_Verify cksessionhandlet_ data signed_data =
@@ -1582,27 +1643,31 @@ let c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle =
       let _ = print_debug "Blocking function C_WrapKey" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [||])
     else
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-	begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_WrapKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID, [||])
-	end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ wrapping_handle !allowed_labels "C_WrapKey" = false) || (check_object_id cksessionhandlet_ wrapping_handle !allowed_ids "C_WrapKey" = false) || (check_object_label cksessionhandlet_ wrapped_handle !allowed_labels "C_WrapKey" = false) || (check_object_id cksessionhandlet_ wrapped_handle !allowed_ids "C_WrapKey" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, [||])
       else
-	(* Check if we forbid padding oracles *)
-	if (check_remove_padding_oracles !remove_padding_oracles "wrap" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
-	begin
-	  (* If we indeed want to remove the padding oracles   *)
-	  (* we check the mechanism against the dangerous ones *)
-	  if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
-	    (Pkcs11.cKR_MECHANISM_INVALID, [||])
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+  	  begin
+	  let s = Printf.sprintf "Mechanism %s has been filtered in C_WrapKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID, [||])
+	  end
+        else
+	  (* Check if we forbid padding oracles *)
+	  if (check_remove_padding_oracles !remove_padding_oracles "wrap" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
+	  begin
+	    (* If we indeed want to remove the padding oracles   *)
+	    (* we check the mechanism against the dangerous ones *)
+	    if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
+	      (Pkcs11.cKR_MECHANISM_INVALID, [||])
+	    else
+	      Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
+	  end
 	  else
 	    Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
-	end
-	else
-	  Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
 
 (*************************************************************************)
 let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_   =
@@ -1617,33 +1682,37 @@ let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key cka
       let _ = print_debug "Blocking function C_UnwrapKey" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, Pkcs11.cK_INVALID_HANDLE)
     else
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-	begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_UnwrapKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID, Pkcs11.cK_INVALID_HANDLE)
-	end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ unwrapping_handle !allowed_labels "C_UnwrapKey" = false) || (check_object_id cksessionhandlet_ unwrapping_handle !allowed_ids "C_UnwrapKey" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, Pkcs11.cK_INVALID_HANDLE)
       else
-	(* Check if we forbid padding oracles *)
-	if (check_remove_padding_oracles !remove_padding_oracles "unwrap" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
-	begin
-	  (* If we indeed want to remove the padding oracles   *)
-	  (* we check the mechanism against the dangerous ones *)
-	  if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
-	    (Pkcs11.cKR_MECHANISM_INVALID, Pkcs11.cK_INVALID_HANDLE)
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+  	  begin
+	  let s = Printf.sprintf "Mechanism %s has been filtered in C_UnwrapKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID, Pkcs11.cK_INVALID_HANDLE)
+	  end
+        else
+	  (* Check if we forbid padding oracles *)
+	  if (check_remove_padding_oracles !remove_padding_oracles "unwrap" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
+	  begin
+	    (* If we indeed want to remove the padding oracles   *)
+	    (* we check the mechanism against the dangerous ones *)
+	    if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
+	      (Pkcs11.cKR_MECHANISM_INVALID, Pkcs11.cK_INVALID_HANDLE)
+	    else
+	      Backend.c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_  
+	  end
 	  else
-	    Backend.c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_  
-	end
-	else
-	  (* Check for the possible label or id blocking *)
-	  let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_UnwrapKey" in
-	  let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_UnwrapKey") in
-	  if check_label_id = true then
-	    (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
-	  else
-	    Backend.c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_  
+	    (* Check for the possible label or id blocking *)
+	    let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_UnwrapKey" in
+	    let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_UnwrapKey") in
+	    if check_label_id = true then
+	      (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
+	    else
+	      Backend.c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_  
 
 (*************************************************************************)
 let c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearray_   =
@@ -1658,22 +1727,26 @@ let c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearr
       let _ = print_debug "Blocking function C_DeriveKey" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, Pkcs11.cK_INVALID_HANDLE)
     else
-      (* Check for the asked mechanism against the forbidden list *)
-      let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-      if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-	begin
-	let s = Printf.sprintf "Mechanism %s has been filtered in C_DeriveKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	print_debug s 1;
-	(Pkcs11.cKR_MECHANISM_INVALID, Pkcs11.cK_INVALID_HANDLE)
-	end
+      (* Check for label or id blocking on the input objects handles *)
+      if (check_object_label cksessionhandlet_ initial_key_handle !allowed_labels "C_DeriveKey" = false) || (check_object_id cksessionhandlet_ initial_key_handle !allowed_ids "C_DeriveKey" = false) then
+        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, Pkcs11.cK_INVALID_HANDLE)
       else
-	(* Check for the possible label or id blocking *)
-	let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_DeriveKey" in
-	let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_DeriveKey") in
-	if check_label_id = true then
-	  (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
-	else
-	  Backend.c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearray_  
+        (* Check for the asked mechanism against the forbidden list *)
+        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+  	  begin
+	  let s = Printf.sprintf "Mechanism %s has been filtered in C_DeriveKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	  print_debug s 1;
+	  (Pkcs11.cKR_MECHANISM_INVALID, Pkcs11.cK_INVALID_HANDLE)
+	  end
+        else
+	  (* Check for the possible label or id blocking *)
+	  let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_DeriveKey" in
+	  let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_DeriveKey") in
+	  if check_label_id = true then
+	    (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
+	  else
+	    Backend.c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearray_  
 
 (*************************************************************************)
 let c_SeedRandom cksessionhandlet_ seed =
