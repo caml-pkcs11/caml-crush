@@ -1643,31 +1643,35 @@ let c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle =
       let _ = print_debug "Blocking function C_WrapKey" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [||])
     else
-      (* Check for label or id blocking on the input objects handles *)
-      if (check_object_label cksessionhandlet_ wrapping_handle !allowed_labels "C_WrapKey" = false) || (check_object_id cksessionhandlet_ wrapping_handle !allowed_ids "C_WrapKey" = false) || (check_object_label cksessionhandlet_ wrapped_handle !allowed_labels "C_WrapKey" = false) || (check_object_id cksessionhandlet_ wrapped_handle !allowed_ids "C_WrapKey" = false) then
-        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, [||])
+      (* Check for label or id blocking on the input wrapping key *)
+      if (check_object_label cksessionhandlet_ wrapping_handle !allowed_labels "C_WrapKey" = false) || (check_object_id cksessionhandlet_ wrapping_handle !allowed_ids "C_WrapKey" = false) then
+        (Pkcs11.cKR_WRAPPING_KEY_HANDLE_INVALID, [||])
       else
-        (* Check for the asked mechanism against the forbidden list *)
-        let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
-        if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
-  	  begin
-	  let s = Printf.sprintf "Mechanism %s has been filtered in C_WrapKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
-	  print_debug s 1;
-	  (Pkcs11.cKR_MECHANISM_INVALID, [||])
-	  end
+        (* Check for label or id blocking on the input wrapped key *)
+        if  (check_object_label cksessionhandlet_ wrapped_handle !allowed_labels "C_WrapKey" = false) || (check_object_id cksessionhandlet_ wrapped_handle !allowed_ids "C_WrapKey" = false) then
+          (Pkcs11.cKR_OBJECT_HANDLE_INVALID, [||])
         else
-	  (* Check if we forbid padding oracles *)
-	  if (check_remove_padding_oracles !remove_padding_oracles "wrap" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
-	  begin
-	    (* If we indeed want to remove the padding oracles   *)
-	    (* we check the mechanism against the dangerous ones *)
-	    if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
-	      (Pkcs11.cKR_MECHANISM_INVALID, [||])
+          (* Check for the asked mechanism against the forbidden list *)
+          let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
+          if check_forbidden_mechanism_in_all_lists ckmechanismtypet_ !forbidden_mechanisms = true then
+    	    begin
+	    let s = Printf.sprintf "Mechanism %s has been filtered in C_WrapKey" (Pkcs11.match_cKM_value ckmechanismtypet_) in
+	    print_debug s 1;
+	    (Pkcs11.cKR_MECHANISM_INVALID, [||])
+	    end
+          else
+	    (* Check if we forbid padding oracles *)
+	    if (check_remove_padding_oracles !remove_padding_oracles "wrap" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
+	    begin
+	      (* If we indeed want to remove the padding oracles   *)
+	      (* we check the mechanism against the dangerous ones *)
+	      if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
+	        (Pkcs11.cKR_MECHANISM_INVALID, [||])
+	      else
+	        Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
+	    end
 	    else
 	      Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
-	  end
-	  else
-	    Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
 
 (*************************************************************************)
 let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_   =
@@ -1684,7 +1688,7 @@ let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key cka
     else
       (* Check for label or id blocking on the input objects handles *)
       if (check_object_label cksessionhandlet_ unwrapping_handle !allowed_labels "C_UnwrapKey" = false) || (check_object_id cksessionhandlet_ unwrapping_handle !allowed_ids "C_UnwrapKey" = false) then
-        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, Pkcs11.cK_INVALID_HANDLE)
+        (Pkcs11.cKR_UNWRAPPING_KEY_HANDLE_INVALID, Pkcs11.cK_INVALID_HANDLE)
       else
         (* Check for the asked mechanism against the forbidden list *)
         let ckmechanismtypet_ = ckmechanism_.Pkcs11.mechanism in
