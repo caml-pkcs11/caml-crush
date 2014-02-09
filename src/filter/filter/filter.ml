@@ -186,8 +186,12 @@ let apply_allowed_label_filter session object_handles_array allowed_list_alias =
   (Array.of_list filtered_list)
 
 let check_label_on_object_creation ckattributearray_ allowed_list_alias function_name =
-  (* For each template, check if it is a label *)
-  let (check_it, counter) = Array.fold_left (fun (previous_bool, previous_counter) a -> 
+  (* If we don't filter labels, no need to proceed *)
+  if compare !allowed_labels [] = 0 then
+    (false)
+  else
+    (* For each template, check if it is a label *)
+    let (check_it, counter) = Array.fold_left (fun (previous_bool, previous_counter) a -> 
                 if compare a.Pkcs11.type_ Pkcs11.cKA_LABEL = 0 then
                 begin
                   (* If we have a label, check if it is in the allowed list *)
@@ -208,11 +212,11 @@ let check_label_on_object_creation ckattributearray_ allowed_list_alias function
                 else
                   (previous_bool, previous_counter)
              ) (false, 0) ckattributearray_ in
-  if compare counter 0 = 0 then
-    (* Block the creation in any case if no id has been provided *)
-    (true)
-  else
-    (check_it)
+    if compare counter 0 = 0 then
+      (* If no label has been provided, do not block the creation *)
+      (false)
+    else
+      (check_it)
 
 (* Check for a given object if its id is in the allowed list *)
 let check_object_id session object_handle allowed_list_alias function_name =
@@ -254,8 +258,12 @@ let apply_allowed_id_filter session object_handles_array allowed_list_alias =
   (Array.of_list filtered_list)
 
 let check_id_on_object_creation ckattributearray_ allowed_list_alias function_name =
-  (* For each template, check if it is an ID *)
-  let (check_it, counter) = Array.fold_left (fun (previous_bool, previous_counter) a -> 
+  (* If we don't filter ids, no need to proceed *)
+  if compare !allowed_ids [] = 0 then
+    (false)
+  else
+    (* For each template, check if it is an ID *)
+    let (check_it, counter) = Array.fold_left (fun (previous_bool, previous_counter) a -> 
                 if compare a.Pkcs11.type_ Pkcs11.cKA_ID = 0 then
                 begin
                   (* If we have a label, check if it is in the allowed list *)
@@ -276,13 +284,11 @@ let check_id_on_object_creation ckattributearray_ allowed_list_alias function_na
                 else
                   (previous_bool, previous_counter)
              ) (false, 0) ckattributearray_ in
-  if compare counter 0 = 0 then
-    (* Block the creation in any case if no id has been provided *)
-    (true)
-  else
-    (check_it)
-  
-
+    if compare counter 0 = 0 then
+      (* Do not block the creation if no id has been provided *)
+      (false)
+    else
+      (check_it)
 
 let remove_elements_from_array array_ref to_remove = 
   let ref_list = Array.to_list !array_ref in
@@ -370,25 +376,35 @@ let check_trigger_and_action function_trigger the_actions_list argument =
   (* For all the aliases, get the actions for the given functio_trigger *)
   let current_actions = List.fold_left 
     (fun constructing_list (a, b) -> 
-     (* check if the current module is concerned by the alias *)
-     if check_regexp a (get !current_module) = true then
-       (* Iterate through the list of couples (function, action) *)
-       (List.fold_left (fun constructing_list (c, d) -> if check_regexp function_trigger c = true then 
-       let info_string = Printf.sprintf "Adding action '%s' on trigger '%s' for alias '%s'" d function_trigger (get !current_module) in
-    print_debug info_string 1; (List.concat [constructing_list; [d]]) else (constructing_list)) constructing_list b)
+      (* check if the current module is concerned by the alias *)
+      if check_regexp a (get !current_module) = true then
+        (* Iterate through the list of couples (function, action) *)
+        (List.fold_left (fun constructing_list (c, d) -> if check_regexp function_trigger c = true then 
+        (List.concat [constructing_list; [d]]) else (constructing_list)) constructing_list b)
     else
       (constructing_list)
     ) [] the_actions_list in
   if List.length current_actions = 0 then
-    (* If we have no action, return a fake ret value    *)
+    (* If we have no action, return a fake ret value         *)
     (serialize (false, ()))
   else
-    (* Now apply all the actions serially               *)
-    (* We only keep the return value of the last action *)
-    (* and ignore other actions return values           *)
-    let final_ret = List.fold_left (fun _ action -> execute_action action (serialize argument)) "" current_actions in
+    (* Now apply all the actions serially                    *)
+    (* If an action returns a value along the way, we return *)
+    (* it and stop the execution flow of other actions       *)
+    let final_ret = List.fold_left 
+    (fun last_action_ret action -> 
+      let (stop, _) = deserialize last_action_ret in
+        if stop = true then
+          (* The last action returned something: return its value without *)
+          (* executing the other actions                                  *)
+          (last_action_ret)
+        else
+          let info_string = Printf.sprintf "Executing user defined action '%s' on trigger '%s' for alias '%s'" action function_trigger (get !current_module) in
+          print_debug info_string 1; 
+          (execute_action function_trigger action (serialize argument))
+    ) (serialize (false, ())) current_actions in
     (final_ret)
-                 
+ 
   
 (***** Our filterfing functions ******)
 (* Filter the mechanisms list returned by C_GetMechanismList *)
@@ -882,7 +898,12 @@ let c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
     else
       (* Check for label or id blocking on the input objects handles *)
       if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_GetAttributeValue" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_GetAttributeValue" = false) then
-        (Pkcs11.cKR_OBJECT_HANDLE_INVALID, [| |])
+	(* Here, we call c_GetAttributeValue, we might want to return what the middleware has returned if there has been an error *)
+        let (ret, template) = Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ in
+        if ret <> Pkcs11.cKR_OK then
+          (ret, [| |])
+        else
+          (Pkcs11.cKR_OBJECT_HANDLE_INVALID, [| |])
       else
         Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_
  
