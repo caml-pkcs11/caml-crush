@@ -390,8 +390,8 @@ On the contrary, if the first element of the couple is "true", the second elemen
 **return value**: this means that the hooked PKCS#11 function will return with this value just after the hook execution.
 
 If more than one hooking routine are defined for the same PKCS#11 function, the hooks are executed **in the order they are defined** inside 
-the filter\_actions option. In this case, **only the return value of the last hook** is used as the PKCS#11 return value: the other hooks 
-return values are discarded.
+the filter\_actions option. In this case, **the first hooking routine that returns something with (true, ...)** will stop the other hooks 
+execution and makes the hooked function return with this value. This means that the other hooks and their return values are discarded.
 
 If a "state" is necessary to keep track of actions of different hooks on the same PKCS#11 function, one will have to implement it through 
 global variables for instance.
@@ -463,6 +463,25 @@ drawbacks are that:
 no type-checking is performed during the unmarshaling. This can lead to uncaught exceptions during the unmarshal.
   * The user defined functions input and output values **must be handled with care**: there is no safety net if 
 the user fails to properly write his function. The program might compile, but the function will - eventually silently - 
-fail at runtime. This is usually not the expected behaviour for OCaml written programs!
+fail at runtime since it overrides OCaml's type inference at compile time. This is usually not the expected behaviour 
+for OCaml written programs!
 
-Improving the user defined hooks to be type-safe and avoid the use of marshaling is a work in pogress.
+Improving the user defined hooks to be type-safe and avoid the use of marshaling is a **work in pogress**.
+
+
+### Advanced examples of uer defined actions
+
+In order to illustrate the flexibility of the user extension system implemented in the filter, we provide 
+patches that **fix the PKCS#11 API**. The API has been deeply analyzed during the last few years, leading 
+to a formal model, an automated attack tool [Tookan](http://secgroup.dais.unive.it/projects/security-apis/tookan/) 
+as well as a patched token reference implementation with [CryptokiX](http://secgroup.dais.unive.it/projects/security-apis/cryptokix/). 
+
+Bortolozzo *et al.*, in their [ACM CCS 2010 paper](http://www.sigsac.org/ccs/CCS2010/paper_list.shtml), give a good overview of 
+why PKCS#11 is not safe as is and how to properly fix it regarding their attacker model: see 
+[here](http://secgroup.dais.unive.it/wp-content/uploads/2010/10/Tookan-CCS10.pdf) for more details on this.
+
+We provide in [src/filter/filter/p11fix_patches](../src/filter/filter/p11fix_patches) patches that should enhance 
+the security of the existing middlewares by using, among other patches, those implemented in [CryptokiX](http://secgroup.dais.unive.it/projects/security-apis/cryptokix/). **We will provide a detailed description of their action very soon**.
+
+Please note that these patches are still in "beta test": they might evolve/be fixed in the future. They have only been 
+tested with OpenCryptoki, but we plan to extend this soon.
