@@ -118,6 +118,14 @@
 #define Return(x) do { CAMLreturn(x); } while(0);
 #endif
 
+/* Macro to check RPC status */
+#define check_rpc_status(operation_type) do {\
+  if(cl == NULL){\
+    DEBUG_CALL(operation_type, " RPC context is not properly initialized, RPC server reachable ?\n");\
+    return CKR_GENERAL_ERROR;\
+  }\
+} while(0);
+
 /* Macro to factorize check of results */
 #define check_linked_list(operation_type, operation_cst, input0, input1, input1_len, output2, output2_len) do {\
   /* Remember previous calls */\
@@ -152,8 +160,8 @@
 #define add_op_element_to_list(operation_type, operation_cst, input0, input1, input1_len, output2, output2_len) do {\
       elem = add_element_to_list(input0, operation_cst, input1, input1_len, output2,\
                  *output2_len);\
-      elem->out = custom_malloc(MAX_BUFF_LEN * sizeof(unsigned char));\
       elem->out_len = ret.c_ ## operation_type ## _value.c_ ## operation_type ## _value_len;\
+      elem->out = custom_malloc(elem->out_len * sizeof(unsigned char));\
       memcpy(elem->out, ret.c_ ## operation_type ## _value.c_ ## operation_type ## _value_val,\
          ret.c_ ## operation_type ## _value.c_ ## operation_type ## _value_len);\
       *output2_len = elem->out_len;\
@@ -164,7 +172,7 @@
 #define add_op_element_to_list(operation_type, operation_cst, input0, input1, input1_len, output2, output2_len) do {\
       elem = add_element_to_list(input0, operation_cst, input1, input1_len, output2,\
                  *output2_len);\
-      elem->out = custom_malloc(MAX_BUFF_LEN * sizeof(unsigned char));\
+      elem->out = custom_malloc(Wosize_val(Field(tuple, 1)) * sizeof(unsigned char));\
       custom_pkcs11_ml2c_char_array_to_buffer(Field(tuple, 1), elem->out, &elem->out_len);\
       camlidl_ml2c_pkcs11_ck_rv_t(Field(tuple, 0), &ret, NULL);\
       *output2_len = elem->out_len;\
@@ -301,6 +309,7 @@ SSL *ssl;
 
 /* --------- PKCS#11 useful defines - */
 #define CKR_OK                          (0UL)
+#define CKR_GENERAL_ERROR               (5UL)
 #define CKR_ARGUMENTS_BAD               (7UL)
 #define CKR_BUFFER_TOO_SMALL            (0x150UL)
 #define CKR_OPERATION_ACTIVE            (0x90L)
