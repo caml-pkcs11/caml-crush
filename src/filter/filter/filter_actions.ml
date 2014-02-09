@@ -97,46 +97,99 @@ let deserialize x = try Marshal.from_string x 0 with _ -> print_error "MARSHALLI
 
 
 (********* CUSTOM actions ******)
-let c_Initialize_hook _ = 
-  let s = Printf.sprintf " ########## Hooking C_Initialize!" in
+let c_Initialize_hook fun_name _ = 
+  let s = Printf.sprintf " ########## Hooking %s!" fun_name in
   print_debug s 1; 
   let return_value = serialize (false, ()) in
   (return_value)
 
-let c_Login_hook arg = 
+let c_Login_hook fun_name arg = 
   let (cksessionhandlet_, ckusertypet_, pin) = (deserialize arg) in
   if compare (Pkcs11.byte_array_to_string pin) "1234" = 0 then
     (* Passtrhough if pin is 1234 *)
-    let s = Printf.sprintf " ######### Passthrough C_Login with pin %s!" (Pkcs11.byte_array_to_string pin) in
+    let s = Printf.sprintf " ######### Passthrough %s with pin %s!" fun_name (Pkcs11.byte_array_to_string pin) in
     print_debug s 1;
     (serialize (false, ()))
   else
   begin
     (* Hook the call if pin != 1234 *)
-    let s = Printf.sprintf " ######### Hooking C_Login with pin %s!" (Pkcs11.byte_array_to_string pin) in
+    let s = Printf.sprintf " ######### Hooking %s with pin %s!" fun_name (Pkcs11.byte_array_to_string pin) in
     print_debug s 1;
     let return_value = serialize (true, Pkcs11.cKR_PIN_LOCKED) in
     (return_value)
   end
 
-let identity _ = 
-  let s = Printf.sprintf " ######### Identity hook called!" in
+let identity fun_name _ = 
+  let s = Printf.sprintf " ######### Identity hook called for %s!" fun_name in
   print_debug s 1;
   let return_value = serialize (false, ()) in
   (return_value)
 
 
-(********* CUSTOM actions wrappers for the cionfiguration file ******)
-let execute_action action argument = match action with
-  "c_Initialize_hook" -> c_Initialize_hook argument
-| "c_Login_hook" -> c_Login_hook argument
-| "identity" -> identity argument
-| _ -> identity argument
+
+(***********************************************************************)
+(***** CryptokiX patches as user defined actions ******)
+
+(*** Common helpers for the patches *****)
+INCLUDE "p11fix_patches/helpers_patch.ml"
+
+(***********************************************************************)
+(* The patch preventing directly reading sensitive or extractable keys *)
+(* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *)
+INCLUDE "p11fix_patches/sensitive_leak_patch.ml"
+
+(***********************************************************************)
+(* We sanitize the creation templates to avoid default values          *)
+(* Default attributes we want to apply when not defined by a creation template *)
+INCLUDE "p11fix_patches/sanitize_creation_templates_patch.ml"
+
+(***********************************************************************)
+(* The conflicting attributes patch:                                   *)
+(* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *)
+INCLUDE "p11fix_patches/conflicting_attributes_patch.ml"
+
+
+(***********************************************************************)
+(* The sticky attributes patch:                                        *)
+(* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *)
+INCLUDE "p11fix_patches/sticky_attributes_patch.ml"
+
+
+(***********************************************************************)
+(* The wrapping format patch:                                          *)
+(* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *)
+INCLUDE "p11fix_patches/wrapping_format_patch.ml"
+
+(***********************************************************************)
+(* The non local objects patch:                                        *)
+INCLUDE "p11fix_patches/non_local_objects_patch.ml"
+
+  
+
+(***********************************************************************)
+(********* CUSTOM actions wrappers for the configuration file ******)
+let execute_action fun_name action argument = match action with
+  "c_Initialize_hook" -> c_Initialize_hook fun_name argument
+| "c_Login_hook" -> c_Login_hook fun_name argument
+| "identity" -> identity fun_name argument
+| "conflicting_attributes_patch" -> conflicting_attributes_patch fun_name argument
+| "sticky_attributes_patch" -> sticky_attributes_patch fun_name argument
+| "sanitize_creation_templates_patch" -> sanitize_creation_templates_patch fun_name argument
+| "prevent_sensitive_leak_patch" -> prevent_sensitive_leak_patch fun_name argument
+| "wrapping_format_patch" -> wrapping_format_patch fun_name argument
+| "non_local_objects_patch" -> non_local_objects_patch fun_name argument
+| _ -> identity fun_name argument
 
 let string_check_action a = match a with
   "c_Initialize_hook" -> a
 | "c_Login_hook" -> a
 | "identity" -> a
+| "conflicting_attributes_patch" -> a
+| "sticky_attributes_patch" -> a
+| "sanitize_creation_templates_patch" -> a
+| "prevent_sensitive_leak_patch" -> a
+| "wrapping_format_patch" -> a
+| "non_local_objects_patch" -> a
 | _ -> let error_string = Printf.sprintf "Error: unknown action option '%s'!" a in netplex_log_critical error_string; raise Config_file_wrong_type
 
 
