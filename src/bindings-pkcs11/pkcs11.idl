@@ -2667,6 +2667,7 @@ quote(mli, "val match_cKC_value : nativeint -> string\n");
 quote(mli, "val match_cKK_value : nativeint -> string\n");
 quote(mli, "val match_cKS_value : nativeint -> string\n");
 quote(mli, "val match_cKU_value : nativeint -> string\n");
+quote(mli, "val match_cKO_value : nativeint -> string\n");
 quote(mli, "val string_to_cKM_value : string -> nativeint\n");
 
 quote(mli, "(* Helpers for strings and char arrays *)\n");
@@ -3251,11 +3252,14 @@ _ML_CK_DECLARE_FUNCTION(C_GetFunctionStatus, (ck_session_handle_t session));
 
 _ML_CK_DECLARE_FUNCTION(C_CancelFunction, (ck_session_handle_t session));
 
-/* Specific function to handle architecture issues (32 versus 64 bit ulong, endianness ...) */
+/* Specific functions to handle architecture issues (32 versus 64 bit ulong, endianness ...) */
 void int_to_ulong_byte_array([nativeint]
 			     unsigned long input,
 			     [size_is(sizeof(unsigned long)), out]
 			     unsigned char data[]);
+
+void byte_array_to_ulong([in]unsigned char data[], 
+                             [nativeint, out]unsigned long output);
 
 /* pkcs11_stubs.c */
 quote(H,
@@ -3619,6 +3623,7 @@ quote(H,
 quote(H, "value camlidl_pkcs11_ML_CK_C_GetFunctionStatus(value _v_session);");
 quote(H, "value camlidl_pkcs11_ML_CK_C_CancelFunction(value _v_session);");
 quote(H, "value camlidl_pkcs11_int_to_ulong_byte_array(value _v_input);");
+quote(H, "value camlidl_pkcs11_byte_array_to_ulong(value _v_data);");
 
 quote(H, "#ifdef SERVER_ROLE");
 quote(H,

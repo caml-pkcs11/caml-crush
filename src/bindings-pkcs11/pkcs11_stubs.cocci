@@ -707,3 +707,14 @@ expression out, in;
 - #include "pkcs11.h"
 + #define CUSTOM_ALLOC
 + #include "pkcs11.h"
+
+@rule_camlidl_pkcs11_byte_array_to_ulong@
+identifier data, output;
+@@
+  camlidl_pkcs11_byte_array_to_ulong(...){
+  <...
+- byte_array_to_ulong(data, output);
++ byte_array_to_ulong(data, _c1, &output);
+  ...>
+}
+

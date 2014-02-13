@@ -2685,3 +2685,23 @@ void int_to_ulong_byte_array( /*in */ unsigned long input,	/*out */
 
   return;
 }
+
+void byte_array_to_ulong( /*in */ unsigned char* data,	/* in */ size_t data_size,
+                         /*out */ unsigned long* output)
+{
+  if (data_size > sizeof(unsigned long)){
+    if (output != NULL) {
+      memset(output, 0, sizeof(unsigned long));
+    }
+    return;
+  }
+  /* Handle the endianness */
+  if ((data != NULL) && (output != NULL)) {
+    memset(output, 0, sizeof(unsigned long));
+    memcpy(output, data, data_size);
+    return;
+  }
+
+  return;
+}
+

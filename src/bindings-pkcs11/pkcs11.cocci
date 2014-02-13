@@ -72,3 +72,8 @@ identifier session, data, data_len;
 - ck_rv_t ML_CK_C_GetOperationState(ck_session_handle_t session, unsigned char *data, unsigned long *data_len);
 + ck_rv_t ML_CK_C_GetOperationState(ck_session_handle_t session, unsigned char **data, unsigned long *data_len);
 
+@@
+identifier data, output;
+@@
+- void byte_array_to_ulong(/*in*/ unsigned char *data, /*out*/ unsigned long output);
++ void byte_array_to_ulong(/*in*/ unsigned char *data, /*in*/ size_t data_size, /*out*/ unsigned long *output);
