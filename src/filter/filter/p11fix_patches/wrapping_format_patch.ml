@@ -15,29 +15,29 @@ let template_array_to_char_array templates =
           (Char.chr 0xff)
       else
         (* Attribute found, we add its true value *)
-        if compare (char_array_to_bool check_value) Pkcs11.cK_TRUE = 0 then
+        if compare (Pkcs11.char_array_to_bool check_value) Pkcs11.cK_TRUE = 0 then
           (Char.chr 1)
         else
           (Char.chr 0)
-  ) !critical_attributes in
+  ) (critical_attributes !segregate_usage) in
   (out_array)
 
 (* Extract critical attributes from a buffer *)
 let char_array_to_template_array buffer =
   let out_template_array = (
-  if compare (Array.length buffer) (Array.length !critical_attributes) = 0 then
+  if compare (Array.length buffer) (Array.length (critical_attributes !segregate_usage)) = 0 then
     Array.mapi (
       fun i in_char ->
       let the_value = (
         if compare in_char (Char.chr 1) = 0 then
-          (bool_to_char_array Pkcs11.cK_TRUE)
+          (Pkcs11.bool_to_char_array Pkcs11.cK_TRUE)
         else
           if compare in_char (Char.chr 0) = 0 then
-            (bool_to_char_array Pkcs11.cK_FALSE)
+            (Pkcs11.bool_to_char_array Pkcs11.cK_FALSE)
           else
             ([||])
       ) in
-      ({Pkcs11.type_ = !critical_attributes.(i).Pkcs11.type_; 
+      ({Pkcs11.type_ = (critical_attributes !segregate_usage).(i).Pkcs11.type_; 
         Pkcs11.value = the_value})
     ) buffer 
   else
@@ -52,7 +52,7 @@ let char_array_to_template_array buffer =
 (* You probably want to use a key secured in a token, or at least *)
 (* a random key protected in a file                               *)
 (************************************************************************************************************)
-(**)let wrapping_format_key = Pkcs11.string_to_byte_array (Pkcs11.pack "00000000000000000000000000000000")(**)
+(**)let wrapping_format_key = Pkcs11.string_to_char_array (Pkcs11.pack "00000000000000000000000000000000")(**)
 (************************************************************************************************************)
 
 let wrapping_format_patch fun_name arg =
@@ -67,7 +67,7 @@ let wrapping_format_patch fun_name arg =
         (serialize (true, (ret, [||])))
       else
         (* Get the attributes of the object we want to wrap *)
-        let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh wrappedh !critical_attributes) in
+        let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh wrappedh (critical_attributes !segregate_usage)) in
         if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
           if (compare ret Pkcs11.cKR_OK <> 0) then
             (serialize (true, (Pkcs11.cKR_KEY_NOT_WRAPPABLE, [||])))
@@ -91,10 +91,10 @@ let wrapping_format_patch fun_name arg =
       (****)
       let extraction_error_ = false in
       let extraction_error = ref extraction_error_ in
-      let buffer_attributes = (try Array.sub buffer ((Array.length buffer) - (Array.length !critical_attributes) - 16) (Array.length !critical_attributes)
+      let buffer_attributes = (try Array.sub buffer ((Array.length buffer) - (Array.length (critical_attributes !segregate_usage)) - 16) (Array.length (critical_attributes !segregate_usage))
         with _ -> extraction_error := true; ([||])
       ) in
-      let real_wrapped_key_buffer =  (try Array.sub buffer 0 ((Array.length buffer) - (Array.length !critical_attributes) - 16)
+      let real_wrapped_key_buffer =  (try Array.sub buffer 0 ((Array.length buffer) - (Array.length (critical_attributes !segregate_usage)) - 16)
         with _ -> extraction_error := true; ([||])
       ) in
       if compare !extraction_error true = 0 then

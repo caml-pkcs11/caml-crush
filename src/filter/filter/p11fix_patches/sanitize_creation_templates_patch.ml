@@ -1,41 +1,37 @@
 (***********************************************************************)
 (* We sanitize the creation templates to avoid default values          *)
 (* Default attributes we want to apply when not defined by a creation template *)
-let default_sanitized_attributes_secret_key_ = [|
-                                      {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_SIGN; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_VERIFY; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_PRIVATE; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
+let default_sanitized_attributes_secret_key = [|
+                                      {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_SIGN; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_VERIFY; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_PRIVATE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
                                     |]
-let default_sanitized_attributes_secret_key = ref default_sanitized_attributes_secret_key_
 
-let default_sanitized_attributes_private_key_ = [|
-                                      {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_SIGN; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_SIGN_RECOVER; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_PRIVATE; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
+let default_sanitized_attributes_private_key = [|
+                                      {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_SIGN; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_SIGN_RECOVER; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_PRIVATE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
                                     |]
-let default_sanitized_attributes_private_key = ref default_sanitized_attributes_private_key_
 
-let default_sanitized_attributes_public_key_ = [|
-                                      {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_VERIFY; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_VERIFY_RECOVER; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
-                                      {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
+let default_sanitized_attributes_public_key = [|
+                                      {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_VERIFY; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_VERIFY_RECOVER; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                                      {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
                                     |]
-let default_sanitized_attributes_public_key = ref default_sanitized_attributes_public_key_
-
 
 let sanitize_creation_templates fun_name attributes_array object_class_ =
   match object_class_ with
@@ -46,9 +42,9 @@ let sanitize_creation_templates fun_name attributes_array object_class_ =
       match Pkcs11.match_cKO_value object_class with  
         ("cKO_SECRET_KEY" | "cKO_PRIVATE_KEY" | "cKO_PUBLIC_KEY") ->
           let default_sanitized_attributes = (match Pkcs11.match_cKO_value object_class with 
-              "cKO_SECRET_KEY" -> !default_sanitized_attributes_secret_key
-            | "cKO_PRIVATE_KEY" -> !default_sanitized_attributes_private_key
-            | "cKO_PUBLIC_KEY" -> !default_sanitized_attributes_public_key
+              "cKO_SECRET_KEY" -> default_sanitized_attributes_secret_key
+            | "cKO_PRIVATE_KEY" -> default_sanitized_attributes_private_key
+            | "cKO_PUBLIC_KEY" -> default_sanitized_attributes_public_key
             | _ -> [||]
           ) in
           (* Append the default sanitized to the given template *)

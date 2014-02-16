@@ -8,7 +8,7 @@ let check_is_sensitive fun_name attributes =
   let check = Array.fold_left (
     fun check_tmp attr ->
       if (compare attr.Pkcs11.type_ Pkcs11.cKA_SENSITIVE = 0) && 
-         (compare attr.Pkcs11.value (bool_to_char_array Pkcs11.cK_TRUE) = 0) then
+         (compare attr.Pkcs11.value (Pkcs11.bool_to_char_array Pkcs11.cK_TRUE) = 0) then
         (check_tmp || true)
       else
         (check_tmp || false)
@@ -20,7 +20,7 @@ let check_is_nonextractable fun_name attributes =
   let check = Array.fold_left (
     fun check_tmp attr ->
       if (compare attr.Pkcs11.type_ Pkcs11.cKA_EXTRACTABLE = 0) && 
-         (compare attr.Pkcs11.value (bool_to_char_array Pkcs11.cK_FALSE) = 0) then
+         (compare attr.Pkcs11.value (Pkcs11.bool_to_char_array Pkcs11.cK_FALSE) = 0) then
         (check_tmp || true)
       else
         (check_tmp || false)
@@ -42,7 +42,7 @@ let prevent_sensitive_leak_patch fun_name arg =
   match fun_name with
     "C_GetAttributeValue" ->
       let (sessionh, objecth, attributes) = deserialize arg in
-      let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh objecth !critical_attributes) in
+      let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh objecth (critical_attributes !segregate_usage)) in
       if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
         if (compare ret Pkcs11.cKR_OK <> 0) then
           (serialize (true, (getAttributeValueErrors ret, templates)))

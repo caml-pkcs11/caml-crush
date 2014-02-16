@@ -1,15 +1,31 @@
 (***********************************************************************)
 (* The sticky attributes patch:                                        *)
 (* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *)
-let sticky_attributes_ = [|
-                           {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
-                           {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
-                           {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
-                           {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
-                           {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = bool_to_char_array Pkcs11.cK_TRUE};
-                           {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = bool_to_char_array Pkcs11.cK_FALSE};
+(* If we segregate key usage, we add the sign-verify as sticky *)
+let sticky_attributes key_segregation = if compare key_segregation true = 0 then
+                        (* If we segregate key usage, we add the sign-verify in the sticky attributes *) 
+                        [|
+                           {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                           (** Addition for key segregation **)
+                           {Pkcs11.type_ = Pkcs11.cKA_SIGN; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_VERIFY; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_SIGN_RECOVER; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_VERIFY_RECOVER; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
                          |]
-let sticky_attributes = ref sticky_attributes_
+                         else
+                         [|
+                           {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
+                           {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE};
+                         |]
 
 let check_for_sticky_attribute fun_name old_attribute new_attribute = 
   let oatype = old_attribute.Pkcs11.type_ in
@@ -24,12 +40,12 @@ let check_for_sticky_attribute fun_name old_attribute new_attribute =
            && (compare oavalue curr_attr.Pkcs11.value = 0) 
            && (compare navalue curr_attr.Pkcs11.value <> 0) then 
            let info_string = Printf.sprintf "[User defined extensions]: STICKY_ATTRIBUTES asked during %s for %s=%s to %s" fun_name  
-            (Pkcs11.match_cKA_value oatype) (sprint_attribute_value (char_array_to_bool (old_attribute.Pkcs11.value))) (sprint_attribute_value (char_array_to_bool (new_attribute.Pkcs11.value))) in
+            (Pkcs11.match_cKA_value oatype) (Pkcs11.sprint_bool_attribute_value (Pkcs11.char_array_to_bool (old_attribute.Pkcs11.value))) (Pkcs11.sprint_bool_attribute_value (Pkcs11.char_array_to_bool (new_attribute.Pkcs11.value))) in
           let _ = print_debug info_string 1 in
           (curr_check || true)
         else
           (curr_check || false)
-    ) false !sticky_attributes in
+    ) false (sticky_attributes !segregate_usage) in
     (check)
   else
     (false)
@@ -50,7 +66,7 @@ let sticky_attributes_patch fun_name arg =
   (* Copy object case *)
   ("C_CopyObject" | "C_SetAttributeValue") ->
       let (sessionh, objecth, attributes) = deserialize arg in
-      let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh objecth !critical_attributes) in
+      let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh objecth (critical_attributes !segregate_usage)) in
       if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
         if (compare ret Pkcs11.cKR_OK <> 0) then
           if compare fun_name "C_CopyObject" = 0 then

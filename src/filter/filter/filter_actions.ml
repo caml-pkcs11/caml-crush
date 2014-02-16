@@ -105,15 +105,15 @@ let c_Initialize_hook fun_name _ =
 
 let c_Login_hook fun_name arg = 
   let (cksessionhandlet_, ckusertypet_, pin) = (deserialize arg) in
-  if compare (Pkcs11.byte_array_to_string pin) "1234" = 0 then
+  if compare (Pkcs11.char_array_to_string pin) "1234" = 0 then
     (* Passtrhough if pin is 1234 *)
-    let s = Printf.sprintf " ######### Passthrough %s with pin %s!" fun_name (Pkcs11.byte_array_to_string pin) in
+    let s = Printf.sprintf " ######### Passthrough %s with pin %s!" fun_name (Pkcs11.char_array_to_string pin) in
     print_debug s 1;
     (serialize (false, ()))
   else
   begin
     (* Hook the call if pin != 1234 *)
-    let s = Printf.sprintf " ######### Hooking %s with pin %s!" fun_name (Pkcs11.byte_array_to_string pin) in
+    let s = Printf.sprintf " ######### Hooking %s with pin %s!" fun_name (Pkcs11.char_array_to_string pin) in
     print_debug s 1;
     let return_value = serialize (true, Pkcs11.cKR_PIN_LOCKED) in
     (return_value)
@@ -164,7 +164,12 @@ INCLUDE "p11fix_patches/wrapping_format_patch.ml"
 (* The non local objects patch:                                        *)
 INCLUDE "p11fix_patches/non_local_objects_patch.ml"
 
-  
+(***********************************************************************)
+(* The secure templates patch:                                         *)
+(* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *)
+INCLUDE "p11fix_patches/secure_templates_patch.ml"
+
+ 
 
 (***********************************************************************)
 (********* CUSTOM actions wrappers for the configuration file ******)
@@ -178,6 +183,8 @@ let execute_action fun_name action argument = match action with
 | "prevent_sensitive_leak_patch" -> prevent_sensitive_leak_patch fun_name argument
 | "wrapping_format_patch" -> wrapping_format_patch fun_name argument
 | "non_local_objects_patch" -> non_local_objects_patch fun_name argument
+| "do_segregate_usage" -> do_segregate_usage fun_name argument
+| "secure_templates_patch" -> secure_templates_patch fun_name argument
 | _ -> identity fun_name argument
 
 let string_check_action a = match a with
@@ -190,6 +197,8 @@ let string_check_action a = match a with
 | "prevent_sensitive_leak_patch" -> a
 | "wrapping_format_patch" -> a
 | "non_local_objects_patch" -> a
+| "do_segregate_usage" -> a
+| "secure_templates_patch" -> a
 | _ -> let error_string = Printf.sprintf "Error: unknown action option '%s'!" a in netplex_log_critical error_string; raise Config_file_wrong_type
 
 

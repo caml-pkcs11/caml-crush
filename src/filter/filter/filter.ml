@@ -160,18 +160,18 @@ let check_object_label session object_handle allowed_list_alias function_name =
     if compare ret_value Pkcs11.cKR_OK = 0 then
     begin
       (* We got the label, check it against the regexp *)
-      let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) "allowed" in
+      let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (Pkcs11.char_array_to_string label_template.(0).Pkcs11.value) "allowed" in
       if check_bool = true then
         begin
         (* true = we don't filter the label            *)
-        let info_string = Printf.sprintf "%s: label '%s' is not filtered for alias '%s'" function_name (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
+        let info_string = Printf.sprintf "%s: label '%s' is not filtered for alias '%s'" function_name (Pkcs11.char_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
         let _ = print_debug info_string 1 in
         (check_bool)
         end
       else
         begin
         (* false = we filter the label *)
-        let info_string = Printf.sprintf "%s: label '%s' is FILTERED for alias '%s'" function_name (Pkcs11.byte_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
+        let info_string = Printf.sprintf "%s: label '%s' is FILTERED for alias '%s'" function_name (Pkcs11.char_array_to_string label_template.(0).Pkcs11.value) (get !current_module) in
         let _ = print_debug info_string 1 in
         (check_bool)
         end
@@ -195,16 +195,16 @@ let check_label_on_object_creation ckattributearray_ allowed_list_alias function
                 if compare a.Pkcs11.type_ Pkcs11.cKA_LABEL = 0 then
                 begin
                   (* If we have a label, check if it is in the allowed list *)
-                  let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (Pkcs11.byte_array_to_string a.Pkcs11.value) "allowed" in
+                  let check_bool = check_regexp_element_in_all_lists (get !current_module) allowed_list_alias (Pkcs11.char_array_to_string a.Pkcs11.value) "allowed" in
                   if check_bool = true then
                   begin
-                    let info_string = Printf.sprintf "%s: label '%s' is not filtered on creation for alias '%s'" function_name (Pkcs11.byte_array_to_string a.Pkcs11.value) (get !current_module) in
+                    let info_string = Printf.sprintf "%s: label '%s' is not filtered on creation for alias '%s'" function_name (Pkcs11.char_array_to_string a.Pkcs11.value) (get !current_module) in
                     let _ = print_debug info_string 1 in
                     (false || previous_bool, previous_counter+1)
                   end
                   else
                   begin
-                    let info_string = Printf.sprintf "%s: label '%s' is FILTERED on creation for alias '%s'" function_name (Pkcs11.byte_array_to_string a.Pkcs11.value) (get !current_module) in
+                    let info_string = Printf.sprintf "%s: label '%s' is FILTERED on creation for alias '%s'" function_name (Pkcs11.char_array_to_string a.Pkcs11.value) (get !current_module) in
                     let _ = print_debug info_string 1 in
                     (true || previous_bool, previous_counter+1)
                   end
@@ -440,10 +440,10 @@ let c_LoadModule path =
   (* no module is already loaded at this point!                    *)
   (* Check the function *)
   (* Check the alias *)
-  let found_alias = try Filter_configuration.get_module_alias (Pkcs11.byte_array_to_string path) 
+  let found_alias = try Filter_configuration.get_module_alias (Pkcs11.char_array_to_string path) 
     with Modules_except -> raise Modules_except in
-  let ret = Backend.c_LoadModule (Pkcs11.string_to_byte_array found_alias) in
-  let _ = if compare ret Pkcs11.cKR_OK = 0 then current_module := Some (Pkcs11.byte_array_to_string path) else () in
+  let ret = Backend.c_LoadModule (Pkcs11.string_to_char_array found_alias) in
+  let _ = if compare ret Pkcs11.cKR_OK = 0 then current_module := Some (Pkcs11.char_array_to_string path) else () in
   (ret)
 
 (*************************************************************************)

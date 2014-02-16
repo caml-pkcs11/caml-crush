@@ -1,49 +1,28 @@
-(* Helpers *)
-let sprint_hex_array myarray = 
-  let s = Array.fold_left (
-    fun a elem -> Printf.sprintf "%s%02x" a (int_of_char elem);
-  ) "'" myarray in
-  (Printf.sprintf "%s'" s)
+(* Global value to tell if we want to segregate usage *)
+let segregate_usage = ref false
 
-let bool_to_char_array boolean_attribute = 
-  if compare boolean_attribute Pkcs11.cK_FALSE = 0 then
-    ([| (Char.chr 0) |])
-  else
-    ([| (Char.chr 1) |])
-
-let char_array_to_bool char_array = 
-  let check = Array.fold_left (
-    fun curr_check elem -> 
-      if compare elem (Char.chr 0) = 0 then 
-        (curr_check || false) 
-      else 
-        (curr_check || true)
-    ) false char_array in
-  if compare check false = 0 then
-    (Pkcs11.cK_FALSE)
-  else
-    (Pkcs11.cK_TRUE)
-
-let sprint_attribute_value attribute_value =
-  if compare attribute_value  Pkcs11.cK_TRUE = 0 then
-    ("TRUE")
-  else
-    if compare attribute_value  Pkcs11.cK_FALSE = 0 then
-      ("FALSE")
-    else
-      ("UNKNOWN!")
-
-let sprint_template_array template_array = 
-  let string_ = Array.fold_left 
-    (fun curr_string templ -> 
-       let s1 = Printf.sprintf "(%s, " (Pkcs11.match_cKA_value templ.Pkcs11.type_) in
-       let s2 = Printf.sprintf "%s) " (sprint_hex_array templ.Pkcs11.value) in
-       (String.concat "" [curr_string; s1; s2])
-  ) "" template_array in
-  (string_)
+let do_segregate_usage _ _ = (let info_string = Printf.sprintf "[User defined extensions]: Activating KEY USAGE SEGREGATION (encrypt/decrypt versus sign/verify)" in  print_debug info_string 1; segregate_usage := true; serialize (false, ()))
 
 (* The critical attributes we focus on in all the patches *)
-let critical_attributes_ = [| 
+let critical_attributes key_segregation = if compare key_segregation true = 0 then
+                           (* If we segregate key usage, we add the sign-verify in the critical attributes *)
+                           [| 
+                             {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_UNWRAP; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_PRIVATE; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = [||]} ;
+                             (** Add the sign/verify attributes for key segregation patch **)
+                             {Pkcs11.type_ = Pkcs11.cKA_SIGN; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_VERIFY; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_SIGN_RECOVER; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_VERIFY_RECOVER; Pkcs11.value = [||]} ;
+                           |]
+                           else
+                           [|
                              {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = [||]} ;
@@ -53,7 +32,6 @@ let critical_attributes_ = [|
                              {Pkcs11.type_ = Pkcs11.cKA_PRIVATE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_DERIVE; Pkcs11.value = [||]} ;
                            |]
-let critical_attributes = ref critical_attributes_
 
 (* The following function removes values from a template array *)
 (* It is useful when we do not want sensitive values to go to  *)
@@ -144,7 +122,7 @@ let get_object_class attributes =
   if compare !object_class [||] = 0 then
     (None)
   else
-    (Some (Pkcs11.byte_array_to_ulong !object_class))
+    (Some (Pkcs11.char_array_to_ulong !object_class))
 
 let is_object_class_key attributes = 
   let object_class_ = get_object_class attributes in
