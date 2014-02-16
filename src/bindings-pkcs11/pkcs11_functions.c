@@ -2675,7 +2675,7 @@ CK_RV ML_CK_C_SetOperationState( /*in */ CK_SESSION_HANDLE session,	/*in */
   return rv;
 }
 
-void int_to_ulong_byte_array( /*in */ unsigned long input,	/*out */
+void int_to_ulong_char_array( /*in */ unsigned long input,	/*out */
 			     unsigned char *data)
 {
   /* Handle the endianness */
@@ -2686,7 +2686,7 @@ void int_to_ulong_byte_array( /*in */ unsigned long input,	/*out */
   return;
 }
 
-void byte_array_to_ulong( /*in */ unsigned char* data,	/* in */ size_t data_size,
+void char_array_to_ulong( /*in */ unsigned char* data,	/* in */ size_t data_size,
                          /*out */ unsigned long* output)
 {
   if (data_size > sizeof(unsigned long)){

@@ -2658,6 +2658,7 @@ quote(ml, "| -2147483648n -> \"cKC_VENDOR_DEFINED\"");
 #endif
 quote(ml, "| _ -> \"cKC_UNKNOWN!\"");
 
+/* Helpers for OCaml programs */
 quote(mli, "(* Helpers for information printing *)\n");
 quote(mli, "val match_cKM_value : nativeint -> string\n");
 quote(mli, "val match_cKR_value : nativeint -> string\n");
@@ -2671,8 +2672,8 @@ quote(mli, "val match_cKO_value : nativeint -> string\n");
 quote(mli, "val string_to_cKM_value : string -> nativeint\n");
 
 quote(mli, "(* Helpers for strings and char arrays *)\n");
-quote(mli, "val string_to_byte_array : string -> char array\n");
-quote(mli, "val byte_array_to_string : char array -> string\n");
+quote(mli, "val string_to_char_array : string -> char array\n");
+quote(mli, "val char_array_to_string : char array -> string\n");
 quote(mli, "val print_int_array : nativeint array -> unit\n");
 quote(mli, "val print_char_array : char array -> unit\n");
 quote(mli, "val print_string_array : string array -> unit\n");
@@ -2682,13 +2683,18 @@ quote(mli, "val int_to_hexchar : nativeint -> char\n");
 quote(mli, "val hexchar_to_int : char -> nativeint\n");
 quote(mli, "val merge_nibbles : char -> char -> char\n");
 quote(mli, "val pack : string -> string\n");
+quote(mli, "val sprint_hex_array : char array -> string\n");
+quote(mli, "val bool_to_char_array : nativeint -> char array\n");
+quote(mli, "val char_array_to_bool : char array -> nativeint\n");
+quote(mli, "val sprint_bool_attribute_value : nativeint -> string\n");
+quote(mli, "val sprint_template_array : ck_attribute array -> string\n");
 
 quote(ml,
-      "let byte_array_to_string = fun a -> let s = String.create (Array.length a) in\n");
+      "let char_array_to_string = fun a -> let s = String.create (Array.length a) in\n");
 quote(ml, "  Array.iteri (fun i x -> String.set s i x) a; s;;\n");
 
 quote(ml,
-      "let string_to_byte_array = fun s -> Array.init (String.length s) (fun i -> s.[i]);;\n");
+      "let string_to_char_array = fun s -> Array.init (String.length s) (fun i -> s.[i]);;\n");
 
 quote(ml,
       "let print_int_array = fun a -> Printf.printf \"'\"; Array.iter (fun str -> Printf.printf \"%s \" (Nativeint.to_string str)) a; Printf.printf \"'\\n\";;");
@@ -2767,6 +2773,54 @@ quote(ml, "          j := !j +1;");
 quote(ml, "          )");
 quote(ml, "     done;");
 quote(ml, "     (res);;");
+
+quote(ml, "let sprint_hex_array myarray =");
+quote(ml, "  let s = Array.fold_left (");
+quote(ml, "    fun a elem -> Printf.sprintf \"%s%02x\" a (int_of_char elem);");
+quote(ml, "  ) \"'\" myarray in");
+quote(ml, "  (Printf.sprintf \"%s'\" s)");
+quote(ml, "");
+
+quote(ml, "let bool_to_char_array boolean_attribute =");
+quote(ml, "  if compare boolean_attribute cK_FALSE = 0 then");
+quote(ml, "    ([| (Char.chr 0) |])");
+quote(ml, "  else");
+quote(ml, "    ([| (Char.chr 1) |])");
+quote(ml, "");
+
+quote(ml, "let char_array_to_bool char_array =");
+quote(ml, "  let check = Array.fold_left (");
+quote(ml, "    fun curr_check elem ->");
+quote(ml, "      if compare elem (Char.chr 0) = 0 then");
+quote(ml, "        (curr_check || false)");
+quote(ml, "      else");
+quote(ml, "        (curr_check || true)");
+quote(ml, "    ) false char_array in");
+quote(ml, "  if compare check false = 0 then");
+quote(ml, "    (cK_FALSE)");
+quote(ml, "  else");
+quote(ml, "    (cK_TRUE)");
+quote(ml, "");
+
+quote(ml, "let sprint_bool_attribute_value attribute_value =");
+quote(ml, "  if compare attribute_value cK_TRUE = 0 then");
+quote(ml, "    (\"TRUE\")");
+quote(ml, "  else");
+quote(ml, "    if compare attribute_value cK_FALSE = 0 then");
+quote(ml, "      (\"FALSE\")");
+quote(ml, "    else");
+quote(ml, "      (\"UNKNOWN!\")");
+quote(ml, "");
+
+quote(ml, "let sprint_template_array template_array =");
+quote(ml, "  let string_ = Array.fold_left");
+quote(ml, "    (fun curr_string templ ->");
+quote(ml, "       let s1 = Printf.sprintf \"(%s, \" (match_cKA_value templ.type_) in");
+quote(ml, "       let s2 = Printf.sprintf \"%s) \" (sprint_hex_array templ.value) in");
+quote(ml, "       (String.concat \"\" [curr_string; s1; s2])");
+quote(ml, "  ) \"\" template_array in");
+quote(ml, "  (string_)");
+
 
 typedef unsigned char CK_BYTE;
 typedef unsigned char CK_CHAR;
@@ -3253,12 +3307,12 @@ _ML_CK_DECLARE_FUNCTION(C_GetFunctionStatus, (ck_session_handle_t session));
 _ML_CK_DECLARE_FUNCTION(C_CancelFunction, (ck_session_handle_t session));
 
 /* Specific functions to handle architecture issues (32 versus 64 bit ulong, endianness ...) */
-void int_to_ulong_byte_array([nativeint]
+void int_to_ulong_char_array([nativeint]
 			     unsigned long input,
 			     [size_is(sizeof(unsigned long)), out]
 			     unsigned char data[]);
 
-void byte_array_to_ulong([in]unsigned char data[], 
+void char_array_to_ulong([in]unsigned char data[], 
                              [nativeint, out]unsigned long output);
 
 /* pkcs11_stubs.c */
@@ -3622,8 +3676,8 @@ quote(H,
       "value camlidl_pkcs11_ML_CK_C_SetOperationState(value _v_session, value _v_data, value _v_hencryptionkey, value _v_hauthenticationkey);");
 quote(H, "value camlidl_pkcs11_ML_CK_C_GetFunctionStatus(value _v_session);");
 quote(H, "value camlidl_pkcs11_ML_CK_C_CancelFunction(value _v_session);");
-quote(H, "value camlidl_pkcs11_int_to_ulong_byte_array(value _v_input);");
-quote(H, "value camlidl_pkcs11_byte_array_to_ulong(value _v_data);");
+quote(H, "value camlidl_pkcs11_int_to_ulong_char_array(value _v_input);");
+quote(H, "value camlidl_pkcs11_char_array_to_ulong(value _v_data);");
 
 quote(H, "#ifdef SERVER_ROLE");
 quote(H,

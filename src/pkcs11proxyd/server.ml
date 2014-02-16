@@ -176,7 +176,7 @@ let c_GetTokenInfo (slot_id) =
 (*************************************************************************) 
 let c_Login (handle, user_type, pin) = 
   debug_print_call "C_Login";
-  let real_pin = (Pkcs11.string_to_byte_array pin) in
+  let real_pin = (Pkcs11.string_to_char_array pin) in
   let ret = CALLP11.c_Login (Int64.to_nativeint handle) (Int64.to_nativeint user_type) real_pin in
   debug_print_ret "C_Login" ret; 
   (Int64.of_nativeint ret)
@@ -234,7 +234,7 @@ let c_GetMechanismInfo (slot_id, mechanism_type) =
 (*************************************************************************) 
 let c_InitPIN (session_handle, pin) = 
   debug_print_call "C_InitPIN";
-  let real_pin = (Pkcs11.string_to_byte_array pin) in
+  let real_pin = (Pkcs11.string_to_char_array pin) in
   let ret = CALLP11.c_InitPIN (Int64.to_nativeint session_handle) real_pin in 
   debug_print_ret "C_InitPIN" ret; 
   (Int64.of_nativeint ret)
@@ -242,8 +242,8 @@ let c_InitPIN (session_handle, pin) =
 (*************************************************************************) 
 let c_SetPIN (session_handle, old_pin, new_pin) = 
   debug_print_call "C_SetPIN";
-  let real_old_pin = (Pkcs11.string_to_byte_array old_pin) in
-  let real_new_pin = (Pkcs11.string_to_byte_array new_pin) in
+  let real_old_pin = (Pkcs11.string_to_char_array old_pin) in
+  let real_new_pin = (Pkcs11.string_to_char_array new_pin) in
   let ret = CALLP11.c_SetPIN (Int64.to_nativeint session_handle) real_old_pin real_new_pin in 
   debug_print_ret "C_SetPIN" ret; 
   (Int64.of_nativeint ret)
@@ -251,7 +251,7 @@ let c_SetPIN (session_handle, old_pin, new_pin) =
 (*************************************************************************) 
 let c_SeedRandom (session_handle, seed) = 
   debug_print_call "C_SeedRandom";
-  let real_seed = (Pkcs11.string_to_byte_array seed) in
+  let real_seed = (Pkcs11.string_to_char_array seed) in
   let ret = CALLP11.c_SeedRandom (Int64.to_nativeint session_handle) real_seed in 
   debug_print_ret "C_SeedRandom" ret;
   (Int64.of_nativeint ret)
@@ -259,8 +259,8 @@ let c_SeedRandom (session_handle, seed) =
 (*************************************************************************) 
 let c_InitToken (slot_id, so_pin, label) = 
   debug_print_call "C_InitToken";
-  let real_label = (Pkcs11.string_to_byte_array label) in
-  let real_so_pin = (Pkcs11.string_to_byte_array so_pin) in
+  let real_label = (Pkcs11.string_to_char_array label) in
+  let real_so_pin = (Pkcs11.string_to_char_array so_pin) in
   let ret = CALLP11.c_InitToken (Int64.to_nativeint slot_id) real_so_pin real_label in 
   debug_print_ret "C_InitToken" ret;
   (Int64.of_nativeint ret)
@@ -270,7 +270,7 @@ let c_GenerateRandom (session_handle, count) =
   debug_print_call "C_GenerateRandom";
   let (ret, rand_data_) = CALLP11.c_GenerateRandom (Int64.to_nativeint session_handle) (Int64.to_nativeint count) in 
   debug_print_ret "C_GenerateRandom" ret;
-  {c_generaterandom_rv = (Int64.of_nativeint ret) ; c_generaterandom_data = (Pkcs11.byte_array_to_string rand_data_) }
+  {c_generaterandom_rv = (Int64.of_nativeint ret) ; c_generaterandom_data = (Pkcs11.char_array_to_string rand_data_) }
 
 (*************************************************************************) 
 let c_FindObjectsInit (session_handle, attributes) = 
@@ -365,14 +365,14 @@ let c_WrapKey (session_handle, mechanism, wrapping_handle, wrapped_handle) =
   let real_mechanism = (ck_mechanism_rpc_aux_to_pkcs11 mechanism) in 
   let (ret, wrapped_value_) = CALLP11.c_WrapKey (Int64.to_nativeint session_handle) real_mechanism (Int64.to_nativeint wrapping_handle) (Int64.to_nativeint wrapped_handle) in 
   debug_print_ret "C_WrapKey" ret;
-  {c_wrapkey_rv = (Int64.of_nativeint ret) ; c_wrapkey_value = (Pkcs11.byte_array_to_string wrapped_value_) }
+  {c_wrapkey_rv = (Int64.of_nativeint ret) ; c_wrapkey_value = (Pkcs11.char_array_to_string wrapped_value_) }
 
 (*************************************************************************) 
 let c_UnwrapKey (session_handle, mechanism, unwrapping_handle, wrapped_key, attributes) = 
   debug_print_call "C_UnwrapKey";  
   let real_mechanism = (ck_mechanism_rpc_aux_to_pkcs11 mechanism) in 
   let real_attributes = (Array.map ck_attribute_rpc_aux_to_pkcs11 attributes) in
-  let real_wrapped_key = (Pkcs11.string_to_byte_array wrapped_key) in
+  let real_wrapped_key = (Pkcs11.string_to_char_array wrapped_key) in
   let (ret, unwrapped_value_) = CALLP11.c_UnwrapKey (Int64.to_nativeint session_handle) real_mechanism (Int64.to_nativeint unwrapping_handle) real_wrapped_key real_attributes in 
   debug_print_ret "C_UnwrapKey" ret;
   {c_unwrapkey_rv = (Int64.of_nativeint ret) ; c_unwrapkey_handle = (Int64.of_nativeint unwrapped_value_) }
@@ -397,15 +397,15 @@ let c_DigestInit (session_handle, mechanism) =
 (*************************************************************************) 
 let c_Digest (session_handle, data) = 
   debug_print_call "C_Digest"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, digested_) = CALLP11.c_Digest (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_Digest" ret;
-  {c_digest_rv = (Int64.of_nativeint ret) ; c_digest_value = (Pkcs11.byte_array_to_string digested_) }
+  {c_digest_rv = (Int64.of_nativeint ret) ; c_digest_value = (Pkcs11.char_array_to_string digested_) }
 
 (*************************************************************************) 
 let c_DigestUpdate (session_handle, data) = 
   debug_print_call "C_DigestUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let ret = CALLP11.c_DigestUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_DigestUpdate" ret;
   (Int64.of_nativeint ret)
@@ -415,7 +415,7 @@ let c_DigestFinal (session_handle) =
   debug_print_call "C_DigestFinal"; 
   let (ret, digested_) = CALLP11.c_DigestFinal (Int64.to_nativeint session_handle) in
   debug_print_ret "C_DigestFinal" ret;
-  {c_digestfinal_rv = (Int64.of_nativeint ret) ; c_digestfinal_value = (Pkcs11.byte_array_to_string digested_) }
+  {c_digestfinal_rv = (Int64.of_nativeint ret) ; c_digestfinal_value = (Pkcs11.char_array_to_string digested_) }
 
 (*************************************************************************) 
 let c_DigestKey (session_handle, object_handle) = 
@@ -435,15 +435,15 @@ let c_SignInit (session_handle, mechanism, object_handle) =
 (*************************************************************************) 
 let c_Sign (session_handle, data) = 
   debug_print_call "C_Sign"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, signed_) = CALLP11.c_Sign (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_Sign" ret;
-  {c_sign_rv = (Int64.of_nativeint ret) ; c_sign_value = (Pkcs11.byte_array_to_string signed_) }
+  {c_sign_rv = (Int64.of_nativeint ret) ; c_sign_value = (Pkcs11.char_array_to_string signed_) }
 
 (*************************************************************************) 
 let c_SignUpdate (session_handle, data) = 
   debug_print_call "C_SignUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let ret = CALLP11.c_SignUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_SignUpdate" ret;
   (Int64.of_nativeint ret)
@@ -453,7 +453,7 @@ let c_SignFinal (session_handle) =
   debug_print_call "C_SignFinal"; 
   let (ret, signed_) = CALLP11.c_SignFinal (Int64.to_nativeint session_handle) in
   debug_print_ret "C_SignFinal" ret;
-  {c_signfinal_rv = (Int64.of_nativeint ret) ; c_signfinal_value = (Pkcs11.byte_array_to_string signed_) }
+  {c_signfinal_rv = (Int64.of_nativeint ret) ; c_signfinal_value = (Pkcs11.char_array_to_string signed_) }
 
 (*************************************************************************) 
 let c_VerifyInit (session_handle, mechanism, object_handle) = 
@@ -466,8 +466,8 @@ let c_VerifyInit (session_handle, mechanism, object_handle) =
 (*************************************************************************) 
 let c_Verify (session_handle, data, signed_data ) = 
   debug_print_call "C_Verify"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
-  let real_signed_data = (Pkcs11.string_to_byte_array signed_data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
+  let real_signed_data = (Pkcs11.string_to_char_array signed_data) in
   let ret = CALLP11.c_Verify (Int64.to_nativeint session_handle) real_data real_signed_data in
   debug_print_ret "C_Verify" ret;
   (Int64.of_nativeint ret)
@@ -475,7 +475,7 @@ let c_Verify (session_handle, data, signed_data ) =
 (*************************************************************************) 
 let c_VerifyUpdate (session_handle, data) = 
   debug_print_call "C_VerifyUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let ret = CALLP11.c_VerifyUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_VerifyUpdate" ret;
   (Int64.of_nativeint ret)
@@ -483,7 +483,7 @@ let c_VerifyUpdate (session_handle, data) =
 (*************************************************************************) 
 let c_VerifyFinal (session_handle, data) = 
   debug_print_call "C_VerifyFinal"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let ret = CALLP11.c_VerifyFinal (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_VerifyFinal" ret;
   (Int64.of_nativeint ret)
@@ -499,25 +499,25 @@ let c_EncryptInit (session_handle, mechanism, object_handle) =
 (*************************************************************************) 
 let c_Encrypt (session_handle, data ) = 
   debug_print_call "C_Encrypt"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, encrypted_) = CALLP11.c_Encrypt (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_Encrypt" ret;
-  {c_encrypt_rv = (Int64.of_nativeint ret) ; c_encrypt_value = (Pkcs11.byte_array_to_string encrypted_) }
+  {c_encrypt_rv = (Int64.of_nativeint ret) ; c_encrypt_value = (Pkcs11.char_array_to_string encrypted_) }
 
 (*************************************************************************) 
 let c_EncryptUpdate (session_handle, data) = 
   debug_print_call "C_EncryptUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, encrypted_) = CALLP11.c_EncryptUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_EncryptUpdate" ret;
-  {c_encryptupdate_rv = (Int64.of_nativeint ret) ; c_encryptupdate_value = (Pkcs11.byte_array_to_string encrypted_) }
+  {c_encryptupdate_rv = (Int64.of_nativeint ret) ; c_encryptupdate_value = (Pkcs11.char_array_to_string encrypted_) }
 
 (*************************************************************************) 
 let c_EncryptFinal (session_handle) = 
   debug_print_call "C_EncryptFinal"; 
   let (ret, encrypted_) = CALLP11.c_EncryptFinal (Int64.to_nativeint session_handle) in
   debug_print_ret "C_EncryptFinal" ret;
-  {c_encryptfinal_rv = (Int64.of_nativeint ret) ; c_encryptfinal_value = (Pkcs11.byte_array_to_string encrypted_) }
+  {c_encryptfinal_rv = (Int64.of_nativeint ret) ; c_encryptfinal_value = (Pkcs11.char_array_to_string encrypted_) }
 
 (*************************************************************************) 
 let c_DecryptInit (session_handle, mechanism, object_handle) = 
@@ -530,25 +530,25 @@ let c_DecryptInit (session_handle, mechanism, object_handle) =
 (*************************************************************************) 
 let c_Decrypt (session_handle, data ) = 
   debug_print_call "C_Decrypt"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, decrypted_) = CALLP11.c_Decrypt (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_Decrypt" ret;
-  {c_decrypt_rv = (Int64.of_nativeint ret) ; c_decrypt_value = (Pkcs11.byte_array_to_string decrypted_) }
+  {c_decrypt_rv = (Int64.of_nativeint ret) ; c_decrypt_value = (Pkcs11.char_array_to_string decrypted_) }
 
 (*************************************************************************) 
 let c_DecryptUpdate (session_handle, data) = 
   debug_print_call "C_DecryptUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, decrypted_) = CALLP11.c_DecryptUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_DecryptUpdate" ret;
-  {c_decryptupdate_rv = (Int64.of_nativeint ret) ; c_decryptupdate_value = (Pkcs11.byte_array_to_string decrypted_) }
+  {c_decryptupdate_rv = (Int64.of_nativeint ret) ; c_decryptupdate_value = (Pkcs11.char_array_to_string decrypted_) }
 
 (*************************************************************************) 
 let c_DecryptFinal (session_handle) = 
   debug_print_call "C_DecryptFinal"; 
   let (ret, decrypted_) = CALLP11.c_DecryptFinal (Int64.to_nativeint session_handle) in
   debug_print_ret "C_DecryptFinal" ret;
-  {c_decryptfinal_rv = (Int64.of_nativeint ret) ; c_decryptfinal_value = (Pkcs11.byte_array_to_string decrypted_) }
+  {c_decryptfinal_rv = (Int64.of_nativeint ret) ; c_decryptfinal_value = (Pkcs11.char_array_to_string decrypted_) }
 
 (*************************************************************************) 
 let c_SignRecoverInit (session_handle, mechanism, object_handle) = 
@@ -561,10 +561,10 @@ let c_SignRecoverInit (session_handle, mechanism, object_handle) =
 (*************************************************************************) 
 let c_SignRecover (session_handle, data ) = 
   debug_print_call "C_SignRecover"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, recover_) = CALLP11.c_SignRecover (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_SignRecover" ret;
-  {c_signrecover_rv = (Int64.of_nativeint ret) ; c_signrecover_value = (Pkcs11.byte_array_to_string recover_) }
+  {c_signrecover_rv = (Int64.of_nativeint ret) ; c_signrecover_value = (Pkcs11.char_array_to_string recover_) }
 
 (*************************************************************************) 
 let c_VerifyRecoverInit (session_handle, mechanism, object_handle) = 
@@ -577,54 +577,54 @@ let c_VerifyRecoverInit (session_handle, mechanism, object_handle) =
 (*************************************************************************) 
 let c_VerifyRecover (session_handle, data ) = 
   debug_print_call "C_VerifyRecover"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, recover_) = CALLP11.c_VerifyRecover (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_VerifyRecover" ret;
-  {c_verifyrecover_rv = (Int64.of_nativeint ret) ; c_verifyrecover_value = (Pkcs11.byte_array_to_string recover_) }
+  {c_verifyrecover_rv = (Int64.of_nativeint ret) ; c_verifyrecover_value = (Pkcs11.char_array_to_string recover_) }
 
 (*************************************************************************) 
 let c_DigestEncryptUpdate (session_handle, data ) = 
   debug_print_call "C_DigestEncryptUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, recover_) = CALLP11.c_DigestEncryptUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_DigestEncryptUpdate" ret;
-  {c_digestencryptupdate_rv = (Int64.of_nativeint ret) ; c_digestencryptupdate_value = (Pkcs11.byte_array_to_string recover_) }
+  {c_digestencryptupdate_rv = (Int64.of_nativeint ret) ; c_digestencryptupdate_value = (Pkcs11.char_array_to_string recover_) }
 
 (*************************************************************************) 
 let c_DecryptDigestUpdate (session_handle, data ) = 
   debug_print_call "C_DecryptDigestUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, recover_) = CALLP11.c_DecryptDigestUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_DecryptDigestUpdate" ret;
-  {c_decryptdigestupdate_rv = (Int64.of_nativeint ret) ; c_decryptdigestupdate_value = (Pkcs11.byte_array_to_string recover_) }
+  {c_decryptdigestupdate_rv = (Int64.of_nativeint ret) ; c_decryptdigestupdate_value = (Pkcs11.char_array_to_string recover_) }
 
 (*************************************************************************) 
 let c_SignEncryptUpdate (session_handle, data ) = 
   debug_print_call "C_SignEncryptUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, recover_) = CALLP11.c_SignEncryptUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_SignEncryptUpdate" ret;
-  {c_signencryptupdate_rv = (Int64.of_nativeint ret) ; c_signencryptupdate_value = (Pkcs11.byte_array_to_string recover_) }
+  {c_signencryptupdate_rv = (Int64.of_nativeint ret) ; c_signencryptupdate_value = (Pkcs11.char_array_to_string recover_) }
 
 (*************************************************************************) 
 let c_DecryptVerifyUpdate (session_handle, data ) = 
   debug_print_call "C_DecryptVerifyUpdate"; 
-  let real_data = (Pkcs11.string_to_byte_array data) in
+  let real_data = (Pkcs11.string_to_char_array data) in
   let (ret, recover_) = CALLP11.c_DecryptVerifyUpdate (Int64.to_nativeint session_handle) real_data in
   debug_print_ret "C_DecryptVerifyUpdate" ret;
-  {c_decryptverifyupdate_rv = (Int64.of_nativeint ret) ; c_decryptverifyupdate_value = (Pkcs11.byte_array_to_string recover_) }
+  {c_decryptverifyupdate_rv = (Int64.of_nativeint ret) ; c_decryptverifyupdate_value = (Pkcs11.char_array_to_string recover_) }
 
 (*************************************************************************) 
 let c_GetOperationState (session_handle) = 
   debug_print_call "C_GetOperationState"; 
   let (ret, state_) = CALLP11.c_GetOperationState (Int64.to_nativeint session_handle) in
   debug_print_ret "C_GetOperationState" ret;
-  {c_getoperationstate_rv = (Int64.of_nativeint ret) ; c_getoperationstate_value = (Pkcs11.byte_array_to_string state_) }
+  {c_getoperationstate_rv = (Int64.of_nativeint ret) ; c_getoperationstate_value = (Pkcs11.char_array_to_string state_) }
 
 (*************************************************************************) 
 let c_SetOperationState (session_handle, state, encryption_handle, authentication_handle) = 
   debug_print_call "C_SetOperationState"; 
-  let real_state = (Pkcs11.string_to_byte_array state) in
+  let real_state = (Pkcs11.string_to_char_array state) in
   let ret = CALLP11.c_SetOperationState (Int64.to_nativeint session_handle) real_state (Int64.to_nativeint encryption_handle) (Int64.to_nativeint authentication_handle) in
   debug_print_ret "C_SetOperationState" ret;
   (Int64.of_nativeint ret)
@@ -673,7 +673,7 @@ ENDIF
 
 let c_LoadModule (modulename) = 
   debug_print_call "C_LoadModule"; 
-  let ret = CALLP11.c_LoadModule (Pkcs11.string_to_byte_array (get_module_config_name modulename)) in
+  let ret = CALLP11.c_LoadModule (Pkcs11.string_to_char_array (get_module_config_name modulename)) in
   debug_print_ret "C_LoadModule" ret;
   (Int64.of_nativeint ret)
 
@@ -1072,13 +1072,13 @@ let custom_hooks =
         (* Call C_Daemonize *)
         if !ref_daemonize_args = "" then
           begin
-          let param = (Pkcs11.string_to_byte_array "") in
+          let param = (Pkcs11.string_to_char_array "") in
           let _ = c_Daemonize param in
           ()
           end
         else
           begin
-          let param = (Pkcs11.string_to_byte_array !ref_daemonize_args) in
+          let param = (Pkcs11.string_to_char_array !ref_daemonize_args) in
           let _ = c_Daemonize param in
           ()
           end
@@ -1162,13 +1162,13 @@ let custom_hooks =
       method post_add_hook _ _  =
         if !ref_daemonize_args = "" then
           begin
-          let param = (Pkcs11.string_to_byte_array "") in
+          let param = (Pkcs11.string_to_char_array "") in
           let _ = c_Daemonize param in
           ()
           end
         else
           begin
-          let param = (Pkcs11.string_to_byte_array !ref_daemonize_args) in
+          let param = (Pkcs11.string_to_char_array !ref_daemonize_args) in
           let _ = c_Daemonize param in
           ()
           end

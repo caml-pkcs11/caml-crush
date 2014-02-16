@@ -75,5 +75,7 @@ identifier session, data, data_len;
 @@
 identifier data, output;
 @@
-- void byte_array_to_ulong(/*in*/ unsigned char *data, /*out*/ unsigned long output);
-+ void byte_array_to_ulong(/*in*/ unsigned char *data, /*in*/ size_t data_size, /*out*/ unsigned long *output);
+- void char_array_to_ulong(/*in*/ unsigned char *data, /*out*/ unsigned long output);
++ void char_array_to_ulong(/*in*/ unsigned char *data, /*in*/ size_t data_size, /*out*/ unsigned long *output);
+
+

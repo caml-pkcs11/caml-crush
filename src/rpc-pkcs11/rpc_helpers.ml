@@ -84,25 +84,25 @@ open Pkcs11
 
 let ck_version_pkcs11_to_rpc_aux input = 
   let output = {
-    Pkcs11_rpc_aux.major = Pkcs11.byte_array_to_string (Array.make 1 input.major);
-    Pkcs11_rpc_aux.minor = Pkcs11.byte_array_to_string (Array.make 1 input.minor) 
+    Pkcs11_rpc_aux.major = Pkcs11.char_array_to_string (Array.make 1 input.major);
+    Pkcs11_rpc_aux.minor = Pkcs11.char_array_to_string (Array.make 1 input.minor) 
     } in
   (output)
 
 let ck_info_pkcs11_to_rpc_aux input =
     let output = {
         Pkcs11_rpc_aux.rpc_ck_info_cryptoki_version = (ck_version_pkcs11_to_rpc_aux input.ck_info_cryptoki_version);
-        Pkcs11_rpc_aux.rpc_ck_info_manufacturer_id = (Pkcs11.byte_array_to_string input.ck_info_manufacturer_id);
+        Pkcs11_rpc_aux.rpc_ck_info_manufacturer_id = (Pkcs11.char_array_to_string input.ck_info_manufacturer_id);
         Pkcs11_rpc_aux.rpc_ck_info_flags = Int64.of_nativeint input.ck_info_flags;
-        Pkcs11_rpc_aux.rpc_ck_info_library_description = (Pkcs11.byte_array_to_string input.ck_info_library_description);
+        Pkcs11_rpc_aux.rpc_ck_info_library_description = (Pkcs11.char_array_to_string input.ck_info_library_description);
         Pkcs11_rpc_aux.rpc_ck_info_library_version = (ck_version_pkcs11_to_rpc_aux input.ck_info_library_version)
       } in
     (output)
 
 let ck_slot_info_pkcs11_to_rpc_aux input =
     let output = {
-        Pkcs11_rpc_aux.rpc_ck_slot_info_slot_description = (Pkcs11.byte_array_to_string input.ck_slot_info_slot_description);
-        Pkcs11_rpc_aux.rpc_ck_slot_info_manufacturer_id = (Pkcs11.byte_array_to_string input.ck_slot_info_manufacturer_id);
+        Pkcs11_rpc_aux.rpc_ck_slot_info_slot_description = (Pkcs11.char_array_to_string input.ck_slot_info_slot_description);
+        Pkcs11_rpc_aux.rpc_ck_slot_info_manufacturer_id = (Pkcs11.char_array_to_string input.ck_slot_info_manufacturer_id);
         Pkcs11_rpc_aux.rpc_ck_slot_info_flags = Int64.of_nativeint input.ck_slot_info_flags;
         Pkcs11_rpc_aux.rpc_ck_slot_info_hardware_version = (ck_version_pkcs11_to_rpc_aux input.ck_slot_info_hardware_version);
         Pkcs11_rpc_aux.rpc_ck_slot_info_firmware_version = (ck_version_pkcs11_to_rpc_aux input.ck_slot_info_firmware_version);
@@ -111,10 +111,10 @@ let ck_slot_info_pkcs11_to_rpc_aux input =
 
 let ck_token_info_pkcs11_to_rpc_aux input =
     let output = {
-        Pkcs11_rpc_aux.rpc_ck_token_info_label = (Pkcs11.byte_array_to_string input.ck_token_info_label);
-        Pkcs11_rpc_aux.rpc_ck_token_info_manufacturer_id = (Pkcs11.byte_array_to_string input.ck_token_info_manufacturer_id);
-        Pkcs11_rpc_aux.rpc_ck_token_info_model = (Pkcs11.byte_array_to_string input.ck_token_info_model);
-        Pkcs11_rpc_aux.rpc_ck_token_info_serial_number = (Pkcs11.byte_array_to_string input.ck_token_info_serial_number);
+        Pkcs11_rpc_aux.rpc_ck_token_info_label = (Pkcs11.char_array_to_string input.ck_token_info_label);
+        Pkcs11_rpc_aux.rpc_ck_token_info_manufacturer_id = (Pkcs11.char_array_to_string input.ck_token_info_manufacturer_id);
+        Pkcs11_rpc_aux.rpc_ck_token_info_model = (Pkcs11.char_array_to_string input.ck_token_info_model);
+        Pkcs11_rpc_aux.rpc_ck_token_info_serial_number = (Pkcs11.char_array_to_string input.ck_token_info_serial_number);
         Pkcs11_rpc_aux.rpc_ck_token_info_flags = Int64.of_nativeint input.ck_token_info_flags;
         Pkcs11_rpc_aux.rpc_ck_token_info_max_session_count = Int64.of_nativeint input.ck_token_info_max_session_count;
         Pkcs11_rpc_aux.rpc_ck_token_info_session_count = Int64.of_nativeint input.ck_token_info_session_count;
@@ -128,30 +128,30 @@ let ck_token_info_pkcs11_to_rpc_aux input =
         Pkcs11_rpc_aux.rpc_ck_token_info_free_private_memory = Int64.of_nativeint input.ck_token_info_free_private_memory;
         Pkcs11_rpc_aux.rpc_ck_token_info_hardware_version = (ck_version_pkcs11_to_rpc_aux input.ck_token_info_hardware_version);
         Pkcs11_rpc_aux.rpc_ck_token_info_firmware_version = (ck_version_pkcs11_to_rpc_aux input.ck_token_info_firmware_version);
-        Pkcs11_rpc_aux.rpc_ck_token_info_utc_time = (Pkcs11.byte_array_to_string input.ck_token_info_utc_time)
+        Pkcs11_rpc_aux.rpc_ck_token_info_utc_time = (Pkcs11.char_array_to_string input.ck_token_info_utc_time)
       } in
     (output)
 
 let ck_attribute_pkcs11_to_rpc_aux input =
     let output = {
         Pkcs11_rpc_aux.rpc_ck_attribute_type = Int64.of_nativeint input.type_;
-        Pkcs11_rpc_aux.rpc_ck_attribute_value = (Pkcs11.byte_array_to_string input.value);
+        Pkcs11_rpc_aux.rpc_ck_attribute_value = (Pkcs11.char_array_to_string input.value);
         Pkcs11_rpc_aux.rpc_ck_attribute_value_len = Int64.of_int (Array.length input.value)
       } in
     (output)
 
 let ck_date_pkcs11_to_rpc_aux input =
     let output = {
-        Pkcs11_rpc_aux.rpc_ck_date_year = (Pkcs11.byte_array_to_string input.year);
-        Pkcs11_rpc_aux.rpc_ck_date_month = (Pkcs11.byte_array_to_string input.month);
-        Pkcs11_rpc_aux.rpc_ck_date_day = (Pkcs11.byte_array_to_string input.day)
+        Pkcs11_rpc_aux.rpc_ck_date_year = (Pkcs11.char_array_to_string input.year);
+        Pkcs11_rpc_aux.rpc_ck_date_month = (Pkcs11.char_array_to_string input.month);
+        Pkcs11_rpc_aux.rpc_ck_date_day = (Pkcs11.char_array_to_string input.day)
       } in
     (output)
 
 let ck_mechanism_pkcs11_to_rpc_aux input =
     let output = {
         Pkcs11_rpc_aux.rpc_ck_mechanism_mechanism = Int64.of_nativeint input.mechanism;
-        Pkcs11_rpc_aux.rpc_ck_mechanism_parameter = (Pkcs11.byte_array_to_string input.parameter);
+        Pkcs11_rpc_aux.rpc_ck_mechanism_parameter = (Pkcs11.char_array_to_string input.parameter);
       } in
     (output)
 
@@ -176,25 +176,25 @@ let ck_mechanism_info_pkcs11_to_rpc_aux input =
 (* GO in CLIENT *)
 let ck_version_rpc_aux_to_pkcs11 input = 
   let output = {
-    Pkcs11.major = (Pkcs11.string_to_byte_array (input.Pkcs11_rpc_aux.major)).(0);
-    Pkcs11.minor = (Pkcs11.string_to_byte_array (input.Pkcs11_rpc_aux.minor)).(0) 
+    Pkcs11.major = (Pkcs11.string_to_char_array (input.Pkcs11_rpc_aux.major)).(0);
+    Pkcs11.minor = (Pkcs11.string_to_char_array (input.Pkcs11_rpc_aux.minor)).(0) 
     } in
   (output)
 
 let ck_info_rpc_aux_to_pkcs11 input =
     let output = {
         Pkcs11.ck_info_cryptoki_version = (ck_version_rpc_aux_to_pkcs11 input.Pkcs11_rpc_aux.rpc_ck_info_cryptoki_version);
-        Pkcs11.ck_info_manufacturer_id = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_info_manufacturer_id);
+        Pkcs11.ck_info_manufacturer_id = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_info_manufacturer_id);
         Pkcs11.ck_info_flags = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_info_flags;
-        Pkcs11.ck_info_library_description = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_info_library_description);
+        Pkcs11.ck_info_library_description = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_info_library_description);
         Pkcs11.ck_info_library_version = (ck_version_rpc_aux_to_pkcs11 input.Pkcs11_rpc_aux.rpc_ck_info_library_version)
       } in
     (output)
 
 let ck_slot_info_rpc_aux_to_pkcs11 input =
     let output = {
-        Pkcs11.ck_slot_info_slot_description = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_slot_info_slot_description);
-        Pkcs11.ck_slot_info_manufacturer_id = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_slot_info_manufacturer_id);
+        Pkcs11.ck_slot_info_slot_description = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_slot_info_slot_description);
+        Pkcs11.ck_slot_info_manufacturer_id = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_slot_info_manufacturer_id);
         Pkcs11.ck_slot_info_flags = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_slot_info_flags;
         Pkcs11.ck_slot_info_hardware_version = (ck_version_rpc_aux_to_pkcs11 input.Pkcs11_rpc_aux.rpc_ck_slot_info_hardware_version);
         Pkcs11.ck_slot_info_firmware_version = (ck_version_rpc_aux_to_pkcs11 input.Pkcs11_rpc_aux.rpc_ck_slot_info_firmware_version);
@@ -203,10 +203,10 @@ let ck_slot_info_rpc_aux_to_pkcs11 input =
 
 let ck_token_info_rpc_aux_to_pkcs11 input =
     let output = {
-        Pkcs11.ck_token_info_label = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_token_info_label);
-        Pkcs11.ck_token_info_manufacturer_id = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_token_info_manufacturer_id);
-        Pkcs11.ck_token_info_model = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_token_info_model);
-        Pkcs11.ck_token_info_serial_number = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_token_info_serial_number);
+        Pkcs11.ck_token_info_label = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_token_info_label);
+        Pkcs11.ck_token_info_manufacturer_id = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_token_info_manufacturer_id);
+        Pkcs11.ck_token_info_model = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_token_info_model);
+        Pkcs11.ck_token_info_serial_number = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_token_info_serial_number);
         Pkcs11.ck_token_info_flags = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_token_info_flags;
         Pkcs11.ck_token_info_max_session_count = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_token_info_max_session_count;
         Pkcs11.ck_token_info_session_count = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_token_info_session_count;
@@ -220,29 +220,29 @@ let ck_token_info_rpc_aux_to_pkcs11 input =
         Pkcs11.ck_token_info_free_private_memory = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_token_info_free_private_memory;
         Pkcs11.ck_token_info_hardware_version = (ck_version_rpc_aux_to_pkcs11 input.Pkcs11_rpc_aux.rpc_ck_token_info_hardware_version);
         Pkcs11.ck_token_info_firmware_version = (ck_version_rpc_aux_to_pkcs11 input.Pkcs11_rpc_aux.rpc_ck_token_info_firmware_version);
-        Pkcs11.ck_token_info_utc_time = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_token_info_utc_time)
+        Pkcs11.ck_token_info_utc_time = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_token_info_utc_time)
       } in
     (output)
 
 let ck_attribute_rpc_aux_to_pkcs11 input =
     let output = {
         Pkcs11.type_ = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_attribute_type;
-        Pkcs11.value = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_attribute_value);
+        Pkcs11.value = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_attribute_value);
       } in
     (output)
 
 let ck_date_rpc_aux_to_pkcs11 input =
     let output = {
-        Pkcs11.year = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_date_year);
-        Pkcs11.month = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_date_month);
-        Pkcs11.day = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_date_day)
+        Pkcs11.year = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_date_year);
+        Pkcs11.month = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_date_month);
+        Pkcs11.day = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_date_day)
       } in
     (output)
 
 let ck_mechanism_rpc_aux_to_pkcs11 input =
     let output = {
         Pkcs11.mechanism = Int64.to_nativeint input.Pkcs11_rpc_aux.rpc_ck_mechanism_mechanism;
-        Pkcs11.parameter = (Pkcs11.string_to_byte_array input.Pkcs11_rpc_aux.rpc_ck_mechanism_parameter);
+        Pkcs11.parameter = (Pkcs11.string_to_char_array input.Pkcs11_rpc_aux.rpc_ck_mechanism_parameter);
       } in
     (output)
 
