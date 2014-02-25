@@ -282,7 +282,7 @@ let c_GetTokenInfo slot_id =
 let _ = Callback.register "C_GetTokenInfo" c_GetTokenInfo
 
 let c_Login handle user_type pin = 
-   let real_pin = (Pkcs11.byte_array_to_string pin) in
+   let real_pin = (Pkcs11.char_array_to_string pin) in
     let ret = Pkcs11_rpc_clnt.P.V.c_login (get_rpc_client rpc_client) (handle, user_type, real_pin) in
     ret
 let _ = Callback.register "C_Login" c_Login
@@ -324,34 +324,34 @@ let c_GetMechanismInfo slot_id mechanism_type =
 let _ = Callback.register "C_GetMechanismInfo" c_GetMechanismInfo
 
 let c_InitPIN session_handle pin = 
-   let real_pin = (Pkcs11.byte_array_to_string pin) in
+   let real_pin = (Pkcs11.char_array_to_string pin) in
    let ret = Pkcs11_rpc_clnt.P.V.c_initpin (get_rpc_client rpc_client) (session_handle, real_pin) in 
     ret
 let _ = Callback.register "C_InitPINT" c_InitPIN
 
 let c_SetPIN session_handle old_pin new_pin = 
-   let real_old_pin = (Pkcs11.byte_array_to_string old_pin) in
-   let real_new_pin = (Pkcs11.byte_array_to_string new_pin) in
+   let real_old_pin = (Pkcs11.char_array_to_string old_pin) in
+   let real_new_pin = (Pkcs11.char_array_to_string new_pin) in
    let ret = Pkcs11_rpc_clnt.P.V.c_setpin (get_rpc_client rpc_client) (session_handle, real_old_pin, real_new_pin) in 
     ret
 let _ = Callback.register "C_SetPIN" c_SetPIN
 
 let c_SeedRandom session_handle seed = 
-   let real_seed = (Pkcs11.byte_array_to_string seed) in
+   let real_seed = (Pkcs11.char_array_to_string seed) in
    let ret = Pkcs11_rpc_clnt.P.V.c_seedrandom (get_rpc_client rpc_client) (session_handle, real_seed) in 
     ret
 let _ = Callback.register "C_SeedRandom" c_SeedRandom
 
 let c_InitToken slot_id so_pin label = 
-   let real_so_pin = (Pkcs11.byte_array_to_string so_pin) in
-   let real_label = (Pkcs11.byte_array_to_string label) in
+   let real_so_pin = (Pkcs11.char_array_to_string so_pin) in
+   let real_label = (Pkcs11.char_array_to_string label) in
    let ret = Pkcs11_rpc_clnt.P.V.c_inittoken (get_rpc_client rpc_client) (slot_id, real_so_pin, real_label) in 
     ret
 let _ = Callback.register "C_InitToken" c_InitToken
 
 let c_GenerateRandom session_handle count = 
    let ret = Pkcs11_rpc_clnt.P.V.c_generaterandom (get_rpc_client rpc_client) (session_handle, count) in
-    (ret.c_generaterandom_rv , (Pkcs11.string_to_byte_array ret.c_generaterandom_data) )
+    (ret.c_generaterandom_rv , (Pkcs11.string_to_char_array ret.c_generaterandom_data) )
 let _ = Callback.register "C_GenerateRandom" c_GenerateRandom
 
 let c_FindObjectsInit session_handle attributes = 
@@ -422,13 +422,13 @@ let _ = Callback.register "C_GetObjectSize" c_GetObjectSize
 let c_WrapKey session_handle mechanism wrapping_handle wrapped_handle = 
    let real_mechanism = (ck_mechanism_pkcs11_to_rpc_aux mechanism) in
    let ret = Pkcs11_rpc_clnt.P.V.c_wrapkey (get_rpc_client rpc_client) (session_handle, real_mechanism, wrapping_handle, wrapped_handle) in 
-   (ret.c_wrapkey_rv , (Pkcs11.string_to_byte_array ret.c_wrapkey_value) )
+   (ret.c_wrapkey_rv , (Pkcs11.string_to_char_array ret.c_wrapkey_value) )
 let _ = Callback.register "C_WrapKey" c_WrapKey
 
 let c_UnwrapKey session_handle mechanism unwrapping_handle wrapped_key attributes = 
    let real_mechanism = (ck_mechanism_pkcs11_to_rpc_aux mechanism) in
    let real_attributes = (Array.map ck_attribute_pkcs11_to_rpc_aux attributes) in
-   let real_wrapped_key = (Pkcs11.byte_array_to_string wrapped_key) in 
+   let real_wrapped_key = (Pkcs11.char_array_to_string wrapped_key) in 
    let ret = Pkcs11_rpc_clnt.P.V.c_unwrapkey (get_rpc_client rpc_client) (session_handle, real_mechanism, unwrapping_handle, real_wrapped_key, real_attributes) in 
    (ret.c_unwrapkey_rv , ret.c_unwrapkey_handle )
 let _ = Callback.register "C_UnwrapKey" c_UnwrapKey
@@ -447,20 +447,20 @@ let c_DigestInit session_handle mechanism =
 let _ = Callback.register "C_DigestInit" c_DigestInit
 
 let c_Digest session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_digest (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_digest_rv , (Pkcs11.string_to_byte_array ret.c_digest_value) )
+   (ret.c_digest_rv , (Pkcs11.string_to_char_array ret.c_digest_value) )
 let _ = Callback.register "C_Digest" c_Digest
 
 let c_DigestUpdate session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_digestupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
    ret
 let _ = Callback.register "C_DigestUpdate" c_DigestUpdate
    
 let c_DigestFinal session_handle = 
    let ret = Pkcs11_rpc_clnt.P.V.c_digestfinal (get_rpc_client rpc_client) (session_handle) in
-   (ret.c_digestfinal_rv , (Pkcs11.string_to_byte_array ret.c_digestfinal_value) )
+   (ret.c_digestfinal_rv , (Pkcs11.string_to_char_array ret.c_digestfinal_value) )
 let _ = Callback.register "C_DigestFinal" c_DigestFinal
 
 let c_DigestKey session_handle object_handle = 
@@ -475,20 +475,20 @@ let c_SignInit session_handle mechanism object_handle =
 let _ = Callback.register "C_SignInit" c_SignInit
 
 let c_Sign session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_sign (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_sign_rv , (Pkcs11.string_to_byte_array ret.c_sign_value) )
+   (ret.c_sign_rv , (Pkcs11.string_to_char_array ret.c_sign_value) )
 let _ = Callback.register "C_Sign" c_Sign
 
 let c_SignUpdate session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_signupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
    ret
 let _ = Callback.register "C_SignUpdate" c_SignUpdate
    
 let c_SignFinal session_handle = 
    let ret = Pkcs11_rpc_clnt.P.V.c_signfinal (get_rpc_client rpc_client) (session_handle) in
-   (ret.c_signfinal_rv , (Pkcs11.string_to_byte_array ret.c_signfinal_value) )
+   (ret.c_signfinal_rv , (Pkcs11.string_to_char_array ret.c_signfinal_value) )
 let _ = Callback.register "C_SignFinal" c_SignFinal
 
 
@@ -499,20 +499,20 @@ let c_VerifyInit session_handle mechanism object_handle =
 let _ = Callback.register "C_VerifyInit" c_VerifyInit
 
 let c_Verify session_handle data signed_data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
-   let real_signed_data = (Pkcs11.byte_array_to_string signed_data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
+   let real_signed_data = (Pkcs11.char_array_to_string signed_data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_verify (get_rpc_client rpc_client) (session_handle, real_data, real_signed_data) in
    ret
 let _ = Callback.register "C_Verify" c_Verify
 
 let c_VerifyUpdate session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_verifyupdate (get_rpc_client rpc_client) (session_handle, real_data) in
    ret
 let _ = Callback.register "C_VerifyUpdate" c_VerifyUpdate
 
 let c_VerifyFinal session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_verifyfinal (get_rpc_client rpc_client) (session_handle, real_data) in
    ret
 let _ = Callback.register "C_VerifyFinal" c_VerifyFinal
@@ -524,20 +524,20 @@ let c_EncryptInit session_handle mechanism object_handle =
 let _ = Callback.register "C_EncryptInit" c_EncryptInit
 
 let c_Encrypt session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_encrypt (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_encrypt_rv , (Pkcs11.string_to_byte_array ret.c_encrypt_value) )
+   (ret.c_encrypt_rv , (Pkcs11.string_to_char_array ret.c_encrypt_value) )
 let _ = Callback.register "C_Encrypt" c_Encrypt
 
 let c_EncryptUpdate session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_encryptupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_encryptupdate_rv , (Pkcs11.string_to_byte_array ret.c_encryptupdate_value) )
+   (ret.c_encryptupdate_rv , (Pkcs11.string_to_char_array ret.c_encryptupdate_value) )
 let _ = Callback.register "C_EncryptUpdate" c_EncryptUpdate
 
 let c_EncryptFinal session_handle = 
    let ret = Pkcs11_rpc_clnt.P.V.c_encryptfinal (get_rpc_client rpc_client) (session_handle) in
-   (ret.c_encryptfinal_rv , (Pkcs11.string_to_byte_array ret.c_encryptfinal_value) )
+   (ret.c_encryptfinal_rv , (Pkcs11.string_to_char_array ret.c_encryptfinal_value) )
 let _ = Callback.register "C_EncryptFinal" c_EncryptFinal
 
 let c_DecryptInit session_handle mechanism object_handle = 
@@ -547,20 +547,20 @@ let c_DecryptInit session_handle mechanism object_handle =
 let _ = Callback.register "C_DecryptInit" c_DecryptInit
 
 let c_Decrypt session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_decrypt (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_decrypt_rv , (Pkcs11.string_to_byte_array ret.c_decrypt_value) )
+   (ret.c_decrypt_rv , (Pkcs11.string_to_char_array ret.c_decrypt_value) )
 let _ = Callback.register "C_Decrypt" c_Decrypt
 
 let c_DecryptUpdate session_handle data = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_decryptupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_decryptupdate_rv , (Pkcs11.string_to_byte_array ret.c_decryptupdate_value) )
+   (ret.c_decryptupdate_rv , (Pkcs11.string_to_char_array ret.c_decryptupdate_value) )
 let _ = Callback.register "C_DecryptUpdate" c_DecryptUpdate
 
 let c_DecryptFinal session_handle = 
    let ret = Pkcs11_rpc_clnt.P.V.c_decryptfinal (get_rpc_client rpc_client) (session_handle) in
-   (ret.c_decryptfinal_rv , (Pkcs11.string_to_byte_array ret.c_decryptfinal_value) )
+   (ret.c_decryptfinal_rv , (Pkcs11.string_to_char_array ret.c_decryptfinal_value) )
 let _ = Callback.register "C_DecryptFinal" c_DecryptFinal
 
 let c_SignRecoverInit session_handle mechanism object_handle = 
@@ -570,9 +570,9 @@ let c_SignRecoverInit session_handle mechanism object_handle =
 let _ = Callback.register "C_SignRecoverInit" c_SignRecoverInit
 
 let c_SignRecover session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_signrecover (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_signrecover_rv , (Pkcs11.string_to_byte_array ret.c_signrecover_value) )
+   (ret.c_signrecover_rv , (Pkcs11.string_to_char_array ret.c_signrecover_value) )
 let _ = Callback.register "C_SignRecover" c_SignRecover
 
 let c_VerifyRecoverInit session_handle mechanism object_handle = 
@@ -582,43 +582,43 @@ let c_VerifyRecoverInit session_handle mechanism object_handle =
 let _ = Callback.register "C_VerifyRecoverInit" c_VerifyRecoverInit
 
 let c_VerifyRecover session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_verifyrecover (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_verifyrecover_rv , (Pkcs11.string_to_byte_array ret.c_verifyrecover_value) )
+   (ret.c_verifyrecover_rv , (Pkcs11.string_to_char_array ret.c_verifyrecover_value) )
 let _ = Callback.register "C_VerifyRecover" c_VerifyRecover
 
 let c_DigestEncryptUpdate session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_digestencryptupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_digestencryptupdate_rv , (Pkcs11.string_to_byte_array ret.c_digestencryptupdate_value) )
+   (ret.c_digestencryptupdate_rv , (Pkcs11.string_to_char_array ret.c_digestencryptupdate_value) )
 let _ = Callback.register "C_DigestEncryptUpdate" c_DigestEncryptUpdate
 
 let c_DecryptDigestUpdate session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_decryptdigestupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_decryptdigestupdate_rv , (Pkcs11.string_to_byte_array ret.c_decryptdigestupdate_value) )
+   (ret.c_decryptdigestupdate_rv , (Pkcs11.string_to_char_array ret.c_decryptdigestupdate_value) )
 let _ = Callback.register "C_DecryptDigestUpdate" c_DecryptDigestUpdate
 
 let c_SignEncryptUpdate session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_signencryptupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_signencryptupdate_rv , (Pkcs11.string_to_byte_array ret.c_signencryptupdate_value) )
+   (ret.c_signencryptupdate_rv , (Pkcs11.string_to_char_array ret.c_signencryptupdate_value) )
 let _ = Callback.register "C_SignEncryptUpdate" c_SignEncryptUpdate
 
 let c_DecryptVerifyUpdate session_handle data  = 
-   let real_data = (Pkcs11.byte_array_to_string data) in
+   let real_data = (Pkcs11.char_array_to_string data) in
    let ret = Pkcs11_rpc_clnt.P.V.c_decryptverifyupdate (get_rpc_client rpc_client) (session_handle, real_data ) in
-   (ret.c_decryptverifyupdate_rv , (Pkcs11.string_to_byte_array ret.c_decryptverifyupdate_value) )
+   (ret.c_decryptverifyupdate_rv , (Pkcs11.string_to_char_array ret.c_decryptverifyupdate_value) )
 let _ = Callback.register "C_DecryptVerifyUpdate" c_DecryptVerifyUpdate
 
 let c_GetOperationState session_handle = 
    let ret = Pkcs11_rpc_clnt.P.V.c_getoperationstate (get_rpc_client rpc_client) (session_handle) in
-   (ret.c_getoperationstate_rv , (Pkcs11.string_to_byte_array ret.c_getoperationstate_value) )
+   (ret.c_getoperationstate_rv , (Pkcs11.string_to_char_array ret.c_getoperationstate_value) )
 let _ = Callback.register "C_GetOperationState" c_GetOperationState
 
 
 let c_SetOperationState session_handle state encryption_handle authentication_handle = 
-   let real_state = (Pkcs11.byte_array_to_string state) in
+   let real_state = (Pkcs11.char_array_to_string state) in
    let ret = Pkcs11_rpc_clnt.P.V.c_setoperationstate (get_rpc_client rpc_client) (session_handle, real_state, encryption_handle, authentication_handle) in
    ret
 let _ = Callback.register "C_SetOperationState" c_SetOperationState
