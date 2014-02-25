@@ -370,7 +370,7 @@ void init()
 #endif
   if (ret != CKR_OK) {
     fprintf(stderr, "Init failed, EXITING\n");
-    exit(-1);
+    return;
   }
 
   /* Did we manage to detect arch ? */

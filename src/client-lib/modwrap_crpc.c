@@ -478,10 +478,12 @@ ck_rv_t init_c(const char *module)
   cl = clnttcp_create(&serv_addr, P, V, &rpc_sock, 0, 0);
 #endif
 
+  /* Check RPC status */
   if (cl == NULL) {
     fprintf(stderr, "error: could not connect to server.\n");
-    exit(-1);
+    return CKR_GENERAL_ERROR;
   }
+
 #ifdef WITH_SSL
   override_net_functions(cl);
 #ifdef GNU_TLS
@@ -495,6 +497,7 @@ ck_rv_t init_c(const char *module)
 #else
     fprintf(stderr, "OpenSSL Error\n");
 #endif
+	/* This is brutal but an SSL error seems worrying enough to exit()*/
     exit(-1);
   }
 #endif				/* END WITH_SSL */
@@ -560,6 +563,11 @@ ck_rv_t myC_SetupArch_C(void)
 #ifdef DEBUG
       fprintf(stderr, "C_SetupArch calling\n");
 #endif
+  /* Check status of RPC
+   * redundant as when RPC failed, code should not be reached.
+   * We keep it to stay coherent.
+   */
+  check_rpc_status(C_SetupArch)
 
   if (((unsigned char *)&test)[0] == 0xDD) {
     /* LittleEndian */
@@ -612,13 +620,18 @@ ck_rv_t myC_LoadModule_C(const char *libname)
   opaque_data module;
   /* init_ret macro memset() the ret structure only in MT RPC case */
   init_ret
-      /* libnames are defined at compile time, so no need to check its length */
-      module.opaque_data_len = strlen(libname);
+
+  /* Check status of RPC */
+  check_rpc_status(C_Initialize)
+
+  /* libnames are defined at compile time, so no need to check its length */
+  module.opaque_data_len = strlen(libname);
   module.opaque_data_val = (char *)libname;
 
 #ifdef DEBUG
   fprintf(stderr, "C_LoadModule calling for module %s to be loaded\n", libname);
 #endif
+
 #ifdef RPCGEN_MT
   retval = c_loadmodule_3(module, &ret, cl);
 #else
@@ -653,6 +666,8 @@ ck_rv_t myC_Initialize_C(void *init_args)
 #ifdef DEBUG
       fprintf(stderr, "C_Initialize calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Initialize)
 
   /* Check for pInitArgs PTR presence */
   if (init_args != NULL) {
@@ -692,6 +707,8 @@ ck_rv_t myC_Finalize_C(void *init_args)
 #ifdef DEBUG
       fprintf(stderr, "C_Finalize calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Finalize)
 
   /* P11 Compliance */
   if (init_args != NULL) {
@@ -728,6 +745,8 @@ ck_rv_t myC_GetInfo_C(struct ck_info * output0)
 #ifdef DEBUG
       fprintf(stderr, "C_GetInfo calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetInfo)
   if (output0 == NULL) {
     return CKR_ARGUMENTS_BAD;
   }
@@ -769,6 +788,8 @@ myC_GetSlotList_C(CK_BBOOL input0, ck_slot_id_t * output2,
 #ifdef DEBUG
       fprintf(stderr, "C_GetSlotList calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetSlotList)
 
   /* P11 compliant */
   if (output3 == NULL) {
@@ -829,6 +850,8 @@ ck_rv_t myC_GetSlotInfo_C(ck_slot_id_t input0, struct ck_slot_info * output1)
 #ifdef DEBUG
       fprintf(stderr, "C_GetSlotInfo calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetSlotInfo)
 
   /* P11 compliant */
   if (output1 == NULL) {
@@ -866,6 +889,8 @@ ck_rv_t myC_GetTokenInfo_C(ck_slot_id_t input0, struct ck_token_info * output1)
 #ifdef DEBUG
       fprintf(stderr, "C_GetTokenInfo calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetTokenInfo)
 
   /* P11 compliant */
   if (output1 == NULL) {
@@ -907,6 +932,8 @@ myC_GetMechanismList_C(ck_slot_id_t input0, ck_mechanism_type_t * output2,
 #ifdef DEBUG
       fprintf(stderr, "C_GetMechanismList calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetMechanismList)
   /* P11 compliant */
   if (output3 == NULL) {
     return CKR_ARGUMENTS_BAD;
@@ -984,6 +1011,8 @@ myC_GetMechanismInfo_C(ck_slot_id_t input0, ck_mechanism_type_t input1,
 #ifdef DEBUG
       fprintf(stderr, "C_GetMechanismInfo calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetMechanismInfo)
   /* P11 compliant */
   if (output2 == NULL) {
     return CKR_ARGUMENTS_BAD;
@@ -1022,6 +1051,8 @@ myC_OpenSession_C(ck_slot_id_t input0, ck_flags_t input1, void *application,
 #ifdef DEBUG
       fprintf(stderr, "C_OpenSession calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_OpenSession)
   /* P11 compliant */
   if (output2 == NULL) {
     return CKR_ARGUMENTS_BAD;
@@ -1066,6 +1097,8 @@ ck_rv_t myC_CloseSession_C(ck_session_handle_t input0)
 #ifdef DEBUG
       fprintf(stderr, "C_CloseSession calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_CloseSession)
 #ifdef RPCGEN_MT
   retval = c_closesession_3(input0, &ret, cl);
 #else
@@ -1097,6 +1130,8 @@ ck_rv_t myC_CloseAllSessions_C(ck_slot_id_t input0)
 #ifdef DEBUG
       fprintf(stderr, "C_CloseAllSessions calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_CloseAllSessions)
 #ifdef RPCGEN_MT
   retval = c_closeallsessions_3(input0, &ret, cl);
 #else
@@ -1130,6 +1165,8 @@ myC_GetSessionInfo_C(ck_session_handle_t input0,
 #ifdef DEBUG
       fprintf(stderr, "C_GetSessionInfo calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetSessionInfo)
   /* P11 compliant */
   if (output1 == NULL) {
     return CKR_ARGUMENTS_BAD;
@@ -1169,6 +1206,8 @@ myC_FindObjectsInit_C(ck_session_handle_t input0, CK_ATTRIBUTE * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_FindObjectsInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_FindObjectsInit)
   /* P11 compliant */
   if (input1 == NULL && count > 0) {
     return CKR_ARGUMENTS_BAD;
@@ -1219,6 +1258,8 @@ myC_FindObjects_C(ck_session_handle_t input0, ck_object_handle_t * output2,
 #ifdef DEBUG
       fprintf(stderr, "C_FindObjects calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_FindObjects)
 
 #ifdef RPCGEN_MT
   retval = c_findobjects_3(input0, input1, &ret, cl);
@@ -1269,6 +1310,8 @@ ck_rv_t myC_FindObjectsFinal_C(ck_session_handle_t input0)
 #ifdef DEBUG
       fprintf(stderr, "C_FindObjectsFinal calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_FindObjectsFinal)
 #ifdef RPCGEN_MT
   retval = c_findobjectsfinal_3(input0, &ret, cl);
 #else
@@ -1314,6 +1357,8 @@ myC_InitToken_C(ck_slot_id_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_InitToken calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_InitToken)
 #ifdef RPCGEN_MT
   retval = c_inittoken_3(input0, sopin, label, &ret, cl);
 #else
@@ -1349,6 +1394,8 @@ myC_Login_C(ck_session_handle_t input0, ck_user_type_t input1,
 #ifdef DEBUG
   fprintf(stderr, "C_Login calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Login)
 #ifdef RPCGEN_MT
   retval = c_login_3(input0, input1, pin, &ret, cl);
 #else
@@ -1379,6 +1426,8 @@ ck_rv_t myC_Logout_C(ck_session_handle_t input0)
 #ifdef DEBUG
       fprintf(stderr, "C_Logout calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Logout)
 #ifdef RPCGEN_MT
   retval = c_logout_3(input0, &ret, cl);
 #else
@@ -1420,6 +1469,8 @@ myC_InitPIN_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_InitPIN calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_InitPIN)
 #ifdef RPCGEN_MT
   retval = c_initpin_3(input0, pin, &ret, cl);
 #else
@@ -1471,6 +1522,8 @@ myC_SetPIN_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_SetPIN calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SetPIN)
 #ifdef RPCGEN_MT
   retval = c_setpin_3(input0, oldpin, newpin, &ret, cl);
 #else
@@ -1548,6 +1601,8 @@ myC_DigestInit_C(ck_session_handle_t input0, struct ck_mechanism * input1)
 #ifdef DEBUG
       fprintf(stderr, "C_DigestInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DigestInit)
   custom_sanitize_ck_mechanism(input1);
 
   /* Check to make sure we cannot initialize before fetching the result
@@ -1603,6 +1658,8 @@ myC_Digest_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_Digest calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Digest)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -1646,6 +1703,8 @@ myC_DigestUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_DigestUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DigestUpdate)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -1685,6 +1744,8 @@ myC_DigestFinal_C(ck_session_handle_t input0, unsigned char *output1,
 #ifdef DEBUG
       fprintf(stderr, "C_DigestFinal calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DigestFinal)
 
   /* Avoid potential NULL_PTR dereference */
   if (output1_len == NULL) {
@@ -1728,6 +1789,8 @@ ck_rv_t myC_DigestKey_C(ck_session_handle_t input0, ck_object_handle_t input1)
 #ifdef DEBUG
       fprintf(stderr, "C_DigestKey calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DigestKey)
 
 #ifdef RPCGEN_MT
   retval = c_digestkey_3(input0, input1, &ret, cl);
@@ -1764,6 +1827,8 @@ myC_SeedRandom_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_SeedRandom calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SeedRandom)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -1802,6 +1867,8 @@ myC_GenerateRandom_C(ck_session_handle_t input0, unsigned char *output2,
 #ifdef DEBUG
       fprintf(stderr, "C_GenerateRandom calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GenerateRandom)
   if (output2 == NULL) {
     return CKR_ARGUMENTS_BAD;
   }
@@ -1843,6 +1910,8 @@ myC_SignRecoverInit_C(ck_session_handle_t input0,
 #ifdef DEBUG
       fprintf(stderr, "C_SignRecoverInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SignRecoverInit)
   custom_sanitize_ck_mechanism(input1);
 
   /* Check to make sure we cannot initialize before fetching the result
@@ -1890,6 +1959,8 @@ myC_SignInit_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_SignInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SignInit)
   custom_sanitize_ck_mechanism(input1);
 
   /* Check to make sure we cannot initialize before fetching the result
@@ -1945,6 +2016,8 @@ myC_Sign_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_Sign calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Sign)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -1989,6 +2062,8 @@ myC_SignUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_SignUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SignUpdate)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -2028,6 +2103,8 @@ myC_SignFinal_C(ck_session_handle_t input0, unsigned char *output1,
 #ifdef DEBUG
       fprintf(stderr, "C_SignFinal calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SignFinal)
 
   /* Avoid potential NULL_PTR dereference */
   if (output1_len == NULL) {
@@ -2074,6 +2151,8 @@ myC_VerifyRecoverInit_C(ck_session_handle_t input0,
 #ifdef DEBUG
       fprintf(stderr, "C_VerifyRecoverInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_VerifyRecoverInit)
   custom_sanitize_ck_mechanism(input1);
 
   /* Check to make sure we cannot initialize before fetching the result
@@ -2122,6 +2201,8 @@ myC_VerifyInit_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_VerifyInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_VerifyInit)
   custom_sanitize_ck_mechanism(input1);
   serialize_rpc_ck_mechanism(input1, &mechanism);
 
@@ -2163,6 +2244,8 @@ myC_Verify_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_Verify calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Verify)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -2205,6 +2288,8 @@ myC_VerifyUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_VerifyUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_VerifyUpdate)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -2244,6 +2329,8 @@ myC_VerifyFinal_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_VerifyFinal calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_VerifyFinal)
 
   signature.opaque_data_len = input1_len;
   signature.opaque_data_val = (char *)input1;
@@ -2283,6 +2370,8 @@ myC_EncryptInit_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_EncryptInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_EncryptInit)
   custom_sanitize_ck_mechanism(input1);
 
   /* Check to make sure we cannot initialize before fetching the result
@@ -2337,6 +2426,8 @@ myC_Encrypt_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_Encrypt calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Encrypt)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -2388,6 +2479,8 @@ myC_EncryptUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_EncryptUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_EncryptUpdate)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -2432,6 +2525,8 @@ myC_EncryptFinal_C(ck_session_handle_t input0, unsigned char *output1,
 #ifdef DEBUG
       fprintf(stderr, "C_EncryptFinal calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_EncryptFinal)
 
   /* Avoid potential NULL_PTR dereference */
   if (output1_len == NULL) {
@@ -2478,6 +2573,8 @@ myC_DecryptInit_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_DecryptInit calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DecryptInit)
   custom_sanitize_ck_mechanism(input1);
 
   /* Check to make sure we cannot initialize before fetching the result
@@ -2532,6 +2629,8 @@ myC_Decrypt_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_Decrypt calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_Decrypt)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -2583,6 +2682,8 @@ myC_DecryptUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
   fprintf(stderr, "C_DecryptUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DecryptUpdate)
 
   data.opaque_data_len = input1_len;
   data.opaque_data_val = (char *)input1;
@@ -2626,6 +2727,8 @@ myC_DecryptFinal_C(ck_session_handle_t input0, unsigned char *output1,
 #ifdef DEBUG
       fprintf(stderr, "C_DecryptFinal calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DecryptFinal)
 
   /* Avoid potential NULL_PTR dereference */
   if (output1_len == NULL) {
@@ -2673,6 +2776,8 @@ myC_SetAttributeValue_C(ck_session_handle_t input0,
 #ifdef DEBUG
       fprintf(stderr, "C_SetAttributeValue calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SetAttributeValue)
   if (input2 == NULL) {
     return CKR_ARGUMENTS_BAD;
   } else {
@@ -2713,6 +2818,8 @@ myC_GetObjectSize_C(ck_session_handle_t input0, ck_object_handle_t input1,
 #ifdef DEBUG
       fprintf(stderr, "C_GetObjectSize calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetObjectSize)
 
 #ifdef RPCGEN_MT
   retval = c_getobjectsize_3(input0, input1, &ret, cl);
@@ -2749,6 +2856,8 @@ myC_GetOperationState_C(ck_session_handle_t input0, unsigned char *output1,
 #ifdef DEBUG
       fprintf(stderr, "C_GetOperationState calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetOperationState)
 
   /* Avoid potential NULL_PTR dereference */
   if (output1_len == NULL) {
@@ -2795,6 +2904,8 @@ myC_SetOperationState_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_SetOperationState calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SetOperationState)
 
   state.opaque_data_len = input1_len;
   state.opaque_data_val = (char *)input1;
@@ -2836,6 +2947,8 @@ myC_WrapKey_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_WrapKey calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_WrapKey)
 
   custom_sanitize_ck_mechanism(input1);
   serialize_rpc_ck_mechanism(input1, &mechanism);
@@ -2890,6 +3003,8 @@ myC_UnwrapKey_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_UnwrapKey calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_UnwrapKey)
 
   custom_sanitize_ck_mechanism(input1);
   serialize_rpc_ck_mechanism(input1, &mechanism);
@@ -2939,6 +3054,8 @@ myC_DeriveKey_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_DeriveKey calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DeriveKey)
 
   custom_sanitize_ck_mechanism(input1);
   serialize_rpc_ck_mechanism(input1, &mechanism);
@@ -2984,6 +3101,8 @@ myC_GenerateKey_C(ck_session_handle_t input0, struct ck_mechanism * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_GenerateKey calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GenerateKey)
 
   custom_sanitize_ck_mechanism(input1);
   serialize_rpc_ck_mechanism(input1, &mechanism);
@@ -3032,6 +3151,8 @@ myC_GenerateKeyPair_C(ck_session_handle_t input0,
 #ifdef DEBUG
       fprintf(stderr, "C_GenerateKeyPairPair calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GenerateKeyPairPair)
 
   custom_sanitize_ck_mechanism(input1);
   serialize_rpc_ck_mechanism(input1, &mechanism);
@@ -3082,6 +3203,8 @@ myC_CreateObject_C(ck_session_handle_t input0, CK_ATTRIBUTE * input1,
 #ifdef DEBUG
       fprintf(stderr, "C_CreateObject calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_CreateObject)
 
   serialize_rpc_ck_attribute_array(input1, count, &attributes);
 
@@ -3123,6 +3246,8 @@ myC_CopyObject_C(ck_session_handle_t input0, ck_object_handle_t input1,
 #ifdef DEBUG
       fprintf(stderr, "C_CopyObject calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_CopyObject)
 
   serialize_rpc_ck_attribute_array(input2, count, &attributes);
 
@@ -3161,6 +3286,8 @@ myC_DestroyObject_C(ck_session_handle_t input0, ck_object_handle_t input1)
 #ifdef DEBUG
       fprintf(stderr, "C_DestroyObject calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DestroyObject)
 
 #ifdef RPCGEN_MT
   retval = c_destroyobject_3(input0, input1, &ret, cl);
@@ -3193,6 +3320,8 @@ ck_rv_t myC_GetFunctionStatus_C(ck_session_handle_t input0)
 #ifdef DEBUG
       fprintf(stderr, "C_GetFunctionStatus calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_GetFunctionStatus)
 
 #ifdef RPCGEN_MT
   retval = c_getfunctionstatus_3(input0, &ret, cl);
@@ -3225,6 +3354,8 @@ ck_rv_t myC_CancelFunction_C(ck_session_handle_t input0)
 #ifdef DEBUG
       fprintf(stderr, "C_CancelFunction calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_CancelFunction)
 
 #ifdef RPCGEN_MT
   retval = c_cancelfunction_3(input0, &ret, cl);
@@ -3259,6 +3390,8 @@ myC_WaitForSlotEvent_C(ck_flags_t input0, ck_slot_id_t * output1,
 #ifdef DEBUG
       fprintf(stderr, "C_WaitForSlotEvent calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_WaitForSlotEvent)
 
   /* P11 compliant */
   if (reserved != NULL) {
@@ -3301,6 +3434,8 @@ myC_VerifyRecover_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_VerifyRecover calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_VerifyRecover)
 
   /* Avoid potential NULL_PTR dereference */
   if (output2_len == NULL) {
@@ -3352,6 +3487,8 @@ myC_SignRecover_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_SignRecover calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SignRecover)
 
   /* Avoid potential NULL_PTR dereference */
   if (output2_len == NULL) {
@@ -3403,6 +3540,8 @@ myC_DigestEncryptUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_DigestEncryptUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DigestEncryptUpdate)
 
   /* Avoid potential NULL_PTR dereference */
   if (output2_len == NULL) {
@@ -3454,6 +3593,8 @@ myC_SignEncryptUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_SignEncryptUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_SignEncryptUpdate)
 
   /* Avoid potential NULL_PTR dereference */
   if (output2_len == NULL) {
@@ -3505,6 +3646,8 @@ myC_DecryptDigestUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_DecryptDigestUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DecryptDigestUpdate)
 
   /* Avoid potential NULL_PTR dereference */
   if (output2_len == NULL) {
@@ -3556,6 +3699,8 @@ myC_DecryptVerifyUpdate_C(ck_session_handle_t input0, unsigned char *input1,
 #ifdef DEBUG
       fprintf(stderr, "C_DecryptVerifyUpdate calling\n");
 #endif
+    /* Check status of RPC */
+    check_rpc_status(C_DecryptVerifyUpdate)
 
   /* Avoid potential NULL_PTR dereference */
   if (output2_len == NULL) {
