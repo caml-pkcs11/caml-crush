@@ -82,6 +82,7 @@
     File:    src/client-lib/modwrap.h
 
 -------------------------- CeCILL-B HEADER ----------------------------------*/
+#ifdef CAMLRPC
 #include <stddef.h>
 #include <string.h>
 #include <caml/mlvalues.h>
@@ -94,6 +95,7 @@
 #include <caml/bigarray.h>
 #endif
 #include <caml/camlidlruntime.h>
+#endif
 
 #include <stdio.h>
 #include <pthread.h>
@@ -957,6 +959,7 @@ p11_request_struct *check_operation_active_in_filtering_list(ck_session_handle_t
 							     unsigned long
 							     operation_type);
 void custom_sanitize_ck_mechanism(struct ck_mechanism *mech);
+#ifdef CAMLRPC
 value custom_c2ml_pkcs11_struct_ck_mechanism(struct ck_mechanism *_c1,
 					     camlidl_ctx _ctx);
 value custom_pkcs11_c2ml_buffer_to_ck_attribute_array(struct ck_attribute
@@ -978,6 +981,7 @@ value custom_pkcs11_c2ml_buffer_to_char_array(unsigned char *array,
 int custom_pkcs11_ml2c_char_array_to_buffer(value _v_data,
 					    unsigned char *array,
 					    unsigned long *array_len);
+#endif
 
 void init(void);
 ck_rv_t init_ml(const char *);
