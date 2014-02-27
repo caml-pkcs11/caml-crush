@@ -618,13 +618,15 @@ val match_cKS_value : nativeint -> string
 
 val match_cKU_value : nativeint -> string
 
+val match_cKO_value : nativeint -> string
+
 val string_to_cKM_value : string -> nativeint
 
 (* Helpers for strings and char arrays *)
 
-val string_to_byte_array : string -> char array
+val string_to_char_array : string -> char array
 
-val byte_array_to_string : char array -> string
+val char_array_to_string : char array -> string
 
 val print_int_array : nativeint array -> unit
 
@@ -643,6 +645,16 @@ val hexchar_to_int : char -> nativeint
 val merge_nibbles : char -> char -> char
 
 val pack : string -> string
+
+val sprint_hex_array : char array -> string
+
+val bool_to_char_array : nativeint -> char array
+
+val char_array_to_bool : char array -> nativeint
+
+val sprint_bool_attribute_value : nativeint -> string
+
+val sprint_template_array : ck_attribute array -> string
 
 external mL_CK_C_Daemonize : char array -> ck_rv_t
 	= "camlidl_pkcs11_ML_CK_C_Daemonize"
@@ -854,8 +866,11 @@ external mL_CK_C_GetFunctionStatus : ck_session_handle_t -> ck_rv_t
 external mL_CK_C_CancelFunction : ck_session_handle_t -> ck_rv_t
 	= "camlidl_pkcs11_ML_CK_C_CancelFunction"
 
-external int_to_ulong_byte_array : nativeint -> char array
-	= "camlidl_pkcs11_int_to_ulong_byte_array"
+external int_to_ulong_char_array : nativeint -> char array
+	= "camlidl_pkcs11_int_to_ulong_char_array"
+
+external char_array_to_ulong : char array -> nativeint
+	= "camlidl_pkcs11_char_array_to_ulong"
 
 val c_Daemonize : char array -> ck_rv_t
 val c_SetupArch : nativeint -> ck_rv_t

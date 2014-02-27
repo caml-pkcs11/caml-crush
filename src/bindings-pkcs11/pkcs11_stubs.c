@@ -5441,7 +5441,6 @@ value camlidl_pkcs11_ML_CK_C_GetOperationState(value _v_session)
   value _vres[2] = { 0, 0, };
 
   camlidl_ml2c_pkcs11_ck_session_handle_t(_v_session, &session, _ctx);
-  data = camlidl_malloc(*data_len * sizeof(unsigned char), _ctx);
   _res = ML_CK_C_GetOperationState(session, &data, data_len);
 /* We add this because of possible shadow warning  */
 /* (this is not our code: these are camlidl macros)*/
@@ -5538,7 +5537,7 @@ value camlidl_pkcs11_ML_CK_C_CancelFunction(value _v_session)
   return _vres;
 }
 
-value camlidl_pkcs11_int_to_ulong_byte_array(value _v_input)
+value camlidl_pkcs11_int_to_ulong_char_array(value _v_input)
 {
   unsigned long input;		/*in */
   unsigned char *data;		/*out */
@@ -5550,12 +5549,35 @@ value camlidl_pkcs11_int_to_ulong_byte_array(value _v_input)
   camlidl_ctx _ctx = &_ctxs;
   input = custom_int_val(_v_input);
   data = camlidl_malloc(sizeof(unsigned long) * sizeof(unsigned char), _ctx);
-  int_to_ulong_byte_array(input, data);
+  int_to_ulong_char_array(input, data);
   _vres = camlidl_alloc(sizeof(unsigned long), 0);
   for (_c1 = 0; _c1 < sizeof(unsigned long); _c1++) {
     _v2 = Val_int(data[_c1]);
     modify(&Field(_vres, _c1), _v2);
   }
+  camlidl_free(_ctx);
+  return _vres;
+}
+
+value camlidl_pkcs11_char_array_to_ulong(value _v_data)
+{
+  unsigned char *data;		/*in */
+  unsigned long output;		/*out */
+  mlsize_t _c1;
+  mlsize_t _c2;
+  value _v3;
+  value _vres;
+
+  struct camlidl_ctx_struct _ctxs = { CAMLIDL_TRANSIENT, NULL };
+  camlidl_ctx _ctx = &_ctxs;
+  _c1 = Wosize_val(_v_data);
+  data = camlidl_malloc(_c1 * sizeof(unsigned char), _ctx);
+  for (_c2 = 0; _c2 < _c1; _c2++) {
+    _v3 = Field(_v_data, _c2);
+    data[_c2] = Int_val(_v3);
+  }
+  char_array_to_ulong(data, _c1, &output);
+  _vres = custom_copy_int(output);
   camlidl_free(_ctx);
   return _vres;
 }

@@ -1521,11 +1521,11 @@ let match_cKC_value a = match a with
 | 2n -> "cKC_WTLS"
 | 2147483648n -> "cKC_VENDOR_DEFINED"
 | _ -> "cKC_UNKNOWN!"
-let byte_array_to_string = fun a -> let s = String.create (Array.length a) in
+let char_array_to_string = fun a -> let s = String.create (Array.length a) in
 
   Array.iteri (fun i x -> String.set s i x) a; s;;
 
-let string_to_byte_array = fun s -> Array.init (String.length s) (fun i -> s.[i]);;
+let string_to_char_array = fun s -> Array.init (String.length s) (fun i -> s.[i]);;
 
 let print_int_array = fun a -> Printf.printf "'"; Array.iter (fun str -> Printf.printf "%s " (Nativeint.to_string str)) a; Printf.printf "'\n";;
 let print_char_array = fun a -> Printf.printf "'"; Array.iter (Printf.printf "%c") a; Printf.printf "'\n";;
@@ -1599,6 +1599,48 @@ let pack hexstr =
           )
      done;
      (res);;
+let sprint_hex_array myarray =
+  let s = Array.fold_left (
+    fun a elem -> Printf.sprintf "%s%02x" a (int_of_char elem);
+  ) "'" myarray in
+  (Printf.sprintf "%s'" s)
+
+let bool_to_char_array boolean_attribute =
+  if compare boolean_attribute cK_FALSE = 0 then
+    ([| (Char.chr 0) |])
+  else
+    ([| (Char.chr 1) |])
+
+let char_array_to_bool char_array =
+  let check = Array.fold_left (
+    fun curr_check elem ->
+      if compare elem (Char.chr 0) = 0 then
+        (curr_check || false)
+      else
+        (curr_check || true)
+    ) false char_array in
+  if compare check false = 0 then
+    (cK_FALSE)
+  else
+    (cK_TRUE)
+
+let sprint_bool_attribute_value attribute_value =
+  if compare attribute_value cK_TRUE = 0 then
+    ("TRUE")
+  else
+    if compare attribute_value cK_FALSE = 0 then
+      ("FALSE")
+    else
+      ("UNKNOWN!")
+
+let sprint_template_array template_array =
+  let string_ = Array.fold_left
+    (fun curr_string templ ->
+       let s1 = Printf.sprintf "(%s, " (match_cKA_value templ.type_) in
+       let s2 = Printf.sprintf "%s) " (sprint_hex_array templ.value) in
+       (String.concat "" [curr_string; s1; s2])
+  ) "" template_array in
+  (string_)
 external mL_CK_C_Daemonize : char array -> ck_rv_t
 	= "camlidl_pkcs11_ML_CK_C_Daemonize"
 
@@ -1809,8 +1851,11 @@ external mL_CK_C_GetFunctionStatus : ck_session_handle_t -> ck_rv_t
 external mL_CK_C_CancelFunction : ck_session_handle_t -> ck_rv_t
 	= "camlidl_pkcs11_ML_CK_C_CancelFunction"
 
-external int_to_ulong_byte_array : nativeint -> char array
-	= "camlidl_pkcs11_int_to_ulong_byte_array"
+external int_to_ulong_char_array : nativeint -> char array
+	= "camlidl_pkcs11_int_to_ulong_char_array"
+
+external char_array_to_ulong : char array -> nativeint
+	= "camlidl_pkcs11_char_array_to_ulong"
 
 let c_Daemonize = fun param -> mL_CK_C_Daemonize param
 let c_SetupArch = fun arch -> mL_CK_C_SetupArch arch
