@@ -163,7 +163,7 @@ quote(H, "#endif");
 
 quote(H,
       "/* To handle nativeint versus int64 for native bindings versus RPC ocaml client */");
-quote(H, "#ifdef OCAML_RPC_CLIENT");
+quote(H, "#ifdef CAMLRPC");
 quote(H, "#define custom_copy_int(input) copy_int64((input))");
 quote(H, "#define custom_int_val(input) Int64_val((input))");
 quote(H, "#else");
@@ -3316,6 +3316,8 @@ void char_array_to_ulong([in]unsigned char data[],
                              [nativeint, out]unsigned long output);
 
 /* pkcs11_stubs.c */
+quote(H,"/* Avoid declaring caml stuff when sharing this header with C rpc client code */");
+quote(H,"#if !defined(CRPC)");
 quote(H,
       "void camlidl_ml2c_pkcs11_ck_flags_t(value _v1, ck_flags_t *_c2, camlidl_ctx _ctx);");
 quote(H,
@@ -3685,6 +3687,7 @@ quote(H,
 quote(H,
       "int encode_ck_attribute_arch(struct ck_attribute *, struct ck_attribute *);");
 quote(H, "#endif");
+quote(H, "#endif /* !CRPC */");
 
 quote(C, "#ifdef SERVER_ROLE");
 quote(C,

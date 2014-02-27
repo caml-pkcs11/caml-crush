@@ -168,7 +168,7 @@ extern void *custom_malloc(size_t size);
 extern void custom_free(void **to_free);
 #endif
 /* To handle nativeint versus int64 for native bindings versus RPC ocaml client */
-#ifdef OCAML_RPC_CLIENT
+#ifdef CAMLRPC
 #define custom_copy_int(input) copy_int64((input))
 #define custom_int_val(input) Int64_val((input))
 #else
@@ -693,6 +693,9 @@ extern void int_to_ulong_char_array( /*in */ unsigned long input,	/*out */
 extern void char_array_to_ulong( /*in */ unsigned char *data,	/*in */
 				size_t data_size,	/*out */
 				unsigned long *output);
+
+/* Avoid declaring caml stuff when sharing this header with C rpc client code */
+#if !defined(CRPC)
 void camlidl_ml2c_pkcs11_ck_flags_t(value _v1, ck_flags_t * _c2,
 				    camlidl_ctx _ctx);
 value camlidl_c2ml_pkcs11_ck_flags_t(ck_flags_t * _c2, camlidl_ctx _ctx);
@@ -1038,6 +1041,7 @@ value camlidl_pkcs11_char_array_to_ulong(value _v_data);
 int decode_ck_attribute_arch(value, struct ck_attribute *, camlidl_ctx);
 int encode_ck_attribute_arch(struct ck_attribute *, struct ck_attribute *);
 #endif
+#endif				/* !CRPC */
 #ifdef _WIN32
 #pragma pack(pop)
 #endif
