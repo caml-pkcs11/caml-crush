@@ -77,6 +77,9 @@
     File:    src/rpc-pkcs11/pkcs11_rpc.x
 
 -------------------------- CeCILL-B HEADER ----------------------------------*/
+#ifdef RPC_HDR
+%extern CLIENT *cl;
+#endif
 typedef hyper pkcs11_int;
 
 typedef pkcs11_int rpc_ck_rv_t;

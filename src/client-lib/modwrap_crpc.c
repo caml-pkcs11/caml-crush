@@ -363,7 +363,7 @@ void free_rpc_ck_mechanism(rpc_ck_mechanism * in)
 
 /* ------------------------------*/
 /*    RPC C PKCS#11 functions    */
-static CLIENT *cl = NULL;
+CLIENT *cl = NULL;
 
 /* TCP socket type */
 #ifdef TCP_SOCKET

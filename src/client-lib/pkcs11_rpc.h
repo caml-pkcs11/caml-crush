@@ -98,6 +98,8 @@
 extern "C" {
 #endif
 
+  extern CLIENT *cl;
+
   typedef quad_t pkcs11_int;
 
   typedef pkcs11_int rpc_ck_rv_t;
