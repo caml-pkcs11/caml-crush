@@ -870,6 +870,9 @@ struct ck_function_list {
   CK_C_CancelFunction C_CancelFunction;
   CK_C_WaitForSlotEvent C_WaitForSlotEvent;
 };
+#if defined(_WIN32) || defined(CRYPTOKI_FORCE_WIN32)
+#pragma pack(pop, cryptoki)
+#endif
 
 /* ----------- LINKED LIST ---------- */
 /* Linked structure */
