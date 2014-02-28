@@ -1,0 +1,80 @@
+#Define target systems
+APPVER = 6.1
+TARGETOS = WINNT
+
+#You need to add the include directory to win32.mak
+# for instance (set include=%include%;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include)
+
+#To compile the Debug version: nmake /f Makefile.Win32
+#To compile the Release version: nmake /f Makefile.Win32 nodebug=1
+#We have to include Windows specific helpers (cvarsmt, cdebug, etc)
+!include <win32.mak>
+
+#Path to ONC-RPC library and generated STATIC lib file.
+#WARNING: your oncrpc.lib have to match your build configuration (Debug/Release), otherwise it will fail
+#Please download and compile your own (<add project URL>)
+RPC_INC=C:\Users\dev\Desktop\oncrpc-win32\win32\include
+RPC_LIB=C:\Users\dev\Desktop\oncrpc-win32\win32\bin\oncrpc.lib
+
+#Local include directory
+BINDING_INC=..\bindings-pkcs11
+ 
+# Output LIB
+CLIENTLIB=libp11client
+
+#We need to define ONCRPC_STATIC to get the correct function declaration
+#Modify SOCKET_PATH LIBNAME to your convenience
+LCFLAGS=-I$(RPC_INC) -I$(BINDING_INC) -I. \
+	-DONCRPC_STATIC\
+	-DCRPC \
+	-DTCP_SOCKET  -DSOCKET_PATH=192.168.39.30:4444\
+	-DLIBNAME=softhsm
+
+LINK_FLAGS=$(RPC_LIB)
+
+CC=cl
+
+TARGETS=prepare $(CLIENTLIB).dll restore
+TRASH=*.pdb *.lib *.exp *.idb *.manifest
+
+CLIENT_OBJ =  \
+    pkcs11_rpc_xdr.obj \
+	pkcs11_rpc_clnt.obj \
+	modwrap.obj \
+	modwrap_crpc.obj \
+	modwrap_crpc_ssl.obj \
+    $(NULL)
+
+.SUFFIXES: .c .obj .OBJ .rc .res .Obj .dll
+
+#The $(cvarsmt) indicates to link with the local C Runtime, we
+# do not use $(cvarsdll) to avoid linking to MSVCRT (shipping redistribuable DLL).
+.c.obj:
+	$(CC) $(LCFLAGS) $(cdebug) $(cflags) $(cvarsmt) $<
+	
+.rc.res:
+	rc $(DEFINES) $<
+
+all:	$(TARGETS)
+
+clean:
+	del  $(TARGETS) $(CLIENT_OBJ) $(TRASH)
+
+#prepare and restore target simply patch (bad structure packing due to camlidl) and restore
+# when the compilation is done.
+# An encoded command to perform a "sed" is used due to nmake limitations
+# it is simply $command = "cat ..\bindings-pkcs11\pkcs11.h.old| %{ `$_ -replace ""push,8"", ""push,1""} | Out-file ..\bindings-pkcs11\pkcs11.h)"
+# see powershell.exe /? to see how the command was encoded
+prepare:
+	move ..\bindings-pkcs11\pkcs11.h ..\bindings-pkcs11\pkcs11.h.old
+	Powershell -EncodedCommand YwBhAHQAIAAuAC4AXABiAGkAbgBkAGkAbgBnAHMALQBwAGsAYwBzADEAMQBcAHAAawBjAHMAMQAxAC4AaAAuAG8AbABkAHwAIAAlAHsAIAAkAF8AIAAtAHIAZQBwAGwAYQBjAGUAIAAiAHAAdQBzAGgALAA4ACIALAAgACIAcAB1AHMAaAAsADEAIgB9ACAAfAAgAE8AdQB0AC0AZgBpAGwAZQAgAC4ALgBcAGIAaQBuAGQAaQBuAGcAcwAtAHAAawBjAHMAMQAxAFwAcABrAGMAcwAxADEALgBoAA==
+restore:
+	move ..\bindings-pkcs11\pkcs11.h.old ..\bindings-pkcs11\pkcs11.h
+
+#Compile and link
+$(CLIENTLIB).dll: $(CLIENT_OBJ) $(LINK_FLAGS)
+	link /OUT:$*.dll $(CLIENT_OBJ) $(ldebug) $(dlllflags) $(conlibsdll) $(LINK_FLAGS)
+	if EXIST $*.dll.manifest mt -manifest $*.dll.manifest -outputresource:$*.dll;2
+!IF "$(_NMAKE_VER)" >= "8.00" 
+	mt.exe -manifest $(CLIENTLIB).dll.manifest -outputresource:"$(CLIENTLIB).dll;2"
+!ENDIF

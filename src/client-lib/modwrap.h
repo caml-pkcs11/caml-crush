@@ -98,8 +98,13 @@
 #endif
 
 #include <stdio.h>
+#ifndef WIN32
 #include <pthread.h>
 #include <unistd.h>
+#endif
+
+/* Only meaningful for WIN32 */
+#define CRYPTOKI_EXPORTS
 
 #include "helpers_pkcs11.h"
 
@@ -253,7 +258,11 @@
 
 /* gethostbyname include */
 #ifdef TCP_SOCKET
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <netdb.h>
+#endif
 #define MAX_HOSTNAME_LEN 1024
 #endif
 
@@ -917,6 +926,15 @@ enum op_types {
 /* Size allocated to keep data in linked list */
 /* TODO: try to do a better job than allocating a huge chunk */
 #define MAX_BUFF_LEN                    2048
+
+/* Wrap around pthread for Windows as we do not want
+ * the pthread dependency on this platform */
+#ifdef WIN32
+typedef CRITICAL_SECTION pthread_mutex_t;
+void pthread_mutex_init(LPCRITICAL_SECTION mutex, void *useless);
+void pthread_mutex_lock(LPCRITICAL_SECTION mutex);
+void pthread_mutex_unlock(LPCRITICAL_SECTION mutex);
+#endif
 
 /* ----------- GLOBAL MUTEX ---------- */
 /* Global mutex to avoid concurrency issues */

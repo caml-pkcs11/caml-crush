@@ -375,6 +375,16 @@ void parse_socket_path(const char *socket_path, struct sockaddr_in *serv_addr)
   char *copy;
   int i = 0;
   int port = 0;
+#ifdef WIN32
+  WSADATA wsaData;
+  /* Initialize Winsock, version 2.2 */
+  int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if (iResult != 0) {
+    fprintf(stderr, "WSAStartup failed: %d\n", iResult);
+    WSACleanup();
+    exit(-1);
+  }
+#endif
 
   /* copy input string */
   copy = custom_malloc(strnlen(socket_path, MAX_HOSTNAME_LEN) + 1);
@@ -390,6 +400,9 @@ void parse_socket_path(const char *socket_path, struct sockaddr_in *serv_addr)
 	if (copy != NULL) {
 	  custom_free((void **)&(copy));
 	}
+#ifdef WIN32
+    WSACleanup();
+#endif
 	exit(-1);
       }
       /* copy the resulting host entry in socket */
@@ -404,6 +417,9 @@ void parse_socket_path(const char *socket_path, struct sockaddr_in *serv_addr)
 	if (copy != NULL) {
 	  custom_free((void **)&(copy));
 	}
+#ifdef WIN32
+    WSACleanup();
+#endif
 	exit(-1);
       }
       serv_addr->sin_port = htons(port);
@@ -415,6 +431,9 @@ void parse_socket_path(const char *socket_path, struct sockaddr_in *serv_addr)
       if (copy != NULL) {
 	custom_free((void **)&(copy));
       }
+#ifdef WIN32
+    WSACleanup();
+#endif
       exit(-1);
     }
     token = strtok(NULL, ":");
@@ -424,6 +443,11 @@ void parse_socket_path(const char *socket_path, struct sockaddr_in *serv_addr)
   if (copy != NULL) {
     custom_free((void **)&(copy));
   }
+#ifdef WIN32
+  if(WSACleanup()){
+    fprintf(stderr, "error: WSACleanup failed %d\n", WSAGetLastError());
+  }
+#endif
   return;
 }
 #endif
@@ -475,6 +499,12 @@ ck_rv_t init_c(const char *module)
   custom_free((void **)&(serv_addr));
 #endif
 #elif TCP_SOCKET
+#ifdef WIN32
+  /* This init call initialize Windows sockets */
+  if(rpc_nt_init() != 0){
+    fprintf(stderr, "error: could not initialize Windows sockets.\n");
+  }
+#endif
   cl = clnttcp_create(&serv_addr, P, V, &rpc_sock, 0, 0);
 #endif
 
@@ -542,6 +572,12 @@ void destroy_c()
 #endif
     clnt_destroy(cl);
   }
+#ifdef WIN32
+  /* This allow the Windows socket to be properly closed */
+  if(rpc_nt_exit() != 0){
+    fprintf(stderr, "error: could not cleanup WSA context\n");
+  }
+#endif
   return;
 }
 

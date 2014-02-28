@@ -78,6 +78,10 @@
 
 -------------------------- CeCILL-B HEADER ----------------------------------*/
 #ifdef RPC_HDR
+%#ifdef WIN32
+%#include <stdint.h>
+%#define quad_t int64_t
+%#endif
 %extern CLIENT *cl;
 #endif
 typedef hyper pkcs11_int;

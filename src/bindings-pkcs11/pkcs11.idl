@@ -133,7 +133,7 @@ quote(H, "void* custom_malloc(size_t size);");
 quote(H, "void custom_free(void** to_free);");
 quote(H, "");
 quote(H, "/* Custom malloc to fail on malloc error */");
-quote(H, "inline void* custom_malloc(size_t size){");
+quote(H, "void* custom_malloc(size_t size){");
 quote(H, "  void* returned_pointer = (void*)malloc(size);");
 quote(H, "  if(returned_pointer == NULL){");
 quote(H, "#ifdef DEBUG");
@@ -144,7 +144,7 @@ quote(H, "  }");
 quote(H, "  return returned_pointer;");
 quote(H, "}");
 quote(H, "/* Custom free to force NULL on variables */");
-quote(H, "inline void custom_free(void** to_free){");
+quote(H, "void custom_free(void** to_free){");
 quote(H, "  if(*to_free == NULL){");
 quote(H, "#ifdef DEBUG");
 quote(H,

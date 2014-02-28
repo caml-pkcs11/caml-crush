@@ -91,6 +91,23 @@
 #endif
 #include "modwrap.h"
 
+/* Wrap around pthread for Windows as we do not want
+ * the pthread dependency on this platform */
+#ifdef WIN32
+void pthread_mutex_init(LPCRITICAL_SECTION mymutex, void *useless){
+  InitializeCriticalSection(mymutex);
+  return;
+}
+void pthread_mutex_lock(LPCRITICAL_SECTION mymutex){
+  EnterCriticalSection(mymutex);
+  return;
+}
+void pthread_mutex_unlock(LPCRITICAL_SECTION mymutex){
+  LeaveCriticalSection(mymutex);
+  return;
+}
+#endif
+
 /* -------------------------------- */
 /*      Linked list functions       */
 
@@ -347,7 +364,9 @@ void custom_sanitize_ck_mechanism(struct ck_mechanism *mech)
 }
 
 /* Init function is called when loading library */
+#ifndef WIN32
 __attribute__ ((constructor))
+#endif
 void init()
 {
   ck_rv_t ret;
@@ -396,7 +415,9 @@ void init()
 }
 
 /* Disconnect all stuff */
+#ifndef WIN32
 __attribute__ ((destructor))
+#endif
 void destroy()
 {
 #ifdef CAMLRPC
@@ -408,6 +429,23 @@ void destroy()
   remove_all_elements_from_filtering_list();
   return;
 }
+
+/* Windows initialization */
+#ifdef WIN32
+BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, IN DWORD nReason, IN LPVOID Reserved){
+ BOOLEAN bSuccess = TRUE;
+ switch(nReason){
+  case DLL_PROCESS_ATTACH:
+       init();
+       break;
+ case DLL_PROCESS_DETACH:
+       destroy();
+       break;
+
+ }
+ return bSuccess;
+}
+#endif
 
 /* -------------------------------- */
 /*   Trampoline PKCS#11 functions   */
@@ -566,7 +604,11 @@ C_WaitForSlotEvent(ck_flags_t input0, ck_slot_id_t * output1, void *reserved)
 #endif
     while (1) {
       /* FIXME: usleep migth be deprecated in favor of nanosleep */
+#ifdef WIN32
+      Sleep(100);
+#else
       usleep(50000);
+#endif
       pthread_mutex_lock(&mutex);
       /* Did we C_Finalize? */
       if (is_Blocking == 2) {

@@ -98,6 +98,10 @@
 extern "C" {
 #endif
 
+#ifdef WIN32
+#include <stdint.h>
+#define quad_t int64_t
+#endif
   extern CLIENT *cl;
 
   typedef quad_t pkcs11_int;

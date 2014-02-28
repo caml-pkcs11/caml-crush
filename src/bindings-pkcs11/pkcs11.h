@@ -138,7 +138,7 @@ void *custom_malloc(size_t size);
 void custom_free(void **to_free);
 
 /* Custom malloc to fail on malloc error */
-inline void *custom_malloc(size_t size)
+void *custom_malloc(size_t size)
 {
   void *returned_pointer = (void *)malloc(size);
   if (returned_pointer == NULL) {
@@ -151,7 +151,7 @@ inline void *custom_malloc(size_t size)
 }
 
 /* Custom free to force NULL on variables */
-inline void custom_free(void **to_free)
+void custom_free(void **to_free)
 {
   if (*to_free == NULL) {
 #ifdef DEBUG
