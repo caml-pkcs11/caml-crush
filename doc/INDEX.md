@@ -76,6 +76,7 @@ Here is a big picture of how the PKCS#11 proxy works:
 | Linux amd64      |   X  |  X  |   X  |   X   |   X  |   X   |     X     |
 | Mac OS X         |  no  |  X  |   X  |   X   |   X  |   X   |     X     |
 | FreeBSD amd64    |   X  |  X  |   X  |   X   |   X  |   X   |     X     |
+| Windows (native) |  no  |  X  |  no  |  no   |  no  |  no   |    wip    |
 | Windows (cygwin) |  wip |  X  |  wip |  wip  |  wip |  wip  |    wip    |
 ---------------------------------------------------------------------------
     no = not implemented due to some limitations
@@ -83,6 +84,7 @@ Here is a big picture of how the PKCS#11 proxy works:
 </pre>
 
   * The RPC over Unix sockets are not currently supported by rpcgen under Mac OS.
+  * The Windows native port only includes the client library, see [dedicated section](WIN32.md)
 
 ### Endianness
 
