@@ -157,6 +157,7 @@
       memcpy(output2, elem->out, elem->out_len);\
       remove_elements_from_filtering_list(input0, operation_cst, input1,\
                                           input1_len);\
+      *output2_len = elem->out_len;\
       Return(CKR_OK);\
     }\
   }\
