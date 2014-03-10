@@ -167,9 +167,15 @@ CK_RV ML_CK_C_LoadModule( /*in */ const char *libname)
   module_handle = dlopen(libname, RTLD_NOW);
   if (module_handle == NULL) {
 #ifdef DEBUG
-    printf("ML_CK_C_LoadModule: Failed to dlopen module %s\n", libname);
+    printf("ML_CK_C_LoadModule: Failed to dlopen(RTLD_NOW) module %s, trying RTLD_LAZY\n", libname);
 #endif
-    return CKR_FUNCTION_FAILED;
+    module_handle = dlopen(libname, RTLD_LAZY);
+    if (module_handle == NULL) {
+#ifdef DEBUG
+      printf("ML_CK_C_LoadModule: Failed to dlopen(RTLD_LAZY) module %s, giving up\n", libname);
+#endif
+      return CKR_FUNCTION_FAILED;
+    }
   }
   /* Weird allocation for ANSI C compliance */
   *(void **)(&get_func_list) = dlsym(module_handle, "C_GetFunctionList");
