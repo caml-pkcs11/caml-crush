@@ -182,8 +182,10 @@ extern void custom_free(void **to_free);
 #define UNSUPPORTED_ARCHITECTURE 5
 #define NOT_INITIALIZED 6
 
-/* variable used to detect architecture */
 #ifdef SERVER_ROLE
+/* variable used to avoid multiple calls to C_LoadModule */
+unsigned long module_loaded = NOT_INITIALIZED;
+/* variable used to detect architecture */
 unsigned long peer_arch = NOT_INITIALIZED;
 #else
 unsigned long peer_arch;

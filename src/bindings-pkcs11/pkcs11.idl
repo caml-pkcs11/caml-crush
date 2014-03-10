@@ -179,8 +179,10 @@ quote(H, "#define UNSUPPORTED_ARCHITECTURE 5");
 quote(H, "#define NOT_INITIALIZED 6");
 
 quote(H, "");
-quote(H, "/* variable used to detect architecture */");
 quote(H, "#ifdef SERVER_ROLE");
+quote(H, "/* variable used to avoid multiple calls to C_LoadModule */");
+quote(H, "unsigned long module_loaded = NOT_INITIALIZED;");
+quote(H, "/* variable used to detect architecture */");
 quote(H, "unsigned long peer_arch = NOT_INITIALIZED;");
 quote(H, "#else");
 quote(H, "unsigned long peer_arch;");

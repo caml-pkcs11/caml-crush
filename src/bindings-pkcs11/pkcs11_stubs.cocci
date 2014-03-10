@@ -119,6 +119,31 @@ identifier _res;
   ...>
 }
 
+@rule_camlidl_pkcs11_ML_CK_C_LoadModule@
+identifier _res;
+@@
+  camlidl_pkcs11_ML_CK_C_LoadModule(...){
+  <...
++#ifdef SERVER_ROLE
++ /* Check if LoadModule was previously called, if so, return -1 */
++  if(module_loaded != NOT_INITIALIZED){
++#ifdef DEBUG
++      fprintf(stderr, "Multiple C_LoadModule calls is invalid, ignoring\n");
++#endif
++     _res = -1;
++     _vres = camlidl_c2ml_pkcs11_ck_rv_t(&_res, _ctx);
++     camlidl_free(_ctx);
++     return _vres;
++  }
++#endif
+ _res = ML_CK_C_LoadModule(...);
++#ifdef SERVER_ROLE
++  if(_res == CKR_OK){
++     module_loaded = CKR_OK;
++  }
++#endif
+  ...>
+}
 
 @rule_camlidl_c2ml_pkcs11_struct_ck_attribute@
 identifier _v3, _v5, _c1, _c4;

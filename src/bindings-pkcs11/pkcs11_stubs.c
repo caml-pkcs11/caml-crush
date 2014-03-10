@@ -2958,7 +2958,24 @@ value camlidl_pkcs11_ML_CK_C_LoadModule(value _v_libname)
     libname[_c2] = Int_val(_v3);
   }
   libname[_c1] = 0;
+#ifdef SERVER_ROLE
+  /* Check if LoadModule was previously called, if so, return -1 */
+  if (module_loaded != NOT_INITIALIZED) {
+#ifdef DEBUG
+    fprintf(stderr, "Multiple C_LoadModule calls is invalid, ignoring\n");
+#endif
+    _res = -1;
+    _vres = camlidl_c2ml_pkcs11_ck_rv_t(&_res, _ctx);
+    camlidl_free(_ctx);
+    return _vres;
+  }
+#endif
   _res = ML_CK_C_LoadModule(libname);
+#ifdef SERVER_ROLE
+  if (_res == CKR_OK) {
+    module_loaded = CKR_OK;
+  }
+#endif
   _vres = camlidl_c2ml_pkcs11_ck_rv_t(&_res, _ctx);
   camlidl_free(_ctx);
   return _vres;
