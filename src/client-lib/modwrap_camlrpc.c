@@ -455,12 +455,8 @@ myC_GetSlotList(CK_BBOOL input0, ck_slot_id_t * output2, unsigned long *output3)
   }
   if (output2 == NULL) {
     args[1] = copy_int64(0);
-  } else if (*output3 > 0) {
+  } else {
     args[1] = copy_int64(*output3);
-  }
-  /* P11 compliant */
-  else {
-    CAMLreturn(CKR_BUFFER_TOO_SMALL);
   }
   tuple = caml_callbackN(*C_GetSlotList_closure, 2, args);
   camlidl_ml2c_pkcs11_ck_rv_t(Field(tuple, 0), &ret, NULL);

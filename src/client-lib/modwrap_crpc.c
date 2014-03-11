@@ -839,12 +839,8 @@ myC_GetSlotList_C(CK_BBOOL input0, ck_slot_id_t * output2,
   }
   if (output2 == NULL) {
     count = 0;
-  } else if (*output3 > 0) {
+  } else {
     count = *output3;
-  }
-  /* P11 compliant */
-  else {
-    return CKR_BUFFER_TOO_SMALL;
   }
 #ifdef RPCGEN_MT
   retval = c_getslotlist_3(token_present, count, &ret, cl);
