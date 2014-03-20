@@ -61,8 +61,14 @@ let prevent_sensitive_leak_patch fun_name arg =
               if (compare (check_is_sensitive fun_name templates_values) true = 0) then "SENSITIVE" else "NON EXTRACTABLE" in
             let info_string = Printf.sprintf "[User defined extensions]: SENSITIVE_LEAK asked during %s for a %s key" fun_name error_type in
             let _ = print_debug info_string 1 in
-            (serialize (true, (Pkcs11.cKR_ATTRIBUTE_SENSITIVE, expurge_template_from_values attributes)))
+            (* We expurge the template from the value type and call the backend *)
+            let (new_attributes, positions) = remove_asked_value_type_from_template attributes in
+            let (ret, returned_attributes) = Backend.c_GetAttributeValue sessionh objecth new_attributes in
+            (* Now, we reinsert the value type in the template with zeroes *)
+            let filtered_attributes = insert_purged_value_type_in_template returned_attributes positions in
+            (serialize (true, (Pkcs11.cKR_ATTRIBUTE_SENSITIVE, filtered_attributes)))
           else
+            (* If we are here, we passthrough the call *)
             (serialize (false, ()))
   (* Default if we are in a non concerned function is to passthrough *)
   | _ -> (serialize (false, ()))

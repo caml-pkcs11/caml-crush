@@ -39,6 +39,32 @@ let critical_attributes key_segregation = if compare key_segregation true = 0 th
 let expurge_template_from_values templates_array =
   (Array.map (fun templ -> {Pkcs11.type_ = templ.Pkcs11.type_; Pkcs11.value = Array.make (Array.length templ.Pkcs11.value) (Char.chr 0)}) templates_array)
 
+let remove_asked_value_type_from_template templates_array = 
+  let (new_templates_array, positions, current_position) = Array.fold_left (
+    fun (curr_array, pos, curr_pos) templ ->
+      if compare templ.Pkcs11.type_ Pkcs11.cKA_VALUE = 0 then
+        (curr_array, Array.append pos [|curr_pos|], curr_pos+1)
+      else
+        (Array.append curr_array [|templ|], pos, curr_pos+1)
+  ) ([||], [||], 0) templates_array in
+  (new_templates_array, positions)
+
+let insert_in_array the_array element position = 
+  if compare position 0 = 0 then
+    (Array.concat [[| element |]; the_array])
+  else
+    let sub_array_one = Array.sub the_array 0 position in
+    let sub_array_two = Array.sub the_array position (Array.length the_array - position) in
+    (Array.concat [sub_array_one; [| element |]; sub_array_two]) 
+
+let insert_purged_value_type_in_template templates_array positions = 
+  let new_array = ref templates_array in
+  Array.iter (
+    fun pos ->
+      new_array := insert_in_array !new_array {Pkcs11.type_ = Pkcs11.cKA_VALUE; Pkcs11.value = [||]} pos;
+  ) positions;
+  (!new_array)
+
 let expurge_template_from_irrelevant_attributes templates_array = 
   let new_templates_array = Array.fold_left (
     fun curr_array templ ->

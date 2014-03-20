@@ -229,14 +229,16 @@ let forbid_admin_operations = ref []
 
 (* Remove padding oracles in UnWrap *)
 (* List of dangerous paddings with regard to padding oracle attacks - PKCS#11 v1.5 and CBC_PAD - *)
-let padding_oracle_mechanisms_ = [Pkcs11.cKM_RSA_PKCS; Pkcs11.cKM_MD2_RSA_PKCS; Pkcs11.cKM_MD5_RSA_PKCS; Pkcs11.cKM_SHA1_RSA_PKCS; Pkcs11.cKM_RIPEMD128_RSA_PKCS; Pkcs11.cKM_RIPEMD160_RSA_PKCS; Pkcs11.cKM_SHA256_RSA_PKCS; Pkcs11.cKM_SHA384_RSA_PKCS; Pkcs11.cKM_SHA512_RSA_PKCS; Pkcs11.cKM_RC2_CBC_PAD; Pkcs11.cKM_DES_CBC_PAD; Pkcs11.cKM_DES3_CBC_PAD; Pkcs11.cKM_CDMF_CBC_PAD; Pkcs11.cKM_CAST_CBC_PAD; Pkcs11.cKM_CAST3_CBC_PAD; Pkcs11.cKM_CAST5_CBC_PAD; Pkcs11.cKM_CAST128_CBC_PAD; Pkcs11.cKM_RC5_CBC_PAD; Pkcs11.cKM_IDEA_CBC_PAD; Pkcs11.cKM_AES_CBC_PAD]
+let padding_oracle_mechanisms_ = [Pkcs11.cKM_RSA_PKCS; Pkcs11.cKM_MD2_RSA_PKCS; Pkcs11.cKM_MD5_RSA_PKCS; Pkcs11.cKM_SHA1_RSA_PKCS; Pkcs11.cKM_RIPEMD128_RSA_PKCS; Pkcs11.cKM_RIPEMD160_RSA_PKCS; Pkcs11.cKM_SHA256_RSA_PKCS; Pkcs11.cKM_SHA384_RSA_PKCS; Pkcs11.cKM_SHA512_RSA_PKCS; Pkcs11.cKM_RC2_CBC_PAD; Pkcs11.cKM_DES_CBC_PAD; Pkcs11.cKM_DES3_CBC_PAD; Pkcs11.cKM_CDMF_CBC_PAD; Pkcs11.cKM_CAST_CBC_PAD; Pkcs11.cKM_CAST3_CBC_PAD; Pkcs11.cKM_CAST5_CBC_PAD; Pkcs11.cKM_CAST128_CBC_PAD; Pkcs11.cKM_RC5_CBC_PAD; Pkcs11.cKM_IDEA_CBC_PAD; Pkcs11.cKM_AES_CBC_PAD; Pkcs11.cKM_RSA_X_509]
 let padding_oracle_mechanisms = ref padding_oracle_mechanisms_
 let remove_padding_oracles_ = new list_cp (tuple2_wrappers string_wrappers (list_wrappers padding_wrappers)) ~group ["remove_padding_oracles"] [] "Remove dangerous paddings at Wrap/UnWrap (that could result in padding oracle attacks)"
 let remove_padding_oracles = ref []
 
 (* Filter actions *)
-let filter_actions_ = new list_cp (tuple2_wrappers string_wrappers (list_wrappers (tuple2_wrappers functions_wrappers actions_wrappers))) ~group ["filter_actions"] [] "Define actions to be taken on some PKCS#11 function call trigger"
-let filter_actions = ref []
+let filter_actions_pre_ = new list_cp (tuple2_wrappers string_wrappers (list_wrappers (tuple2_wrappers functions_wrappers actions_wrappers))) ~group ["filter_actions_pre"] [] "Define actions to be taken on some PKCS#11 function call trigger (pre actions)"
+let filter_actions_pre = ref []
+let filter_actions_post_ = new list_cp (tuple2_wrappers string_wrappers (list_wrappers (tuple2_wrappers functions_wrappers actions_wrappers))) ~group ["filter_actions_post"] [] "Define actions to be taken on some PKCS#11 function call trigger (post actions)"
+let filter_actions_post = ref []
 
 (************************************)
 (**** Basic checking primitives *****)
@@ -656,9 +658,14 @@ let print_some_help groupable_cp _ _ filename _ =
      let error_string = Printf.sprintf "Field '%s' should contain a list of couples (alias_regexp, [OPERATION_TYPE1, OPERATION_TYPE2 ...]) where alias_regexp is a module alias regular expression and OPERATION_TYPEi are operation types ('wrap', 'unwrap', 'encrypt', 'sign' or 'all') telling for each alias and each operation type if the possible padding oracles are to be removed or not" (String.concat "." groupable_cp#get_name) in print_error error_string;
      raise Config_file_wrong_type;
    end;
-   if compare (String.concat "." groupable_cp#get_name) "filter_actions" = 0 then
+   if compare (String.concat "." groupable_cp#get_name) "filter_actions_pre" = 0 then
    begin
-     let error_string = Printf.sprintf "Field '%s' should contain a list of couples (alias_regexp, [(PKCS11_FUNCTION1, ACTION1), (PKCS11_FUNCTION2, ACTION2) ...]) where alias_regexp is a module alias regular expression and PKCS11_FUNCTIONi are PKCS#11 function names, and ACTIONi are actions defined and implemented in the filter_actions plugin file" (String.concat "." groupable_cp#get_name) in print_error error_string;
+     let error_string = Printf.sprintf "Field '%s' should contain a list of couples (alias_regexp, [(PKCS11_FUNCTION1, ACTION1), (PKCS11_FUNCTION2, ACTION2) ...]) where alias_regexp is a module alias regular expression and PKCS11_FUNCTION are PKCS#11 function names, and ACTION are actions defined and implemented in the filter_actions plugin file" (String.concat "." groupable_cp#get_name) in print_error error_string;
+     raise Config_file_wrong_type;
+   end;
+   if compare (String.concat "." groupable_cp#get_name) "filter_actions_post" = 0 then
+   begin
+     let error_string = Printf.sprintf "Field '%s' should contain a list of couples (alias_regexp, [(PKCS11_FUNCTION1, ACTION1), (PKCS11_FUNCTION2, ACTION2) ...]) where alias_regexp is a module alias regular expression and PKCS11_FUNCTION are PKCS#11 function names, and ACTION are actions defined and implemented in the filter_actions plugin file" (String.concat "." groupable_cp#get_name) in print_error error_string;
      raise Config_file_wrong_type;
    end;
    () 
@@ -739,9 +746,12 @@ let get_config configuration_file =
     let _ = try check_remove_padding_oracles !modules !remove_padding_oracles with Remove_padding_oracles -> raise Remove_padding_oracles in
     print_remove_padding_oracles !remove_padding_oracles "Remove padding oracles:" 3;
     (* Get the specific actions for each PKCS#11 trigger *)
-    filter_actions := filter_actions_#get;
-    let _ = try check_actions !modules !filter_actions with Actions_except -> raise Actions_except in
-    print_filter_actions !filter_actions "Specific actions are:" 3; 
+    filter_actions_pre := filter_actions_pre_#get;
+    let _ = try check_actions !modules !filter_actions_pre with Actions_except -> raise Actions_except in
+    filter_actions_post := filter_actions_post_#get;
+    let _ = try check_actions !modules !filter_actions_pre with Actions_except -> raise Actions_except in
+    print_filter_actions !filter_actions_pre "Specific pre actions are:" 3; 
+    print_filter_actions !filter_actions_post "Specific post actions are:" 3; 
     ()
   end
   else
