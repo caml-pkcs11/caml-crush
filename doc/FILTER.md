@@ -484,7 +484,7 @@ for OCaml written programs!
 Improving the user defined hooks to be type-safe and avoid the use of marshaling is a **work in pogress**.
 
 
-### Advanced examples of uer defined actions
+### Advanced examples of user defined actions
 
 In order to illustrate the flexibility of the user extension system implemented in the filter, we provide 
 patches that **fix the PKCS#11 API**. The API has been deeply analyzed during the last few years, leading 
