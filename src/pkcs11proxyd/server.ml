@@ -646,22 +646,33 @@ let c_CancelFunction (session_handle) =
 (*************************************************************************) 
 IFDEF WITHOUT_FILTER THEN
 let get_module_config_name (modulename) = 
-  let regexpression = Printf.sprintf ".*%s:\\([^;]*\\);" modulename in
+  let regexpression = 
+    if compare modulename "" = 0 then
+      Printf.sprintf "\\(^\|.*;\\):\\([^;]*\\);"
+    else
+      Printf.sprintf ".*%s:\\([^;]*\\);" modulename
+  in
+  let matching_group = 
+    if compare modulename "" = 0 then
+      2
+    else
+      1
+  in
   let b = Str.string_match (Str.regexp regexpression) !libnames_config_ref 0 in
   if  b = false then
   begin
     (* Return thet the module has not been found *)
-    let s = Printf.sprintf "C_LoadModule in process %d did not match any libname for %s!" (Unix.getpid()) modulename in
+    let s = Printf.sprintf "C_LoadModule in process %d did not match any libname for '%s'!" (Unix.getpid()) modulename in
     Netplex_cenv.log `Err s;
     raise (Failure "Reading configuration");
   end
   else
   begin
-    let matchedlib = Str.matched_group 1 !libnames_config_ref in
+    let matchedlib = Str.matched_group matching_group !libnames_config_ref in
     (* Debug *)
     if !ref_pkcs_debug = 1
     then begin
-      let s = Printf.sprintf "C_LoadModule aliased %s to %s in process %d" modulename matchedlib (Unix.getpid()) in
+      let s = Printf.sprintf "C_LoadModule aliased '%s' to '%s' in process %d" modulename matchedlib (Unix.getpid()) in
       Netplex_cenv.log `Info s;
     end;
     (matchedlib)
