@@ -134,7 +134,7 @@ let _ =
         *)
         let (ret_value, rand_) = Pkcs11.mL_CK_C_GenerateRandom session 32n in 
         let _ = check_ret ret_value C_GenerateRandomError false in
-        let string_to_digest = Pkcs11.byte_array_to_string rand_ in
+        let string_to_digest = Pkcs11.char_array_to_string rand_ in
         List.iter (digest_some_data_with_mech_type session string_to_digest) mech_intersect;
 
         (* CloseAllSessions and finalize *)

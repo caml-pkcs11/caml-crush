@@ -82,7 +82,7 @@ let encrypt_decrypt_some_data_with_mech_type session pubkey_ privkey_ data mech_
     Pkcs11.print_hex_array enc_data_;
     let dec_data_ = decrypt_some_data session enc_mech privkey_ enc_data_ in
     printf "\tthrough Decrypt single call is:\n";
-    Printf.printf "'%s'\n" (Pkcs11.byte_array_to_string dec_data_)
+    Printf.printf "'%s'\n" (Pkcs11.char_array_to_string dec_data_)
 
 let _ = 
     let _ = init_module in
@@ -120,7 +120,7 @@ let _ =
     let (ret_value, session) = Pkcs11.mL_CK_C_OpenSession slot_id (Nativeint.logor Pkcs11.cKF_SERIAL_SESSION Pkcs11.cKF_RW_SESSION) in
     let _ = check_ret ret_value C_OpenSessionError false in
     printf "C_OpenSession ret: %s\n" (Pkcs11.match_cKR_value ret_value);
-    let user_pin = Pkcs11.string_to_byte_array conf_user_pin in
+    let user_pin = Pkcs11.string_to_char_array conf_user_pin in
     let ret_value = Pkcs11.mL_CK_C_Login session Pkcs11.cKU_USER user_pin in
     let _ = check_ret ret_value C_LoginError false in
     printf "C_Login ret: %s\n" (Pkcs11.match_cKR_value ret_value);

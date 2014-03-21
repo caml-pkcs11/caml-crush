@@ -98,7 +98,7 @@ let _ =
     let slot_id = slot_list_.(0) in
 
     let (_, session) = Pkcs11.mL_CK_C_OpenSession slot_id (Nativeint.logor Pkcs11.cKF_SERIAL_SESSION Pkcs11.cKF_RW_SESSION) in
-    let pin = Pkcs11.string_to_byte_array conf_user_pin in
+    let pin = Pkcs11.string_to_char_array conf_user_pin in
     let ret_value = Pkcs11.mL_CK_C_Login session Pkcs11.cKU_USER pin in
     printf "C_Login ret: %s\n" (Pkcs11.match_cKR_value ret_value);
 

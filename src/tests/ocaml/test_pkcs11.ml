@@ -109,7 +109,7 @@ let _ =
     let (ret_value, session) = Pkcs11.mL_CK_C_OpenSession slot_id (Nativeint.logor Pkcs11.cKF_SERIAL_SESSION Pkcs11.cKF_RW_SESSION) in
     let _ = check_ret ret_value C_OpenSessionError false in
     printf "C_OpenSession ret: %s\n" (Pkcs11.match_cKR_value ret_value);
-    let user_pin = Pkcs11.string_to_byte_array conf_user_pin in
+    let user_pin = Pkcs11.string_to_char_array conf_user_pin in
     let ret_value = Pkcs11.mL_CK_C_Login session Pkcs11.cKU_USER user_pin in
     let _ = check_ret ret_value C_LoginError false in
     printf "C_Login ret: %s\n" (Pkcs11.match_cKR_value ret_value);
@@ -176,18 +176,18 @@ let _ =
     (*Append fetched values from x1 and x2 *)
     let pub_template = Array.append modbit_template pub_template in
 
-    let id = Pkcs11.string_to_byte_array "789" in
+    let id = Pkcs11.string_to_char_array "789" in
     let pub_template = templ_append pub_template Pkcs11.cKA_ID id in
 
-    let keytype = Pkcs11.int_to_ulong_byte_array Pkcs11.cKK_RSA in
+    let keytype = Pkcs11.int_to_ulong_char_array Pkcs11.cKK_RSA in
     let pub_template = templ_append pub_template Pkcs11.cKA_KEY_TYPE keytype in
 
     (* PublicTemplate *)
-    let pubclass = Pkcs11.int_to_ulong_byte_array Pkcs11.cKO_PUBLIC_KEY in
+    let pubclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PUBLIC_KEY in
     let pub_template = templ_append pub_template Pkcs11.cKA_CLASS pubclass in
 
     let pub_template = templ_append pub_template Pkcs11.cKA_CLASS pubclass in
-    let label = Pkcs11.string_to_byte_array "testlabel" in
+    let label = Pkcs11.string_to_char_array "testlabel" in
     let pub_template = templ_append pub_template Pkcs11.cKA_WRAP Pkcs11.true_ in
     let pub_template = templ_append pub_template Pkcs11.cKA_TOKEN Pkcs11.true_ in
 
@@ -197,7 +197,7 @@ let _ =
 
     printf "--------------\n";
     (* PrivateTemplate *)
-    let privclass = Pkcs11.int_to_ulong_byte_array Pkcs11.cKO_PRIVATE_KEY in
+    let privclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PRIVATE_KEY in
 
     let priv_expo = { Pkcs11.type_ = Pkcs11.cKA_PRIVATE_EXPONENT; Pkcs11.value = [||]} in
     let modbit_template = [| priv_expo |] in
@@ -272,7 +272,7 @@ let _ =
     let _ = check_ret ret_value C_LoginError false in
     printf "C_Login ret: %s\n" (Pkcs11.match_cKR_value ret_value);
 
-    let rand = Pkcs11.string_to_byte_array "ThisIsSuperMegaRandom" in
+    let rand = Pkcs11.string_to_char_array "ThisIsSuperMegaRandom" in
     let ret_value = Pkcs11.mL_CK_C_SeedRandom session rand in
     let _ = check_ret ret_value C_SeedRandomError false in
     printf "C_SeedRandom ret: %s\n" (Pkcs11.match_cKR_value ret_value);
@@ -322,7 +322,7 @@ let _ =
         Pkcs11.print_hex_array deskey_template.(0).Pkcs11.value;
 
         (* Let's wrap the RSA privkey with the DES key *)
-        let iv = Pkcs11.string_to_byte_array (Pkcs11.pack "0000000000000000") in
+        let iv = Pkcs11.string_to_char_array (Pkcs11.pack "0000000000000000") in
         let wrapping_mech = { Pkcs11.mechanism = Pkcs11.cKM_DES3_CBC_PAD ;
         Pkcs11.parameter = iv } in
         let (ret_value, wrapped_key_) = Pkcs11.mL_CK_C_WrapKey session wrapping_mech deskey_ privkey_ in
@@ -396,8 +396,8 @@ let _ =
         let pub_dh_template = [||] in
         let priv_dh_template = [||] in
         let derive_template = [||] in
-        let prime = Pkcs11.string_to_byte_array (Pkcs11.pack "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF") in
-        let base = Pkcs11.int_to_ulong_byte_array 2n in
+        let prime = Pkcs11.string_to_char_array (Pkcs11.pack "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA237327FFFFFFFFFFFFFFFF") in
+        let base = Pkcs11.int_to_ulong_char_array 2n in
         let pub_dh_template = templ_append pub_dh_template Pkcs11.cKA_PRIME prime in
         let pub_dh_template = templ_append pub_dh_template Pkcs11.cKA_BASE base in
         (* PrivateTemplate *)
@@ -411,8 +411,8 @@ let _ =
         (* Create derive_mech with parameter, array of size 128 filled with '0' *)
         let derive_mech = { Pkcs11.mechanism = Pkcs11.cKM_DH_PKCS_DERIVE ; Pkcs11.parameter = Array.make 128 '0'} in
         (* Create derive_template, derived key will encrypt/decrypt *)
-        let derive_template = templ_append derive_template Pkcs11.cKA_CLASS (Pkcs11.int_to_ulong_byte_array Pkcs11.cKO_SECRET_KEY) in
-        let derive_template = templ_append derive_template Pkcs11.cKA_KEY_TYPE (Pkcs11.int_to_ulong_byte_array Pkcs11.cKK_DES) in
+        let derive_template = templ_append derive_template Pkcs11.cKA_CLASS (Pkcs11.int_to_ulong_char_array Pkcs11.cKO_SECRET_KEY) in
+        let derive_template = templ_append derive_template Pkcs11.cKA_KEY_TYPE (Pkcs11.int_to_ulong_char_array Pkcs11.cKK_DES) in
         let derive_template = templ_append derive_template Pkcs11.cKA_ENCRYPT Pkcs11.true_ in
         let derive_template = templ_append derive_template Pkcs11.cKA_DECRYPT Pkcs11.true_ in
         let (ret_value, derived_key_handle_) = Pkcs11.mL_CK_C_DeriveKey session derive_mech privkeydh_ derive_template in

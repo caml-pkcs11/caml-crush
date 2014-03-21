@@ -169,7 +169,7 @@ let group = new group in
       failwith "Libname cannot be empty"
     else
       (* We should check for LoadModule return values *)
-      Pkcs11.mL_CK_C_LoadModule (Pkcs11.string_to_byte_array libname)
+      Pkcs11.mL_CK_C_LoadModule (Pkcs11.string_to_char_array libname)
 
 (* Append one element to template array *)
 let templ_append template type_ value_ =
@@ -180,8 +180,8 @@ let templ_append template type_ value_ =
 let append_rsa_template type_ value_ pub_template priv_template =
     let (pub_template, priv_template) = match value_ with
         None -> (pub_template, priv_template)
-        | Some x  -> (templ_append pub_template type_ (Pkcs11.string_to_byte_array x),
-                        templ_append priv_template type_ (Pkcs11.string_to_byte_array x)) in
+        | Some x  -> (templ_append pub_template type_ (Pkcs11.string_to_char_array x),
+                        templ_append priv_template type_ (Pkcs11.string_to_char_array x)) in
     (pub_template, priv_template)
 
 (* Check return value and raise string on errors *)
@@ -189,7 +189,8 @@ let check_ret ret_value except continue =
     let msg = Pkcs11.match_cKR_value ret_value in
         match msg with
             "cKR_OK" -> msg
-            | _ -> if continue = true then msg else raise (except)
+            | _ -> if continue = true then msg else failwith msg
+            (*| _ -> if continue = true then msg else raise (except)*)
 
 (* Function for checking if one element is in a list *)
 let check_element_in_list the_list element =
@@ -222,13 +223,13 @@ let print_slots = fun slot ->
     let (ret_valuea, slot_info_) = Pkcs11.mL_CK_C_GetSlotInfo slot in
     let (ret_valueb, token_info_) = Pkcs11.mL_CK_C_GetTokenInfo slot in
     (* Slot info *)
-    let slot_desc = Pkcs11.byte_array_to_string slot_info_.Pkcs11.ck_slot_info_slot_description in
+    let slot_desc = Pkcs11.char_array_to_string slot_info_.Pkcs11.ck_slot_info_slot_description in
     (* Token info *)
-    let token_label = Pkcs11.byte_array_to_string token_info_.Pkcs11.ck_token_info_label in
-    let token_manufacturer_id = Pkcs11.byte_array_to_string token_info_.Pkcs11.ck_token_info_manufacturer_id in
-    let token_model = Pkcs11.byte_array_to_string token_info_.Pkcs11.ck_token_info_model in
-    let token_serial_number = Pkcs11.byte_array_to_string token_info_.Pkcs11.ck_token_info_serial_number in
-    let token_utc_time = Pkcs11.byte_array_to_string token_info_.Pkcs11.ck_token_info_utc_time in
+    let token_label = Pkcs11.char_array_to_string token_info_.Pkcs11.ck_token_info_label in
+    let token_manufacturer_id = Pkcs11.char_array_to_string token_info_.Pkcs11.ck_token_info_manufacturer_id in
+    let token_model = Pkcs11.char_array_to_string token_info_.Pkcs11.ck_token_info_model in
+    let token_serial_number = Pkcs11.char_array_to_string token_info_.Pkcs11.ck_token_info_serial_number in
+    let token_utc_time = Pkcs11.char_array_to_string token_info_.Pkcs11.ck_token_info_utc_time in
     let token_max_session_count = token_info_.Pkcs11.ck_token_info_max_session_count in
     if ret_valuea = Pkcs11.cKR_OK then printf "Slot description: %s\n" slot_desc;
     if ret_valueb = Pkcs11.cKR_OK then 
@@ -254,22 +255,22 @@ let generate_rsa_template keysize keyslabel keysid =
     let pub_template = [||] in
     let priv_template = [||] in
 
-    let pubclass = Pkcs11.int_to_ulong_byte_array Pkcs11.cKO_PUBLIC_KEY in
+    let pubclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PUBLIC_KEY in
     let pub_template = templ_append pub_template Pkcs11.cKA_CLASS pubclass in
 
-    let privclass = Pkcs11.int_to_ulong_byte_array Pkcs11.cKO_PRIVATE_KEY in
+    let privclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PRIVATE_KEY in
     let priv_template = templ_append priv_template Pkcs11.cKA_CLASS privclass in
 
-    let public_exponent = Pkcs11.string_to_byte_array (Pkcs11.pack "010001") in
+    let public_exponent = Pkcs11.string_to_char_array (Pkcs11.pack "010001") in
     let pub_template = templ_append pub_template Pkcs11.cKA_PUBLIC_EXPONENT public_exponent in
 
     let modulus_bits = match keysize with
-        512n -> Pkcs11.int_to_ulong_byte_array keysize
-        |1024n -> Pkcs11.int_to_ulong_byte_array keysize
-        |2048n -> Pkcs11.int_to_ulong_byte_array keysize
-        |4096n -> Pkcs11.int_to_ulong_byte_array keysize
-        |8192n -> Pkcs11.int_to_ulong_byte_array keysize
-        |16384n -> Pkcs11.int_to_ulong_byte_array keysize
+        512n -> Pkcs11.int_to_ulong_char_array keysize
+        |1024n -> Pkcs11.int_to_ulong_char_array keysize
+        |2048n -> Pkcs11.int_to_ulong_char_array keysize
+        |4096n -> Pkcs11.int_to_ulong_char_array keysize
+        |8192n -> Pkcs11.int_to_ulong_char_array keysize
+        |16384n -> Pkcs11.int_to_ulong_char_array keysize
         | _ -> raise UnsupportedRSAKeySize in
     let pub_template = templ_append pub_template Pkcs11.cKA_MODULUS_BITS modulus_bits in
            
@@ -310,7 +311,7 @@ let sign_some_data session mechanism privkey_ data =
     let ret_value = Pkcs11.mL_CK_C_SignInit session mechanism privkey_ in
     let _ = check_ret ret_value C_SignInitError false in
 
-    let tosign = Pkcs11.string_to_byte_array data in
+    let tosign = Pkcs11.string_to_char_array data in
     let (ret_value, signed_data_) = Pkcs11.mL_CK_C_Sign session tosign in
     let _ = check_ret ret_value C_SignInitError false in
 
@@ -320,9 +321,9 @@ let digest_some_data session mechanism data =
     let ret_value = Pkcs11.mL_CK_C_DigestInit session mechanism in
     let _ = check_ret ret_value C_DigestInitError false in
 
-    let todigest = Pkcs11.string_to_byte_array data in
+    let todigest = Pkcs11.string_to_char_array data in
     let (ret_value, digested_data_) = Pkcs11.mL_CK_C_Digest session todigest in
-    let _ = check_ret ret_value C_DigestUpdateError false in
+    let _ = check_ret ret_value C_DigestError false in
 
     (digested_data_)
 
@@ -330,7 +331,7 @@ let digestupdate_some_data session mechanism data =
     let ret_value = Pkcs11.mL_CK_C_DigestInit session mechanism in
     let _ = check_ret ret_value C_DigestInitError false in
 
-    let todigest = Pkcs11.string_to_byte_array data in
+    let todigest = Pkcs11.string_to_char_array data in
     let ret_value = Pkcs11.mL_CK_C_DigestUpdate session todigest in
     let _ = check_ret ret_value C_DigestUpdateError false in
 
@@ -344,7 +345,7 @@ let verify_some_data session mechanism pubkey_ rawdata_ signed_data_ =
     let ret_value = Pkcs11.mL_CK_C_VerifyInit session mechanism pubkey_ in
     let _ = check_ret ret_value C_VerifyInitError false in
 
-    let tocheck = Pkcs11.string_to_byte_array rawdata_ in
+    let tocheck = Pkcs11.string_to_char_array rawdata_ in
 
     let ret_value = Pkcs11.mL_CK_C_Verify session tocheck signed_data_ in
     let _ = check_ret ret_value C_VerifyError false in
@@ -352,7 +353,7 @@ let verify_some_data session mechanism pubkey_ rawdata_ signed_data_ =
     (ret_value)
 
 let encrypt_some_data session mechanism key_ data = 
-    let toenc = Pkcs11.string_to_byte_array data in
+    let toenc = Pkcs11.string_to_char_array data in
 
     let ret_value = Pkcs11.mL_CK_C_EncryptInit session mechanism key_ in
     let _ = check_ret ret_value C_EncryptInitError false in
