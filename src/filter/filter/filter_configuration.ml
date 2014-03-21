@@ -240,55 +240,7 @@ let filter_actions_pre = ref []
 let filter_actions_post_ = new list_cp (tuple2_wrappers string_wrappers (list_wrappers (tuple2_wrappers functions_wrappers actions_wrappers))) ~group ["filter_actions_post"] [] "Define actions to be taken on some PKCS#11 function call trigger (post actions)"
 let filter_actions_post = ref []
 
-(************************************)
-(**** Basic checking primitives *****)
-(* Check if an element is in a list *)
-let check_element_in_list the_list element =
-   (* Find the element *)
-  let found = try Some (List.find (fun a -> compare a element = 0) the_list) with
-  (* If not found, return false *)
-  Not_found -> (None) in
-  if found = None
-  then
-    (false)
-  else
-    (true)
-
-(* Check if b fits the regexp in a *)
-let check_regexp a b = 
-  (* Add an end of line character $ at the end of the string *)
-  (* to match to avoid sub strings match                     *)
-  (Str.string_match (Str.regexp (Printf.sprintf "%s$" a)) b 0)
-  
-(* Check if an element is in a regexp string list *)
-let check_regexp_element_in_list the_list element =
-   (* Find the element *)
-  let found = try Some (List.find (fun a -> check_regexp a element = true) the_list) with
-  (* If not found, return false *)
-  Not_found -> (None) in
-  if found = None
-  then
-    (false)
-  else
-    (true)
  
-(* Check if an alias is indeed present in the couples list as a first element *)
-let check_alias the_list alias = 
-  (* Find the element *)
-  let found = try Some (List.find (fun (a, _) -> check_regexp alias a = true) the_list) with
-  (* If not found, return false *)
-  Not_found -> (None) in
-  if found = None
-  then
-    (false)
-  else
-    (true)
-
-let get_aliases_from_regexp the_list regexp = 
-  (* For each alias in the list, get *)
-  let matched_aliases = List.fold_left (fun s (a, _) -> let ret_s = if check_regexp regexp a = true then Printf.sprintf "%s '%s'" s a else s in (ret_s)) "" the_list in
-  (matched_aliases)
-
 (********************************************)
 (*********** Printer helpers ****************)
 (********************************************)
