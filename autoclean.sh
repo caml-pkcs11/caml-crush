@@ -25,6 +25,7 @@ for (( i = 0 ; i < ${#clean_dirs[*]} ; i++ ))
 do
   rm -f ${clean_dirs[i]}/Makefile
 done
+rm -f ${bindings_dir}/Makefile.standalone
 echo "Cleaning initrc file ..."
 rm -rf ${scripts_dir}/pkcs11proxyd
 echo "Cleaning the SSL related files ..."
