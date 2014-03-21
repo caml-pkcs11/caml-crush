@@ -117,10 +117,14 @@ module names, and 'b1', 'b2', ... are booleans that can take 'true', 'false', 'y
   * **remove\_padding\_oracles** = [(a1, b1), (a2, b2) ...] is a **list** of **couples** where 'a' is a regular expression string representing
 module names, and 'b1', 'b2', ... are a **lists** of cryptographic operations type that can take as possible values 'wrap', 'unwrap', 
 'encrypt', 'sign' and 'all' (this last one represents the sum of all the values)
-  * **filter\_actions** =  [(a1, b1), (a2, b2) ...] is a **list** of **couples** where 'a' is a regular expression string representing 
+  * **filter\_actions_pre** =  [(a1, b1), (a2, b2) ...] is a **list** of **couples** where 'a' is a regular expression string representing 
 module names, and 'b1', 'b2', ... are **lists** of **couples** (c, d) where 'c' is a PKCS#11 function following the PKCS#11 
 naming convention (C\_Login, C\_Logout ...) and 'd' is an OCaml function name defined in /src/filter/filter/filter\_actions.ml 
-(it is a user defined action to be triggered when the PKCS#11 function 'c' is called, see below for more details)
+(it is a user defined action to be triggered when the PKCS#11 function 'c' is called as a 'pre action', see below for more details)
+  * **filter\_actions_post** =  [(a1, b1), (a2, b2) ...] is a **list** of **couples** where 'a' is a regular expression string representing 
+module names, and 'b1', 'b2', ... are **lists** of **couples** (c, d) where 'c' is a PKCS#11 function following the PKCS#11 
+naming convention (C\_Login, C\_Logout ...) and 'd' is an OCaml function name defined in /src/filter/filter/filter\_actions.ml 
+(it is a user defined action to be triggered when the PKCS#11 function 'c' is called as a 'post action', see below for more details)
 
 The meaning of each key word is detailed in the following sections.
 
@@ -272,7 +276,8 @@ The potentially dangerous mechanisms (with PKCS#1 v1.5 or CBC paddings) that are
 [CKM_RSA_PKCS; CKM_MD2_RSA_PKCS; CKM_MD5_RSA_PKCS; CKM_SHA1_RSA_PKCS; CKM_RIPEMD128_RSA_PKCS; 
  CKM_RIPEMD160_RSA_PKCS; CKM_SHA256_RSA_PKCS; CKM_SHA384_RSA_PKCS; CKM_SHA512_RSA_PKCS; CKM_RC2_CBC_PAD; 
  CKM_DES_CBC_PAD; CKM_DES3_CBC_PAD; CKM_CDMF_CBC_PAD; CKM_CAST_CBC_PAD; CKM_CAST3_CBC_PAD; 
- CKM_CAST5_CBC_PAD; CKM_CAST128_CBC_PAD; CKM_RC5_CBC_PAD; CKM_IDEA_CBC_PAD; CKM_AES_CBC_PAD]
+ CKM_CAST5_CBC_PAD; CKM_CAST128_CBC_PAD; CKM_RC5_CBC_PAD; CKM_IDEA_CBC_PAD; CKM_AES_CBC_PAD; 
+ CKM_RSA_X_509]
 ```
 
 Syntax example:
@@ -380,7 +385,7 @@ is interrupted and the PKCS#11 error CKR\_PIN\_LOCKED is returned. Though this a
 of user defined routines: one can completely customize the filter since input and output values can be handled here. One can also 
 make "real" PKCS#11 calls to the Backend and decide of the filtering action depending on the result.
 
-The PKCS#11 functions hooking system uses OCaml [marshaling module](http://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html).
+The PKCS#11 functions hooking system uses the OCaml [marshaling module](http://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html).
 The user defined functions **must take exactly one argument** that corresponds to the marshaled string of the original PKCS#11 function 
 original arguments tuple (this argument is therefore of type string). Similarly, the output values of custom hooks are strings that are 
 the **marshaled versions** of couples whose first element is a boolean value, and the second element is a PKCS#11 return value. If the 
@@ -395,6 +400,16 @@ execution and makes the hooked function return with this value. This means that 
 
 If a "state" is necessary to keep track of actions of different hooks on the same PKCS#11 function, one will have to implement it through 
 global variables for instance.
+
+Two kind of user defined actions have been implemented:
+
+  * **Early actions**: they are defined through the `filter_actions_pre` option. They are called **before** any filtering action at the 
+very beginning of each hooked PKCS#11 function. This means that a user can, through early actions, **completely replace** the filter 
+action on any given function with his defined actions, thus bypassing the genuine core engine process.
+  * **Late actions**: they are defined through the `filter_actions_post` option. They are called **at the end** of filtering actions, generally 
+just before the _real call_ to the backend. This means that other filtering actions (such as functions blocking, label and id filtering ...) 
+have been processed when these user defined actions are executed. Hence, late actions are meant to define actions extending (i.e. complementing 
+and 'living with') the actions that are already performed in the filter core engine.
 
 ### Code example
 
@@ -481,7 +496,7 @@ why PKCS#11 is not safe as is and how to properly fix it regarding their attacke
 [here](http://secgroup.dais.unive.it/wp-content/uploads/2010/10/Tookan-CCS10.pdf) for more details on this.
 
 We provide in [src/filter/filter/p11fix_patches](../src/filter/filter/p11fix_patches) patches that should enhance 
-the security of the existing middlewares by using, among other patches, those implemented in [CryptokiX](http://secgroup.dais.unive.it/projects/security-apis/cryptokix/). **We will provide a detailed description of their action very soon**.
+the security of the existing middlewares by using, among other patches, those implemented in [CryptokiX](http://secgroup.dais.unive.it/projects/security-apis/cryptokix/). These patches are defined as `filter_actions_post` functions since we want them to live with the other filter actions. **We will provide a detailed description of their action very soon**.
 
 Please note that these patches are still in "beta test": they might evolve/be fixed in the future. They have only been 
 tested with OpenCryptoki, but we plan to extend this soon.

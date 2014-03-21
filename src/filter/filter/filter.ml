@@ -154,7 +154,7 @@ let check_object_label session object_handle allowed_list_alias function_name =
   else
   begin
     (* Get the label of the object *)
-    let label_template = [| { Pkcs11.type_ = Pkcs11.cKA_LABEL; Pkcs11.value = [||]} |]  in 
+    let label_template = [| { Pkcs11.type_ = Pkcs11.cKA_LABEL; Pkcs11.value = [||] } |]  in 
     let (_, label_template) = Backend.c_GetAttributeValue session object_handle label_template in
     let (ret_value, label_template) = Backend.c_GetAttributeValue session object_handle label_template in
     if compare ret_value Pkcs11.cKR_OK = 0 then
@@ -404,7 +404,15 @@ let check_trigger_and_action function_trigger the_actions_list argument =
           (execute_action function_trigger action (serialize argument))
     ) (serialize (false, ())) current_actions in
     (final_ret)
- 
+
+(** Apply pre actions **)
+let apply_pre_filter_actions function_name  args =
+  deserialize (check_trigger_and_action function_name !filter_actions_pre args)
+
+(** Apply post actions **)
+let apply_post_filter_actions function_name  args =
+  deserialize (check_trigger_and_action function_name !filter_actions_post args)
+
   
 (***** Our filterfing functions ******)
 (* Filter the mechanisms list returned by C_GetMechanismList *)
@@ -432,6 +440,8 @@ let filter_c_GetMechanismList ret mechanism_list count =
   end
 
 
+
+
 (***** PKCS#11 functions *****)
 (*************************************************************************)
 (* We don't block SetupArch *)
@@ -454,7 +464,7 @@ let c_SetupArch arch =
 (*************************************************************************)
 let c_Initialize () =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Initialize" !filter_actions (())) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Initialize" (()) in
   if take_ret = true then
     (ret)
   else
@@ -464,12 +474,17 @@ let c_Initialize () =
       let _ = print_debug "Blocking function C_Initialize" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_Initialize ()
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Initialize" (()) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Initialize ()
  
 (*************************************************************************)
 let c_GetInfo () =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetInfo" !filter_actions (())) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetInfo" (()) in
   if take_ret = true then
     (ret)
   else
@@ -479,12 +494,17 @@ let c_GetInfo () =
       let _ = print_debug "Blocking function C_GetInfo" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, {Pkcs11.ck_info_cryptoki_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}; Pkcs11.ck_info_manufacturer_id = [| |]; Pkcs11.ck_info_flags = 0n; Pkcs11.ck_info_library_description = [| |]; Pkcs11.ck_info_library_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}})
     else
-      Backend.c_GetInfo ()
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_GetInfo" (()) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_GetInfo ()
  
 (*************************************************************************)
 let c_GetSlotList token_present count =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetSlotList" !filter_actions (token_present, count)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetSlotList" (token_present, count) in
   if take_ret = true then
     (ret)
   else
@@ -494,12 +514,17 @@ let c_GetSlotList token_present count =
       let _ = print_debug "Blocking function C_GetSlotList" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |], 0n)
     else
-      Backend.c_GetSlotList token_present count
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_GetSlotList" (token_present, count) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_GetSlotList token_present count
  
 (*************************************************************************)
 let c_GetSlotInfo ckslotidt_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetSlotInfo" !filter_actions (ckslotidt_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetSlotInfo" (ckslotidt_) in
   if take_ret = true then
     (ret)
   else
@@ -514,7 +539,7 @@ let c_GetSlotInfo ckslotidt_ =
 (*************************************************************************)
 let c_GetTokenInfo ckslotidt_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetTokenInfo" !filter_actions (ckslotidt_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetTokenInfo" (ckslotidt_) in
   if take_ret = true then
     (ret)
   else
@@ -524,12 +549,22 @@ let c_GetTokenInfo ckslotidt_ =
       let _ = print_debug "Blocking function C_GetTokenInfo" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, {Pkcs11.ck_token_info_label = [| |]; Pkcs11.ck_token_info_manufacturer_id = [| |]; Pkcs11.ck_token_info_model = [| |]; Pkcs11.ck_token_info_serial_number = [| |]; Pkcs11.ck_token_info_flags = 0n; Pkcs11.ck_token_info_max_session_count = 0n; Pkcs11.ck_token_info_session_count = 0n; Pkcs11.ck_token_info_max_rw_session_count = 0n; Pkcs11.ck_token_info_rw_session_count = 0n; Pkcs11.ck_token_info_max_pin_len = 0n; Pkcs11.ck_token_info_min_pin_len = 0n; Pkcs11.ck_token_info_total_public_memory = 0n; Pkcs11.ck_token_info_free_public_memory = 0n; Pkcs11.ck_token_info_total_private_memory = 0n; Pkcs11.ck_token_info_free_private_memory = 0n; Pkcs11.ck_token_info_hardware_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}; Pkcs11.ck_token_info_firmware_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}; Pkcs11.ck_token_info_utc_time = [| |]})
     else
-      Backend.c_GetTokenInfo ckslotidt_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_GetTokenInfo" (ckslotidt_) in
+      if take_ret = true then
+        (ret)
+      else
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_GetTokenInfo" (ckslotidt_) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_GetTokenInfo ckslotidt_
 
 (*************************************************************************)
 let c_WaitForSlotEvent ckflagst_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_WaitForSlotEvent" !filter_actions (ckflagst_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_WaitForSlotEvent" (ckflagst_) in
   if take_ret = true then
     (ret)
   else
@@ -539,12 +574,17 @@ let c_WaitForSlotEvent ckflagst_ =
       let _ = print_debug "Blocking function C_WaitForSlotEvent" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, -1n)
     else
-      Backend.c_WaitForSlotEvent ckflagst_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_WaitForSlotEvent" (ckflagst_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_WaitForSlotEvent ckflagst_
  
 (*************************************************************************)
 let c_GetMechanismList ckslotidt_ count =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetMechanismList" !filter_actions (count)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetMechanismList" (ckslotidt_, count) in
   if take_ret = true then
     (ret)
   else
@@ -563,21 +603,36 @@ let c_GetMechanismList ckslotidt_ count =
 	  if compare ret Pkcs11.cKR_OK = 0 then newcount else count
         in
         let (ret, mechanism_list, _) = Backend.c_GetMechanismList ckslotidt_ mycount in
-        (* We filter the list if everything were OK *)
+        (* We filter the list if everything went OK *)
         if compare ret Pkcs11.cKR_OK = 0 then
-	  let (filtered_ret, filtered_list, filtered_count) = filter_c_GetMechanismList ret mechanism_list count in
-	  (filtered_ret, filtered_list, filtered_count)
+          (* Late actions after other checks *)
+          let (take_ret, return) =  apply_post_filter_actions "c_GetMechanismList" (ckslotidt_, count) in
+          if take_ret = true then
+            (return)
+          else
+	    let (filtered_ret, filtered_list, filtered_count) = filter_c_GetMechanismList ret mechanism_list count in
+	    (filtered_ret, filtered_list, filtered_count)
         else
-	  (ret, mechanism_list, count)
+          (* Late actions after other checks *)
+          let (take_ret, return) =  apply_post_filter_actions "c_GetMechanismList" (ckslotidt_, count) in
+          if take_ret = true then
+            (return)
+          else
+ 	    (ret, mechanism_list, count)
         end
       else
         (* If we don't filter mechanisms, passthrough to the backend *)
-        (Backend.c_GetMechanismList ckslotidt_ count)
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_GetMechanismList" (ckslotidt_, count) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_GetMechanismList ckslotidt_ count
 
 (*************************************************************************)
 let c_GetMechanismInfo ckslotidt_ ckmechanismtypet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetMechanismInfo" !filter_actions (ckslotidt_, ckmechanismtypet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetMechanismInfo" (ckslotidt_, ckmechanismtypet_) in
   if take_ret = true then
     (ret)
   else
@@ -595,12 +650,17 @@ let c_GetMechanismInfo ckslotidt_ ckmechanismtypet_ =
 	(Pkcs11.cKR_MECHANISM_INVALID, {Pkcs11.ck_mechanism_info_min_key_size = 0n; Pkcs11.ck_mechanism_info_max_key_size = 0n; Pkcs11.ck_mechanism_info_flags = 0n})
 	end
       else
-	Backend.c_GetMechanismInfo ckslotidt_ ckmechanismtypet_
+	(* Late actions after other checks *)
+	let (take_ret, ret) =  apply_post_filter_actions "C_GetMechanismInfo" (ckslotidt_, ckmechanismtypet_) in
+	if take_ret = true then
+	  (ret)
+	else
+	  Backend.c_GetMechanismInfo ckslotidt_ ckmechanismtypet_
 
 (*************************************************************************)
 let c_InitToken ckslotidt_  so_pin label =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_InitToken" !filter_actions (ckslotidt_, so_pin, label)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_InitToken" (ckslotidt_, so_pin, label) in
   if take_ret = true then
     (ret)
   else
@@ -610,12 +670,17 @@ let c_InitToken ckslotidt_  so_pin label =
       let _ = print_debug "Blocking function C_InitToken" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_InitToken ckslotidt_  so_pin label
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_InitToken" (ckslotidt_, so_pin, label) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_InitToken ckslotidt_  so_pin label
  
 (*************************************************************************)
 let c_InitPIN cksessionhandlet_ pin =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_InitPIN" !filter_actions (cksessionhandlet_, pin)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_InitPIN" (cksessionhandlet_, pin) in
   if take_ret = true then
     (ret)
   else
@@ -625,12 +690,17 @@ let c_InitPIN cksessionhandlet_ pin =
       let _ = print_debug "Blocking function C_InitPIN" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_InitPIN cksessionhandlet_ pin
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_InitPIN" (cksessionhandlet_, pin) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_InitPIN cksessionhandlet_ pin
  
 (*************************************************************************)
 let c_SetPIN cksessionhandlet_ old_pin  new_pin =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SetPIN" !filter_actions (cksessionhandlet_, old_pin, new_pin)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SetPIN" (cksessionhandlet_, old_pin, new_pin) in
   if take_ret = true then
     (ret)
   else
@@ -640,12 +710,17 @@ let c_SetPIN cksessionhandlet_ old_pin  new_pin =
       let _ = print_debug "Blocking function C_SetPIN" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_SetPIN cksessionhandlet_ old_pin  new_pin
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_SetPIN" (cksessionhandlet_, old_pin, new_pin) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_SetPIN cksessionhandlet_ old_pin  new_pin
  
 (*************************************************************************)
 let c_OpenSession ckslotid_ ckflagst_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_OpenSession" !filter_actions (ckslotid_, ckflagst_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_OpenSession" (ckslotid_, ckflagst_) in
   if take_ret = true then
     (ret)
   else
@@ -655,18 +730,21 @@ let c_OpenSession ckslotid_ ckflagst_ =
       let _ = print_debug "Blocking function C_OpenSession" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, Pkcs11.cK_INVALID_HANDLE)
     else
-    begin
       (* Check if we are enforcing the RO session *)
       let new_flags = if check_enforce_ro_sessions_for_alias !enforce_ro_sessions = true then
       Nativeint.logand ckflagst_ (Nativeint.lognot Pkcs11.cKF_RW_SESSION)
       else  ckflagst_ in
-      Backend.c_OpenSession ckslotid_ new_flags
-    end
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_OpenSession" (ckslotid_, new_flags) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_OpenSession ckslotid_ new_flags
  
 (*************************************************************************)
 let c_CloseSession cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_CloseSession" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_CloseSession" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -676,12 +754,17 @@ let c_CloseSession cksessionhandlet_ =
       let _ = print_debug "Blocking function C_CloseSession" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_CloseSession cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_CloseSession" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_CloseSession cksessionhandlet_
  
 (*************************************************************************)
 let c_CloseAllSessions ckslotidt_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_CloseAllSessions" !filter_actions (ckslotidt_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_CloseAllSessions" (ckslotidt_) in
   if take_ret = true then
     (ret)
   else
@@ -691,12 +774,17 @@ let c_CloseAllSessions ckslotidt_ =
       let _ = print_debug "Blocking function C_CloseAllSessions" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_CloseAllSessions ckslotidt_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_CloseAllSessions" (ckslotidt_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_CloseAllSessions ckslotidt_
  
 (*************************************************************************)
 let c_GetSessionInfo cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetSessionInfo" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetSessionInfo" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -706,12 +794,17 @@ let c_GetSessionInfo cksessionhandlet_ =
       let _ = print_debug "Blocking function C_GetSessionInfo" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, {Pkcs11.ck_session_info_slot_id = -1n; Pkcs11.ck_session_info_state = 0n; ck_session_info_flags = 0n; ck_session_info_device_error = 0n})
     else
-      Backend.c_GetSessionInfo cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_GetSessionInfo" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_GetSessionInfo cksessionhandlet_
 
 (*************************************************************************)
 let c_GetOperationState cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetOperationState" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetOperationState" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -721,12 +814,17 @@ let c_GetOperationState cksessionhandlet_ =
       let _ = print_debug "Blocking function C_GetOperationState" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_GetOperationState cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_GetOperationState" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_GetOperationState cksessionhandlet_
  
 (*************************************************************************)
 let c_SetOperationState cksessionhandlet_ state encryption_handle authentication_handle  =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SetOperationState" !filter_actions (cksessionhandlet_, state, encryption_handle, authentication_handle)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SetOperationState" (cksessionhandlet_, state, encryption_handle, authentication_handle) in
   if take_ret = true then
     (ret)
   else
@@ -736,12 +834,17 @@ let c_SetOperationState cksessionhandlet_ state encryption_handle authentication
       let _ = print_debug "Blocking function C_SetOperationState" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_SetOperationState cksessionhandlet_ state encryption_handle authentication_handle 
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_SetOperationState" (cksessionhandlet_, state, encryption_handle, authentication_handle) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_SetOperationState cksessionhandlet_ state encryption_handle authentication_handle 
 
 (*************************************************************************)
 let c_Login cksessionhandlet_ ckusertypet_ pin =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Login" !filter_actions (cksessionhandlet_, ckusertypet_, pin)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Login" (cksessionhandlet_, ckusertypet_, pin) in
   if take_ret = true then
     (ret)
   else
@@ -759,16 +862,26 @@ let c_Login cksessionhandlet_ ckusertypet_ pin =
         if (compare ckusertypet_ Pkcs11.cKU_SO = 0) || (compare ckusertypet_ Pkcs11.cKU_CONTEXT_SPECIFIC = 0) then
           (Pkcs11.cKR_USER_TYPE_INVALID)
         else
-          Backend.c_Login cksessionhandlet_ ckusertypet_ pin
+          (* Late actions after other checks *)
+          let (take_ret, ret) =  apply_post_filter_actions "C_Login" (cksessionhandlet_, ckusertypet_, pin) in
+          if take_ret = true then
+            (ret)
+          else
+            Backend.c_Login cksessionhandlet_ ckusertypet_ pin
       end
       else
-        Backend.c_Login cksessionhandlet_ ckusertypet_ pin
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_Login" (cksessionhandlet_, ckusertypet_, pin) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_Login cksessionhandlet_ ckusertypet_ pin
     end
  
 (*************************************************************************)
 let c_Logout cksessionhandlet =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Logout" !filter_actions (cksessionhandlet)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Logout" (cksessionhandlet) in
   if take_ret = true then
     (ret)
   else
@@ -778,12 +891,17 @@ let c_Logout cksessionhandlet =
       let _ = print_debug "Blocking function C_Logout" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_Logout cksessionhandlet
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Logout" (cksessionhandlet) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Logout cksessionhandlet
 
 (*************************************************************************)
 let c_Finalize () =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Finalize" !filter_actions (())) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Finalize" (()) in
   if take_ret = true then
     (ret)
   else
@@ -793,12 +911,17 @@ let c_Finalize () =
       let _ = print_debug "Blocking function C_Finalize" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_Finalize ()
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Finalize" (()) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Finalize ()
  
 (*************************************************************************)
 let c_CreateObject cksessionhandlet_ ckattributearray_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_CreateObject" !filter_actions (cksessionhandlet_, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_CreateObject" (cksessionhandlet_, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -814,12 +937,17 @@ let c_CreateObject cksessionhandlet_ ckattributearray_ =
       if check_label_id = true then
 	(Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
       else
-	Backend.c_CreateObject cksessionhandlet_ ckattributearray_
+	(* Late actions after other checks *)
+	let (take_ret, ret) =  apply_post_filter_actions "C_CreateObject" (cksessionhandlet_, ckattributearray_) in
+	if take_ret = true then
+	  (ret)
+	else
+	  Backend.c_CreateObject cksessionhandlet_ ckattributearray_
   
 (*************************************************************************)
 let c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_CopyObject" !filter_actions (cksessionhandlet_, ckobjecthandlet_, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_CopyObject" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -833,20 +961,23 @@ let c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
       if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_CopyObject" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_CopyObject" = false) then
         (Pkcs11.cKR_OBJECT_HANDLE_INVALID, Pkcs11.cK_INVALID_HANDLE)
       else
-      begin
         (* Check for the possible label or id blocking *)
         let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_CopyObject" in
         let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_CopyObject") in
         if check_label_id = true then
 	  (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
         else
-  	  Backend.c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_
-      end
+  	  (* Late actions after other checks *)
+  	  let (take_ret, ret) =  apply_post_filter_actions "C_CopyObject" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
+  	  if take_ret = true then
+  	    (ret)
+  	  else
+  	    Backend.c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_
  
 (*************************************************************************)
 let c_DestroyObject cksessionhandlet_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DestroyObject" !filter_actions (cksessionhandlet_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DestroyObject" (cksessionhandlet_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -856,18 +987,21 @@ let c_DestroyObject cksessionhandlet_ ckobjecthandlet_ =
     let _ = print_debug "Blocking function C_DestroyObject" 1 in
     (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
   else
-  begin
     (* Check for label or id blocking on the input objects handles *)
       if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_DestroyObject" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_DestroyObject" = false) then
         (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-        Backend.c_DestroyObject cksessionhandlet_ ckobjecthandlet_
-  end
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_DestroyObject" (cksessionhandlet_, ckobjecthandlet_) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_DestroyObject cksessionhandlet_ ckobjecthandlet_
 
 (*************************************************************************)
 let c_GetObjectSize cksessionhandlet_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetObjectSize" !filter_actions (cksessionhandlet_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetObjectSize" (cksessionhandlet_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -881,12 +1015,17 @@ let c_GetObjectSize cksessionhandlet_ ckobjecthandlet_ =
       if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_GetObjectSize" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_GetObjectSize" = false) then
         (Pkcs11.cKR_OBJECT_HANDLE_INVALID, -1n)
       else
-        Backend.c_GetObjectSize cksessionhandlet_ ckobjecthandlet_
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_GetObjectSize" (cksessionhandlet_, ckobjecthandlet_) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_GetObjectSize cksessionhandlet_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetAttributeValue" !filter_actions (cksessionhandlet_, ckobjecthandlet_, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetAttributeValue" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -899,18 +1038,30 @@ let c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
       (* Check for label or id blocking on the input objects handles *)
       if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_GetAttributeValue" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_GetAttributeValue" = false) then
 	(* Here, we call c_GetAttributeValue, we might want to return what the middleware has returned if there has been an error *)
-        let (ret, template) = Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ in
-        if ret <> Pkcs11.cKR_OK then
-          (ret, [| |])
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_GetAttributeValue" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
+        let (return, template) =
+          if take_ret = true then
+            (ret)
+          else
+            Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_
+        in
+        if return <> Pkcs11.cKR_OK then
+          (return, [| |])
         else
           (Pkcs11.cKR_OBJECT_HANDLE_INVALID, [| |])
       else
-        Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_GetAttributeValue" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_
  
 (*************************************************************************)
 let c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_  =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SetAttributeValue" !filter_actions (cksessionhandlet_, ckobjecthandlet_, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SetAttributeValue" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -924,15 +1075,18 @@ let c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_  =
       if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_SetAttributeValue" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_SetAttributeValue" = false) then
         (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-      begin
         (* Check for the possible label or id blocking *)
         let check_label = check_label_on_object_creation ckattributearray_ !allowed_labels "C_SetAttributeValue" in
         let check_label_id = check_label || (check_id_on_object_creation ckattributearray_ !allowed_ids "C_SetAttributeValue") in
         if check_label_id = true then
 	  (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID)
         else
-  	  Backend.c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ 
-      end
+  	  (* Late actions after other checks *)
+  	  let (take_ret, ret) =  apply_post_filter_actions "C_SetAttributeValue" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_ ) in
+  	  if take_ret = true then
+  	    (ret)
+  	  else
+  	    Backend.c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ 
 
 (*************************************************************************)
 (* Variable holding the filtered handles     *)
@@ -944,7 +1098,7 @@ let max_objects_loop : int ref = ref 10000
 
 let c_FindObjectsInit cksessionhandlet_ ckattributearray_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_FindObjectsInit" !filter_actions (cksessionhandlet_, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -960,15 +1114,25 @@ let c_FindObjectsInit cksessionhandlet_ ckattributearray_ =
 	  (* Reinitialize the found objects array *)
 	  current_find_objects_filtered_handles := [| |];
 	  last_ret_on_error := Pkcs11.cKR_OK;
-	  (ret)
+          (* Late actions after other checks *)
+          let (take_ret, return) =  apply_post_filter_actions "c_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
+          if take_ret = true then
+            (return)
+          else
+            (ret)
 	end
 	else
-	  (ret)
+          (* Late actions after other checks *)
+          let (take_ret, return) =  apply_post_filter_actions "c_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
+          if take_ret = true then
+            (return)
+          else
+            (ret)
  
 (*************************************************************************)
 let c_FindObjects cksessionhandlet_ count =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_FindObjects" !filter_actions (cksessionhandlet_, count)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_FindObjects" (cksessionhandlet_, count) in
   if take_ret = true then
     (ret)
   else
@@ -1009,25 +1173,30 @@ let c_FindObjects cksessionhandlet_ count =
 	done
 	with Exit -> ();
       end;
-      if compare !last_ret_on_error Pkcs11.cKR_OK <> 0 then
-      begin
-	(* We got an error, reinitialize the global variable last_ret_on_error *)
-	let ret = !last_ret_on_error in
-	last_ret_on_error := Pkcs11.cKR_OK;
-	(* We return the real error that we got from the Backend               *)
-	(ret, [| |], 0n)
-      end
+      (* Late actions after other checks *)
+      let (take_ret, return) =  apply_post_filter_actions "c_FindObjects" (cksessionhandlet_, 1n) in
+      if take_ret = true then
+        (return)
       else
-	(* FindObjects has already been called          *)
-	(* Pick up objects from local cache array       *)
-	let returned_objects_handles = pickup_elements_in_array current_find_objects_filtered_handles count in
-	(Pkcs11.cKR_OK, returned_objects_handles, Nativeint.of_int (Array.length returned_objects_handles))
-     end
+        if compare !last_ret_on_error Pkcs11.cKR_OK <> 0 then
+        begin
+  	  (* We got an error, reinitialize the global variable last_ret_on_error *)
+	  let ret = !last_ret_on_error in
+	  last_ret_on_error := Pkcs11.cKR_OK;
+          (* We return the real error that we got from the Backend               *)
+	  (ret, [| |], 0n)
+        end
+        else
+	  (* FindObjects has already been called          *)
+	  (* Pick up objects from local cache array       *)
+	  let returned_objects_handles = pickup_elements_in_array current_find_objects_filtered_handles count in
+	  (Pkcs11.cKR_OK, returned_objects_handles, Nativeint.of_int (Array.length returned_objects_handles))
+        end
 
 (*************************************************************************)
 let c_FindObjectsFinal cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_FindObjectsFinal" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_FindObjectsFinal" (cksessionhandlet_) in
   if take_ret = true then
   (ret)
     else
@@ -1037,12 +1206,17 @@ let c_FindObjectsFinal cksessionhandlet_ =
       let _ = print_debug "Blocking function C_FindObjectsFinal" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_FindObjectsFinal cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_FindObjectsFinal" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_FindObjectsFinal cksessionhandlet_
  
 (*************************************************************************)
 let c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_EncryptInit" !filter_actions (cksessionhandlet_, ckmechanism_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_EncryptInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1068,22 +1242,30 @@ let c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
         else
 	  (* Check if we forbid padding oracles *)
 	  if (check_remove_padding_oracles !remove_padding_oracles "encrypt" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
-	  begin
 	    (* If we indeed want to remove the padding oracles   *)
 	    (* we check the mechanism against the dangerous ones *)
 	    if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
 	      (Pkcs11.cKR_MECHANISM_INVALID)
 	    else
-	      Backend.c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-	  end
+	      (* Late actions after other checks *)
+	      let (take_ret, ret) =  apply_post_filter_actions "C_EncryptInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
+	      if take_ret = true then
+	        (ret)
+	      else
+	        Backend.c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
 	  else
-	    Backend.c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+	    (* Late actions after other checks *)
+	    let (take_ret, ret) =  apply_post_filter_actions "C_EncryptInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
+	    if take_ret = true then
+	      (ret)
+	    else
+	      Backend.c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
       end
 
 (*************************************************************************)
 let c_Encrypt cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Encrypt" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Encrypt" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1093,12 +1275,17 @@ let c_Encrypt cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_Encrypt" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_Encrypt cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Encrypt" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Encrypt cksessionhandlet_ data
  
 (*************************************************************************)
 let c_EncryptUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_EncryptUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_EncryptUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1108,12 +1295,17 @@ let c_EncryptUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_EncryptUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_EncryptUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_EncryptUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_EncryptUpdate cksessionhandlet_ data
  
 (*************************************************************************)
 let c_EncryptFinal cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_EncryptFinal" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_EncryptFinal" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1123,12 +1315,17 @@ let c_EncryptFinal cksessionhandlet_ =
       let _ = print_debug "Blocking function C_EncryptFinal" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_EncryptFinal cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_EncryptFinal" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_EncryptFinal cksessionhandlet_
 
 (*************************************************************************)
 let c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DecryptInit" !filter_actions (cksessionhandlet_, ckmechanism_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1151,12 +1348,17 @@ let c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
         (Pkcs11.cKR_MECHANISM_INVALID)
         end
       else
-        Backend.c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_DecryptInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_Decrypt cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Decrypt" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Decrypt" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1166,12 +1368,17 @@ let c_Decrypt cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_Decrypt" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_Decrypt cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Decrypt" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Decrypt cksessionhandlet_ data
  
 (*************************************************************************)
 let c_DecryptUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DecryptUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1181,12 +1388,17 @@ let c_DecryptUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_DecryptUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_DecryptUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_DecryptUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_DecryptUpdate cksessionhandlet_ data
  
 (*************************************************************************)
 let c_DecryptFinal cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DecryptFinal" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptFinal" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1196,12 +1408,17 @@ let c_DecryptFinal cksessionhandlet_ =
       let _ = print_debug "Blocking function C_DecryptFinal" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_DecryptFinal cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_DecryptFinal" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_DecryptFinal cksessionhandlet_
 
 (*************************************************************************)
 let c_DigestInit cksessionhandlet_ ckmechanism_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DigestInit" !filter_actions (cksessionhandlet_, ckmechanism_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DigestInit" (cksessionhandlet_, ckmechanism_) in
   if take_ret = true then
     (ret)
   else
@@ -1220,12 +1437,17 @@ let c_DigestInit cksessionhandlet_ ckmechanism_ =
 	(Pkcs11.cKR_MECHANISM_INVALID)
       end
       else
-	Backend.c_DigestInit cksessionhandlet_ ckmechanism_
+	(* Late actions after other checks *)
+	let (take_ret, ret) =  apply_post_filter_actions "C_DigestInit" (cksessionhandlet_, ckmechanism_) in
+	if take_ret = true then
+	  (ret)
+	else
+	  Backend.c_DigestInit cksessionhandlet_ ckmechanism_
 
 (*************************************************************************)
 let c_Digest cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Digest" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Digest" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1235,12 +1457,17 @@ let c_Digest cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_Digest" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_Digest cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Digest" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Digest cksessionhandlet_ data
 
 (*************************************************************************)
 let c_DigestUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DigestUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DigestUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1250,12 +1477,17 @@ let c_DigestUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_DigestUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_DigestUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_DigestUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_DigestUpdate cksessionhandlet_ data
 
 (*************************************************************************)
 let c_DigestKey cksessionhandlet_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DigestKey" !filter_actions (cksessionhandlet_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DigestKey" (cksessionhandlet_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1269,12 +1501,17 @@ let c_DigestKey cksessionhandlet_ ckobjecthandlet_ =
       if (check_object_label cksessionhandlet_ ckobjecthandlet_ !allowed_labels "C_DigestKey" = false) || (check_object_id cksessionhandlet_ ckobjecthandlet_ !allowed_ids "C_DigestKey" = false) then
         (Pkcs11.cKR_OBJECT_HANDLE_INVALID)
       else
-        Backend.c_DigestKey cksessionhandlet_ ckobjecthandlet_
+        (* Late actions after other checks *)
+        let (take_ret, ret) =  apply_post_filter_actions "C_DigestKey" (cksessionhandlet_, ckobjecthandlet_) in
+        if take_ret = true then
+          (ret)
+        else
+          Backend.c_DigestKey cksessionhandlet_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_DigestFinal cksessionhandlet =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DigestFinal" !filter_actions (cksessionhandlet)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DigestFinal" (cksessionhandlet) in
   if take_ret = true then
     (ret)
   else
@@ -1284,12 +1521,17 @@ let c_DigestFinal cksessionhandlet =
       let _ = print_debug "Blocking function C_DigestFinal" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_DigestFinal cksessionhandlet
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_DigestFinal" (cksessionhandlet) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_DigestFinal cksessionhandlet
  
 (*************************************************************************)
 let c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SignInit" !filter_actions (cksessionhandlet_, ckmechanism_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SignInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1314,21 +1556,29 @@ let c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
         else
 	  (* Check if we forbid padding oracles *)
 	  if (check_remove_padding_oracles !remove_padding_oracles "sign" = true || check_remove_padding_oracles !remove_padding_oracles "all" = true) then
-	  begin
 	    (* If we indeed want to remove the padding oracles   *)
 	    (* we check the mechanism against the dangerous ones *)
 	    if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
 	      (Pkcs11.cKR_MECHANISM_INVALID)
 	    else
-	      Backend.c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
-	  end
+	      (* Late actions after other checks *)
+	      let (take_ret, ret) =  apply_post_filter_actions "C_SignInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
+	      if take_ret = true then
+	        (ret)
+	      else
+	        Backend.c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
 	  else
-	    Backend.c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+	    (* Late actions after other checks *)
+	    let (take_ret, ret) =  apply_post_filter_actions "C_SignInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
+	    if take_ret = true then
+	      (ret)
+	    else
+	      Backend.c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SignRecoverInit" !filter_actions (cksessionhandlet_, ckmechanism_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SignRecoverInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1351,12 +1601,17 @@ let c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
 	  (Pkcs11.cKR_MECHANISM_INVALID)
 	  end
         else
-	  Backend.c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+	  (* Late actions after other checks *)
+	  let (take_ret, ret) =  apply_post_filter_actions "C_SignRecoverInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
+	  if take_ret = true then
+	    (ret)
+	  else
+	    Backend.c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
 
 (*************************************************************************)
 let c_Sign cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Sign" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Sign" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1366,12 +1621,17 @@ let c_Sign cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_Sign" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_Sign cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Sign" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Sign cksessionhandlet_ data
 
 (*************************************************************************)
 let c_SignRecover cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SignRecover" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SignRecover" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1381,12 +1641,17 @@ let c_SignRecover cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_SignRecover" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_SignRecover cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_SignRecover" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_SignRecover cksessionhandlet_ data
  
 (*************************************************************************)
 let c_SignUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SignUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SignUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1396,12 +1661,17 @@ let c_SignUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_SignUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_SignUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_SignUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_SignUpdate cksessionhandlet_ data
 
 (*************************************************************************)
 let c_SignFinal cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SignFinal" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SignFinal" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1411,12 +1681,17 @@ let c_SignFinal cksessionhandlet_ =
       let _ = print_debug "Blocking function C_SignFinal" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_SignFinal cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_SignFinal" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_SignFinal cksessionhandlet_
 
 (*************************************************************************)
 let c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_VerifyInit" !filter_actions (cksessionhandlet_, ckmechanism_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1439,12 +1714,17 @@ let c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
 	  (Pkcs11.cKR_MECHANISM_INVALID)
         end
         else
-	  Backend.c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
+	  (* Late actions after other checks *)
+	  let (take_ret, ret) =  apply_post_filter_actions "C_VerifyInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
+	  if take_ret = true then
+	    (ret)
+	  else
+	    Backend.c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_
  
 (*************************************************************************)
 let c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_  =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_VerifyRecoverInit " !filter_actions (cksessionhandlet_, ckmechanism_, ckobjecthandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyRecoverInit " (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1467,12 +1747,17 @@ let c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_  =
 	  (Pkcs11.cKR_MECHANISM_INVALID)
 	  end
         else
-	  Backend.c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_ 
+	  (* Late actions after other checks *)
+	  let (take_ret, ret) =  apply_post_filter_actions "C_VerifyRecoverInit" ( cksessionhandlet_, ckmechanism_, ckobjecthandlet_ ) in
+	  if take_ret = true then
+	    (ret)
+	  else
+	    Backend.c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_ 
 
 (*************************************************************************)
 let c_Verify cksessionhandlet_ data signed_data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_Verify" !filter_actions (cksessionhandlet_, data, signed_data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_Verify" (cksessionhandlet_, data, signed_data) in
   if take_ret = true then
   (ret)
     else
@@ -1482,12 +1767,17 @@ let c_Verify cksessionhandlet_ data signed_data =
       let _ = print_debug "Blocking function C_Verify" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_Verify cksessionhandlet_ data signed_data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_Verify" (cksessionhandlet_, data, signed_data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_Verify cksessionhandlet_ data signed_data
  
 (*************************************************************************)
 let c_VerifyRecover cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_VerifyRecover" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyRecover" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1497,12 +1787,17 @@ let c_VerifyRecover cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_VerifyRevover" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_VerifyRecover cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_VerifyRecover" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_VerifyRecover cksessionhandlet_ data
  
 (*************************************************************************)
 let c_VerifyUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_VerifyUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1512,12 +1807,17 @@ let c_VerifyUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_VerifyUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_VerifyUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_VerifyUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_VerifyUpdate cksessionhandlet_ data
 
 (*************************************************************************)
 let c_VerifyFinal cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_VerifyFinal" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyFinal" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1527,12 +1827,17 @@ let c_VerifyFinal cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_VerifyFinal" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_VerifyFinal cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_VerifyFinal" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_VerifyFinal cksessionhandlet_ data
 
 (*************************************************************************)
 let c_DigestEncryptUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DigestEncryptUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DigestEncryptUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1542,12 +1847,17 @@ let c_DigestEncryptUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_DigestEncryptUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_DigestEncryptUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_DigestEncryptUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_DigestEncryptUpdate cksessionhandlet_ data
 
 (*************************************************************************)
 let c_DecryptDigestUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DecryptDigestUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptDigestUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1557,12 +1867,17 @@ let c_DecryptDigestUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_DecryptDigestUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_DecryptDigestUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_DecryptDigestUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_DecryptDigestUpdate cksessionhandlet_ data
  
 (*************************************************************************)
 let c_SignEncryptUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SignEncryptUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SignEncryptUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1572,12 +1887,17 @@ let c_SignEncryptUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_SignEncryptUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_SignEncryptUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_SignEncryptUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_SignEncryptUpdate cksessionhandlet_ data
  
 (*************************************************************************)
 let c_DecryptVerifyUpdate cksessionhandlet_ data =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DecryptVerifyUpdate" !filter_actions (cksessionhandlet_, data)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptVerifyUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
     (ret)
   else
@@ -1587,12 +1907,17 @@ let c_DecryptVerifyUpdate cksessionhandlet_ data =
       let _ = print_debug "Blocking function C_DecryptVerifyUpdate" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_DecryptVerifyUpdate cksessionhandlet_ data
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_DecryptVerifyUpdate" (cksessionhandlet_, data) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_DecryptVerifyUpdate cksessionhandlet_ data
  
 (*************************************************************************)
 let c_GenerateKey cksessionhandlet_ ckmechanism_ ckattributearray_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GenerateKey" !filter_actions (cksessionhandlet_, ckmechanism_, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GenerateKey" (cksessionhandlet_, ckmechanism_, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -1617,12 +1942,17 @@ let c_GenerateKey cksessionhandlet_ ckmechanism_ ckattributearray_ =
 	if check_label_id = true then
 	  (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
 	else
-	  Backend.c_GenerateKey cksessionhandlet_ ckmechanism_ ckattributearray_
+	  (* Late actions after other checks *)
+	  let (take_ret, ret) =  apply_post_filter_actions "C_GenerateKey" (cksessionhandlet_, ckmechanism_, ckattributearray_) in
+	  if take_ret = true then
+	    (ret)
+	  else
+	    Backend.c_GenerateKey cksessionhandlet_ ckmechanism_ ckattributearray_
 
 (*************************************************************************)
 let c_GenerateKeyPair cksessionhandlet_ ckmechanism_ pub_attributes priv_attributes =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GenerateKeyPair" !filter_actions (cksessionhandlet_, ckmechanism_, pub_attributes, priv_attributes)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GenerateKeyPair" (cksessionhandlet_, ckmechanism_, pub_attributes, priv_attributes) in
   if take_ret = true then
     (ret)
   else
@@ -1649,12 +1979,17 @@ let c_GenerateKeyPair cksessionhandlet_ ckmechanism_ pub_attributes priv_attribu
 	if check_all = true then
 	  (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE, Pkcs11.cK_INVALID_HANDLE)
 	else
-	  Backend.c_GenerateKeyPair cksessionhandlet_ ckmechanism_ pub_attributes priv_attributes
+	  (* Late actions after other checks *)
+	  let (take_ret, ret) =  apply_post_filter_actions "C_GenerateKeyPair" (cksessionhandlet_, ckmechanism_, pub_attributes, priv_attributes) in
+	  if take_ret = true then
+	    (ret)
+	  else
+	    Backend.c_GenerateKeyPair cksessionhandlet_ ckmechanism_ pub_attributes priv_attributes
 
 (*************************************************************************)
 let c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_WrapKey" !filter_actions (cksessionhandlet_, ckmechanism_, wrapping_handle, wrapped_handle)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_WrapKey" (cksessionhandlet_, ckmechanism_, wrapping_handle, wrapped_handle) in
   if take_ret = true then
     (ret)
   else
@@ -1689,15 +2024,25 @@ let c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle =
 	      if check_element_in_list !padding_oracle_mechanisms ckmechanism_.Pkcs11.mechanism = true then
 	        (Pkcs11.cKR_MECHANISM_INVALID, [||])
 	      else
-	        Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
+	        (* Late actions after other checks *)
+	        let (take_ret, ret) =  apply_post_filter_actions "C_WrapKey" (cksessionhandlet_, ckmechanism_, wrapping_handle, wrapped_handle) in
+	        if take_ret = true then
+	          (ret)
+	        else
+	          Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
 	    end
 	    else
-	      Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
+	      (* Late actions after other checks *)
+	      let (take_ret, ret) =  apply_post_filter_actions "C_WrapKey" (cksessionhandlet_, ckmechanism_, wrapping_handle, wrapped_handle) in
+	      if take_ret = true then
+	        (ret)
+	      else
+	        Backend.c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle
 
 (*************************************************************************)
 let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_   =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_UnwrapKey" !filter_actions (cksessionhandlet_, ckmechanism_, unwrapping_handle, wrapped_key, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_UnwrapKey" (cksessionhandlet_, ckmechanism_, unwrapping_handle, wrapped_key, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -1737,12 +2082,17 @@ let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key cka
 	    if check_label_id = true then
 	      (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
 	    else
-	      Backend.c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_  
+	      (* Late actions after other checks *)
+	      let (take_ret, ret) =  apply_post_filter_actions "C_UnwrapKey" (cksessionhandlet_, ckmechanism_, unwrapping_handle, wrapped_key, ckattributearray_  ) in
+	      if take_ret = true then
+	        (ret)
+	      else
+	        Backend.c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_  
 
 (*************************************************************************)
 let c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearray_   =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_DeriveKey" !filter_actions (cksessionhandlet_, ckmechanism_, initial_key_handle, ckattributearray_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_DeriveKey" (cksessionhandlet_, ckmechanism_, initial_key_handle, ckattributearray_) in
   if take_ret = true then
     (ret)
   else
@@ -1771,12 +2121,17 @@ let c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearr
 	  if check_label_id = true then
 	    (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE)
 	  else
-	    Backend.c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearray_  
+	    (* Late actions after other checks *)
+	    let (take_ret, ret) =  apply_post_filter_actions "C_DeriveKey" (cksessionhandlet_, ckmechanism_, initial_key_handle, ckattributearray_  ) in
+	    if take_ret = true then
+	      (ret)
+	    else
+	      Backend.c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearray_  
 
 (*************************************************************************)
 let c_SeedRandom cksessionhandlet_ seed =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_SeedRandom" !filter_actions (cksessionhandlet_, seed)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_SeedRandom" (cksessionhandlet_, seed) in
   if take_ret = true then
     (ret)
   else
@@ -1786,12 +2141,17 @@ let c_SeedRandom cksessionhandlet_ seed =
       let _ = print_debug "Blocking function C_SeedRandom" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_SeedRandom cksessionhandlet_ seed
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_SeedRandom" (cksessionhandlet_, seed) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_SeedRandom cksessionhandlet_ seed
 
 (*************************************************************************)
 let c_GenerateRandom cksessionhandlet_ count =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GenerateRandom" !filter_actions (cksessionhandlet_, count)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GenerateRandom" (cksessionhandlet_, count) in
   if take_ret = true then
     (ret)
   else
@@ -1801,12 +2161,17 @@ let c_GenerateRandom cksessionhandlet_ count =
       let _ = print_debug "Blocking function C_GenerateRandom" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED, [| |])
     else
-      Backend.c_GenerateRandom cksessionhandlet_ count
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_GenerateRandom" (cksessionhandlet_, count) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_GenerateRandom cksessionhandlet_ count
 
 (*************************************************************************)
 let c_GetFunctionStatus cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_GetFunctionStatus" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_GetFunctionStatus" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1816,12 +2181,17 @@ let c_GetFunctionStatus cksessionhandlet_ =
       let _ = print_debug "Blocking function C_GetFunctionStatus" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_GetFunctionStatus cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_GetFunctionStatus" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_GetFunctionStatus cksessionhandlet_
 
 (*************************************************************************)
 let c_CancelFunction cksessionhandlet_ =
   (* Early actions before other checks *)
-  let (take_ret, ret) =  deserialize (check_trigger_and_action "C_CancelFunction" !filter_actions (cksessionhandlet_)) in
+  let (take_ret, ret) =  apply_pre_filter_actions "C_CancelFunction" (cksessionhandlet_) in
   if take_ret = true then
     (ret)
   else
@@ -1831,5 +2201,10 @@ let c_CancelFunction cksessionhandlet_ =
       let _ = print_debug "Blocking function C_CancelFunction" 1 in
       (Pkcs11.cKR_FUNCTION_NOT_SUPPORTED)
     else
-      Backend.c_CancelFunction cksessionhandlet_
+      (* Late actions after other checks *)
+      let (take_ret, ret) =  apply_post_filter_actions "C_CancelFunction" (cksessionhandlet_) in
+      if take_ret = true then
+        (ret)
+      else
+        Backend.c_CancelFunction cksessionhandlet_
 
