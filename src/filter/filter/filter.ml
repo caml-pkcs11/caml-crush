@@ -87,9 +87,6 @@ exception Loop_overflow
 
 let print_hex_array_to_string = fun a ->  String.concat "" (Array.to_list (Array.map (fun b -> let s = Printf.sprintf "%02x" (int_of_char b) in (s)) a))
 
-(* Current module if it is loaded *)
-let current_module : string option ref = ref None
-
 (*** High level helper functions *****)
 let apply_blacklist original_list forbidden_list =
   (* We have two lists: we want to return a list with the original *)
@@ -606,7 +603,7 @@ let c_GetMechanismList ckslotidt_ count =
         (* We filter the list if everything went OK *)
         if compare ret Pkcs11.cKR_OK = 0 then
           (* Late actions after other checks *)
-          let (take_ret, return) =  apply_post_filter_actions "c_GetMechanismList" (ckslotidt_, count) in
+          let (take_ret, return) =  apply_post_filter_actions "C_GetMechanismList" (ckslotidt_, count) in
           if take_ret = true then
             (return)
           else
@@ -614,7 +611,7 @@ let c_GetMechanismList ckslotidt_ count =
 	    (filtered_ret, filtered_list, filtered_count)
         else
           (* Late actions after other checks *)
-          let (take_ret, return) =  apply_post_filter_actions "c_GetMechanismList" (ckslotidt_, count) in
+          let (take_ret, return) =  apply_post_filter_actions "C_GetMechanismList" (ckslotidt_, count) in
           if take_ret = true then
             (return)
           else
@@ -1089,12 +1086,11 @@ let c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_  =
   	    Backend.c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ 
 
 (*************************************************************************)
-(* Variable holding the filtered handles     *)
-let current_find_objects_filtered_handles : Pkcs11.ck_object_handle_t array ref = ref [| |]
+(* Variable used for the filtered handles     *)
 let last_ret_on_error : Pkcs11.ck_rv_t ref = ref Pkcs11.cKR_OK
 let find_objects_loop_num : int ref = ref 0
 (* Maximum number of loop iterations allowed *)
-let max_objects_loop : int ref = ref 10000
+let max_objects_loop : int ref = ref 100000
 
 let c_FindObjectsInit cksessionhandlet_ ckattributearray_ =
   (* Early actions before other checks *)
@@ -1115,7 +1111,7 @@ let c_FindObjectsInit cksessionhandlet_ ckattributearray_ =
 	  current_find_objects_filtered_handles := [| |];
 	  last_ret_on_error := Pkcs11.cKR_OK;
           (* Late actions after other checks *)
-          let (take_ret, return) =  apply_post_filter_actions "c_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
+          let (take_ret, return) =  apply_post_filter_actions "C_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
           if take_ret = true then
             (return)
           else
@@ -1123,7 +1119,7 @@ let c_FindObjectsInit cksessionhandlet_ ckattributearray_ =
 	end
 	else
           (* Late actions after other checks *)
-          let (take_ret, return) =  apply_post_filter_actions "c_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
+          let (take_ret, return) =  apply_post_filter_actions "C_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
           if take_ret = true then
             (return)
           else
@@ -1174,7 +1170,7 @@ let c_FindObjects cksessionhandlet_ count =
 	with Exit -> ();
       end;
       (* Late actions after other checks *)
-      let (take_ret, return) =  apply_post_filter_actions "c_FindObjects" (cksessionhandlet_, 1n) in
+      let (take_ret, return) =  apply_post_filter_actions "C_FindObjects" (cksessionhandlet_, 1n) in
       if take_ret = true then
         (return)
       else

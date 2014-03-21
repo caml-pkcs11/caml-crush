@@ -97,6 +97,15 @@ let get = function
   | Some x -> x
   | None   -> raise (Invalid_argument "Option.get")
 
+(************************************)
+(* Global variables and structures  *)
+(* of the filter core engine        *)
+(************************************)
+let current_find_objects_filtered_handles : Pkcs11.ck_object_handle_t array ref = ref [| |]
+(* Current module if it is loaded *)
+let current_module : string option ref = ref None
+
+
 (****************************)
 (* Basic logging primitives *)
 (****************************)

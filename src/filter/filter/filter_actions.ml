@@ -178,6 +178,7 @@ let execute_action fun_name action argument = match action with
 | "c_Login_hook" -> c_Login_hook fun_name argument
 | "identity" -> identity fun_name argument
 | "conflicting_attributes_patch" -> conflicting_attributes_patch fun_name argument
+| "conflicting_attributes_patch_on_existing_objects" -> conflicting_attributes_patch_on_existing_objects fun_name argument
 | "sticky_attributes_patch" -> sticky_attributes_patch fun_name argument
 | "sanitize_creation_templates_patch" -> sanitize_creation_templates_patch fun_name argument
 | "prevent_sensitive_leak_patch" -> prevent_sensitive_leak_patch fun_name argument
@@ -192,6 +193,7 @@ let string_check_action a = match a with
 | "c_Login_hook" -> a
 | "identity" -> a
 | "conflicting_attributes_patch" -> a
+| "conflicting_attributes_patch_on_existing_objects" -> a
 | "sticky_attributes_patch" -> a
 | "sanitize_creation_templates_patch" -> a
 | "prevent_sensitive_leak_patch" -> a
