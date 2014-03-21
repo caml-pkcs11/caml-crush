@@ -9,6 +9,8 @@ let critical_attributes key_segregation = if compare key_segregation true = 0 th
                            [| 
                              {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_NEVER_EXTRACTABLE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = [||]} ;
@@ -25,6 +27,8 @@ let critical_attributes key_segregation = if compare key_segregation true = 0 th
                            [|
                              {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = [||]} ;
+                             {Pkcs11.type_ = Pkcs11.cKA_NEVER_EXTRACTABLE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_DECRYPT; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = [||]} ;
