@@ -9,6 +9,8 @@ let conflicting_attributes key_segregation = if compare key_segregation true = 0
                                 ({Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE}, {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
                                 ({Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
                                 ({Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE}, {Pkcs11.type_ = Pkcs11.cKA_NEVER_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
+                                ({Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
+                                ({Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
                                 (** Addition for key segregation **)
                                 ({Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_SIGN; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE});
                                 ({Pkcs11.type_ = Pkcs11.cKA_ENCRYPT; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_SIGN_RECOVER; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE});
@@ -26,6 +28,8 @@ let conflicting_attributes key_segregation = if compare key_segregation true = 0
                                 ({Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE}, {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
                                 ({Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
                                 ({Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE}, {Pkcs11.type_ = Pkcs11.cKA_NEVER_EXTRACTABLE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
+                                ({Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
+                                ({Pkcs11.type_ = Pkcs11.cKA_WRAP; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE}, {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_FALSE});
                               |]
 
 
@@ -87,26 +91,23 @@ let conflicting_attributes_patch fun_name arg =
         (serialize (false, ()))
   | "C_GenerateKeyPair" -> 
       let (sessionh, mechanism, pub_attributes, priv_attributes) = deserialize arg in
-      let check = detect_conflicting_attributes fun_name [||] priv_attributes in
+      (* For asymmetric keys, we have to check conflicting attributes on the fused template *)
+      let check = detect_conflicting_attributes fun_name [||] (Array.concat [pub_attributes; priv_attributes]) in
       if check = true then
         (serialize (true, (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE, Pkcs11.cK_INVALID_HANDLE)))
       else
-        let check = detect_conflicting_attributes fun_name [||] pub_attributes in
-        if check = true then
-          (serialize (true, (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID, Pkcs11.cK_INVALID_HANDLE, Pkcs11.cK_INVALID_HANDLE)))
-        else          
           (serialize (false, ()))
   (* It is an attributes modification function *)
   | "C_SetAttributeValue" ->
       let (sessionh, objecth, attributes) = deserialize arg in
-      let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh objecth (critical_attributes !segregate_usage)) in
+      let (ret, templates) = filter_getAttributeValue sessionh objecth (critical_attributes !segregate_usage) in
       if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
         if (compare ret Pkcs11.cKR_OK <> 0) then
           (serialize (true, (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID)))
         else
           let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...\n" in netplex_log_critical s; failwith s;
       else
-        let (ret, templates_values) = Backend.c_GetAttributeValue sessionh objecth templates in
+        let (ret, templates_values) = filter_getAttributeValue sessionh objecth templates in
         if compare ret Pkcs11.cKR_OK <> 0 then
           (serialize (true, (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID)))
         else
@@ -121,14 +122,14 @@ let conflicting_attributes_patch fun_name arg =
 
 (* Function to check for conflicting attributes on existing objects *)
 let detect_conflicting_attributes_on_existing_object function_name sessionh objecth = 
-  let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh objecth (critical_attributes !segregate_usage)) in
+  let (ret, templates) = filter_getAttributeValue sessionh objecth (critical_attributes !segregate_usage) in
   if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
     if (compare ret Pkcs11.cKR_OK <> 0) then
       (true)
     else
       let s = Printf.sprintf "[User defined extensions] %s CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...\n" function_name in netplex_log_critical s; failwith s;
   else
-    let (ret, templates_values) = Backend.c_GetAttributeValue sessionh objecth templates in
+    let (ret, templates_values) = filter_getAttributeValue sessionh objecth templates in
     if compare ret Pkcs11.cKR_OK <> 0 then
       (true)
     else

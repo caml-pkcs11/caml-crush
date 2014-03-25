@@ -67,14 +67,14 @@ let wrapping_format_patch fun_name arg =
         (serialize (true, (ret, [||])))
       else
         (* Get the attributes of the object we want to wrap *)
-        let (ret, templates) = filter_getAttributeValue (Backend.c_GetAttributeValue sessionh wrappedh (critical_attributes !segregate_usage)) in
+        let (ret, templates) = filter_getAttributeValue sessionh wrappedh (critical_attributes !segregate_usage) in
         if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
           if (compare ret Pkcs11.cKR_OK <> 0) then
             (serialize (true, (Pkcs11.cKR_KEY_NOT_WRAPPABLE, [||])))
           else
-            let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...\n" in netplex_log_critical s; failwith s;
+            let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...): occured during C_WrapKey for WRAPPING_FORMAT\n" in netplex_log_critical s; failwith s;
         else
-          let (ret, templates_values) = Backend.c_GetAttributeValue sessionh wrappedh templates in
+          let (ret, templates_values) = filter_getAttributeValue sessionh wrappedh templates in
           if compare ret Pkcs11.cKR_OK <> 0 then
             (serialize (true, (Pkcs11.cKR_KEY_NOT_WRAPPABLE, [||])))
           else

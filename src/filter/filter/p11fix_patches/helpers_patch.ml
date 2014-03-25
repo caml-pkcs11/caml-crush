@@ -7,6 +7,7 @@ let do_segregate_usage _ _ = (let info_string = Printf.sprintf "[User defined ex
 let critical_attributes key_segregation = if compare key_segregation true = 0 then
                            (* If we segregate key usage, we add the sign-verify in the critical attributes *)
                            [| 
+                             (* {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} ; *)
                              {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = [||]} ;
@@ -25,6 +26,7 @@ let critical_attributes key_segregation = if compare key_segregation true = 0 th
                            |]
                            else
                            [|
+                             (* {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} ; *)
                              {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = [||]} ;
@@ -118,13 +120,47 @@ let merge_templates old_attributes new_attributes =
 
 (* All the critical attributes might no be extracted depending on the object type   *)
 (* Hence, we remove all the empty attributes that have not been extracted           *)
-let filter_getAttributeValue (ret, attributes) =
+(************************************************************************************)
+(* Get the critical attributes in one C_GetAttributeValue call *)
+let filter_getAttributeValue_raw sessionh objecth the_critical_attributes =
+  let (ret, attributes) = Backend.c_GetAttributeValue sessionh objecth the_critical_attributes in
   if (compare ret Pkcs11.cKR_OK = 0) || (compare ret Pkcs11.cKR_ATTRIBUTE_TYPE_INVALID = 0) then
     (* Expurge template from the non extracted attributes *)
     (Pkcs11.cKR_OK, expurge_template_from_irrelevant_attributes attributes) 
   else
     (* Return the error with purged values *)
     (ret, expurge_template_from_values attributes)
+
+(* Get the critical attributes in multiple C_GetAttributeValue calls *)
+let filter_getAttributeValue_multi_call sessionh objecth the_critical_attributes =
+  let (ret, attributes) = Array.fold_left (
+    fun (curr_ret, curr_attributes) attr ->
+      (* If the last GetAttributeValue returned an error, skip the rest with empty values *)
+      if compare curr_ret Pkcs11.cKR_OK <> 0 then
+            (curr_ret, Array.append curr_attributes [| attr |])
+      else
+        let (the_ret, attr_array) =  Backend.c_GetAttributeValue sessionh objecth [| attr |] in
+        if compare the_ret Pkcs11.cKR_OK = 0 then
+          (* It is ok, we have the value, push the result in the array *)
+          (Pkcs11.cKR_OK, Array.append curr_attributes attr_array)
+        else
+          if compare the_ret Pkcs11.cKR_ATTRIBUTE_TYPE_INVALID = 0 then
+            (* We cannot extract the attribute, just add it empty to the attribute list *)
+            (Pkcs11.cKR_OK, Array.append curr_attributes [| attr |])
+          else
+            (* We have another error, report it and add the attribute empty *)
+            (the_ret, Array.append curr_attributes [| attr |])
+  ) (Pkcs11.cKR_OK, [||]) the_critical_attributes in
+  if compare ret Pkcs11.cKR_OK = 0 then
+    (Pkcs11.cKR_OK, attributes)
+  else
+    (* Return the error with purged values *)
+    (ret, expurge_template_from_values attributes)
+
+let filter_getAttributeValue sessionh objecth the_critical_attributes = 
+  (filter_getAttributeValue_multi_call sessionh objecth the_critical_attributes)
+
+
 
 (* Errors for GetAttributeValue that we want to keep to remain P11 conforming *)
 let conforming_errors_ = [ Pkcs11.cKR_GENERAL_ERROR; Pkcs11.cKR_SLOT_ID_INVALID; Pkcs11.cKR_KEY_HANDLE_INVALID; 
@@ -173,6 +209,8 @@ let check_are_templates_nonconforming fun_name attributes new_attributes =
         fun tmp_check curr_new_attr ->
           if (compare curr_new_attr.Pkcs11.type_ curr_attr.Pkcs11.type_ = 0) &&
              (compare curr_new_attr.Pkcs11.value curr_attr.Pkcs11.value <> 0) then
+            let s = Printf.sprintf "%s" (Pkcs11.sprint_template_array [| curr_new_attr; curr_attr|]) in
+            let _ = print_debug s 1 in
             (tmp_check || true)
           else
             (tmp_check || false)
@@ -180,4 +218,62 @@ let check_are_templates_nonconforming fun_name attributes new_attributes =
       (curr_check || tmp_check)
   ) false attributes in
   (check)
-  
+
+(* Check if attribute is set to TRUE in an attributes array *)
+let check_is_attribute_set fun_name the_attr attributes =
+  let check = Array.fold_left (
+    fun check_tmp attr ->
+      if (compare attr.Pkcs11.type_ the_attr = 0) &&                  
+         (compare attr.Pkcs11.value (Pkcs11.bool_to_char_array Pkcs11.cK_FALSE) = 0) then
+        (check_tmp || true)
+      else
+        (check_tmp || false)
+  ) false attributes in
+  (check)
+
+(* Check if a given attribute is asked in the given template *)
+let check_is_attribute_asked fun_name the_attr attributes =
+  let check = Array.fold_left (
+    fun check_tmp attr ->
+      if (compare attr.Pkcs11.type_ the_attr = 0) then
+        (check_tmp || true)
+      else
+        (check_tmp || false)
+  ) false attributes in
+  (check)
+
+(* Stricky attributes checks *)
+let check_for_sticky_attribute fun_name old_attribute new_attribute the_sticky_attributes =
+  let oatype = old_attribute.Pkcs11.type_ in
+  let oavalue = old_attribute.Pkcs11.value in
+  let natype = new_attribute.Pkcs11.type_ in
+  let navalue = new_attribute.Pkcs11.value in
+  if compare oatype natype = 0 then
+    let check = Array.fold_left (
+      fun curr_check curr_attr ->
+        (* Detect a sticky attribute if the type is the same but we try to (un)set it *)
+        if (compare oatype curr_attr.Pkcs11.type_ = 0) && (compare natype curr_attr.Pkcs11.type_ = 0)
+           && (compare oavalue curr_attr.Pkcs11.value = 0)
+           && (compare navalue curr_attr.Pkcs11.value <> 0) then
+           let info_string = Printf.sprintf "[User defined extensions]: STICKY_ATTRIBUTES asked during %s for %s=%s to %s" fun_name
+            (Pkcs11.match_cKA_value oatype) (Pkcs11.sprint_bool_attribute_value (Pkcs11.char_array_to_bool (old_attribute.Pkcs11.value))) (Pkcs11.sprint_bool_attribute_value (Pkcs11.char_array_to_bool (new_attribute.Pkcs11.value))) in
+          let _ = print_debug info_string 1 in
+          (curr_check || true)
+        else
+          (curr_check || false)
+    ) false the_sticky_attributes in
+    (check)
+  else
+    (false)
+
+let detect_sticky_attributes fun_name attributes new_attributes the_sticky_attributes =
+  let check = Array.fold_left (
+    fun curr_check curr_attr ->
+      let tmp_check = Array.fold_left (
+        fun tmp_check curr_new_attr ->
+          (tmp_check || (check_for_sticky_attribute fun_name curr_attr curr_new_attr the_sticky_attributes))
+      ) false new_attributes in
+      (curr_check || tmp_check)
+  ) false attributes in
+  (check)
+

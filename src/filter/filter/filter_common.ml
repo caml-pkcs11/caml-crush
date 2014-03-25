@@ -199,17 +199,13 @@ let check_regexp a b =
   let found = (try Hashtbl.find !regexp_hash_tbl (a,b) with
     (* If a match is found, return it *)
     Not_found -> 
-      (* We have not found a match in the hash table, add it *)
+      (* We have not found a match in the hash table, add it     *)
       (* Add an end of line character $ at the end of the string *)
       (* to match to avoid sub strings match                     *)
       let check = Str.string_match (Str.regexp (Printf.sprintf "%s$" a)) b 0 in
       let _ = Hashtbl.add !regexp_hash_tbl (a, b) check in
       (check)) in
    (found)
-
-(* Check if b fits the regexp in a *)
-let check_regexp_ a b =
-      (Str.string_match (Str.regexp (Printf.sprintf "%s$" a)) b 0)
 
 (* Check if an element is in a regexp string list *)
 let check_regexp_element_in_list the_list element =

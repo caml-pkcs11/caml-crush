@@ -161,7 +161,7 @@ INCLUDE "p11fix_patches/sticky_attributes_patch.ml"
 INCLUDE "p11fix_patches/wrapping_format_patch.ml"
 
 (***********************************************************************)
-(* The non local objects patch:                                        *)
+(* The local and non local objects patch:                              *)
 INCLUDE "p11fix_patches/non_local_objects_patch.ml"
 
 (***********************************************************************)

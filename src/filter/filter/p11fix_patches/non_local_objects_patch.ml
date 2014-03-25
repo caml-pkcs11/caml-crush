@@ -14,7 +14,6 @@ let non_local_objects_dangerous_attributes = [|
                                       (* We should not be able to set CKA_LOCAL according to the standard, we enforce this however *)
                                       (* for C_CreateObject, C_CopyObject and C_SetAttribute                                       *)
                                       {Pkcs11.type_ = Pkcs11.cKA_LOCAL; Pkcs11.value = Pkcs11.bool_to_char_array Pkcs11.cK_TRUE};
-
                                                |]
 
 
