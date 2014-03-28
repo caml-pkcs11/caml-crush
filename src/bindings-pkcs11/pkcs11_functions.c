@@ -2739,7 +2739,7 @@ void hton_char_array( /*in */ unsigned char *input, unsigned long input_len,
   }
   *output_len = 4;
   memset(output, 0, *output_len);
-  if(input != NULL){
+  if((input != NULL) && (output != NULL)){
     switch (arch) {
       case LITTLE_ENDIAN_32:
       case LITTLE_ENDIAN_64:
@@ -2784,7 +2784,7 @@ void ntoh_char_array( /*in */ unsigned char *input, unsigned long input_len,
     *output_len = 0;
     return;
   }
-  if(input != NULL){
+  if((input != NULL) && (output != NULL)){
     switch (arch) {
       case LITTLE_ENDIAN_32:
         *output_len = 4;
