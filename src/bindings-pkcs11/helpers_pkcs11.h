@@ -88,9 +88,15 @@
 #if !(defined(CRPC) || defined (CAMLRPC))
 #include "original_pkcs11.h"
 
+unsigned long get_local_arch(void);
+
 void int_to_ulong_char_array(unsigned long, unsigned char *);
 
 void char_array_to_ulong(unsigned char*, size_t, unsigned long*);
+
+void hton_char_array(unsigned char*, unsigned long, unsigned char*, unsigned long*);
+
+void ntoh_char_array(unsigned char*, unsigned long, unsigned char*, unsigned long*);
 
 void print_pkcs11_error(CK_RV);
 

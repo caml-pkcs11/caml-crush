@@ -78,4 +78,15 @@ identifier data, output;
 - void char_array_to_ulong(/*in*/ unsigned char *data, /*out*/ unsigned long output);
 + void char_array_to_ulong(/*in*/ unsigned char *data, /*in*/ size_t data_size, /*out*/ unsigned long *output);
 
+@@
+identifier in, out, out_len;
+@@
+- void hton_char_array(/*in*/ unsigned char *in, /*out*/ unsigned char *out, /*in*/ unsigned long *out_len);
++ void hton_char_array(/*in*/ unsigned char *in, unsigned long in_len, /*out*/ unsigned char *out, /*in*/ unsigned long *out_len); 
+
+@@
+identifier in, out, out_len;
+@@
+- void ntoh_char_array(/*in*/ unsigned char *in, /*out*/ unsigned char *out, /*in*/ unsigned long *out_len);
++ void ntoh_char_array(/*in*/ unsigned char *in, unsigned long in_len, /*out*/ unsigned char *out, /*in*/ unsigned long *out_len); 
 

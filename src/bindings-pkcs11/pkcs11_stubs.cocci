@@ -743,3 +743,40 @@ identifier data, output;
   ...>
 }
 
+@rule_camlidl_pkcs11_ntoh_char_array@
+identifier in, out, _vres, out_len, _ctx;
+@@
+  camlidl_pkcs11_ntoh_char_array(...){
+  <...
+  value _vres;
++ unsigned char tmp[8];
++ unsigned long tmp_out_len;
+  ...
+  camlidl_ctx _ctx = &_ctxs;
++ out = (unsigned char*)tmp;
++ out_len = &tmp_out_len;
+  ...
+- out = camlidl_malloc(*out_len * sizeof(unsigned char ), _ctx);
+- ntoh_char_array(in, out, out_len);
++ ntoh_char_array(in, _c1, out, out_len);
+  ...>
+}
+
+@rule_camlidl_pkcs11_hton_char_array@
+identifier in, out, _vres, out_len, _ctx;
+@@
+  camlidl_pkcs11_hton_char_array(...){
+  <...
+  value _vres;
++ unsigned char tmp[8];
++ unsigned long tmp_out_len;
+  ...
+  camlidl_ctx _ctx = &_ctxs;
++ out = (unsigned char*)tmp;
++ out_len = &tmp_out_len;
+  ...
+- out = camlidl_malloc(*out_len * sizeof(unsigned char ), _ctx);
+- hton_char_array(in, out, out_len);
++ hton_char_array(in, _c1, out, out_len);
+  ...>
+}

@@ -178,6 +178,31 @@ quote(H, "#define BIG_ENDIAN_32 4");
 quote(H, "#define UNSUPPORTED_ARCHITECTURE 5");
 quote(H, "#define NOT_INITIALIZED 6");
 
+quote(mli, "val lITTLE_ENDIAN_64  : nativeint");
+quote(mli, "val lITTLE_ENDIAN_32  : nativeint");
+quote(mli, "val bIG_ENDIAN_64  : nativeint");
+quote(mli, "val bIG_ENDIAN_32  : nativeint");
+quote(mli, "val uNSUPPORTED_ARCHITECTURE  : nativeint");
+quote(mli, "val nOT_INITIALIZED  : nativeint");
+
+quote(ml, "let lITTLE_ENDIAN_64  = 1n");
+quote(ml, "let lITTLE_ENDIAN_32  = 2n");
+quote(ml, "let bIG_ENDIAN_64  = 3n");
+quote(ml, "let bIG_ENDIAN_32  = 4n");
+quote(ml, "let uNSUPPORTED_ARCHITECTURE  = 5n");
+quote(ml, "let nOT_INITIALIZED  = 6n");
+
+quote(mli, "val match_arch_value : nativeint -> string\n");
+quote(ml, "let match_arch_value a = match a with");
+quote(ml, "   1n -> \"LITTLE_ENDIAN_64\"");
+quote(ml, " | 2n -> \"LITTLE_ENDIAN_32\"");
+quote(ml, " | 3n -> \"BIG_ENDIAN_64\"");
+quote(ml, " | 4n -> \"BIG_ENDIAN_32\"");
+quote(ml, " | 5n -> \"UNSUPPORTED_ARCHITECTURE\"");
+quote(ml, " | 6n -> \"NOT_INITIALIZED\"");
+quote(ml, " | _  -> \"UNKNOWN_ERROR\"");
+
+
 quote(H, "");
 quote(H, "#ifdef SERVER_ROLE");
 quote(H, "/* variable used to avoid multiple calls to C_LoadModule */");
@@ -3317,6 +3342,15 @@ void int_to_ulong_char_array([nativeint]
 void char_array_to_ulong([in]unsigned char data[], 
                              [nativeint, out]unsigned long output);
 
+void hton_char_array([in]unsigned char in[], 
+	             [size_is(*out_len), out]unsigned char out[],
+                     [ignore]unsigned long* out_len);
+
+void ntoh_char_array([in]unsigned char in[], 
+	             [size_is(*out_len), out]unsigned char out[],
+                     [ignore]unsigned long* out_len);
+
+
 /* pkcs11_stubs.c */
 quote(H,"/* Avoid declaring caml stuff when sharing this header with C rpc client code */");
 quote(H,"#if !defined(CRPC)");
@@ -3682,6 +3716,8 @@ quote(H, "value camlidl_pkcs11_ML_CK_C_GetFunctionStatus(value _v_session);");
 quote(H, "value camlidl_pkcs11_ML_CK_C_CancelFunction(value _v_session);");
 quote(H, "value camlidl_pkcs11_int_to_ulong_char_array(value _v_input);");
 quote(H, "value camlidl_pkcs11_char_array_to_ulong(value _v_data);");
+quote(H, "value camlidl_pkcs11_hton_char_array(value _v_data);");
+quote(H, "value camlidl_pkcs11_ntoh_char_array(value _v_data);");
 
 quote(H, "#ifdef SERVER_ROLE");
 quote(H,

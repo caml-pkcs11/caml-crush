@@ -93,6 +93,34 @@ extern void custom_free(void **to_free);
 #include "pkcs11_functions.h"
 #include "pkcs11_aliasing.h"
 
+/* Endianness handling */
+unsigned long get_local_arch(void)
+{
+  unsigned long rv;
+  unsigned int test = 0xAABBCCDD;
+
+  if (((unsigned char *)&test)[0] == 0xDD) {
+    /* LittleEndian */
+    if (sizeof(long) == 8) {
+      /* 64bit */
+      rv = LITTLE_ENDIAN_64;
+    } else {
+      rv = LITTLE_ENDIAN_32;
+    }
+  } else {
+    /* BigEndian */
+    if (sizeof(long) == 8) {
+      /* 64bit */
+      rv = BIG_ENDIAN_64;
+    } else {
+      rv = BIG_ENDIAN_32;
+    }
+  }
+
+  return rv;
+}
+
+
 /* Global variable holding the current module handle        */
 void *module_handle = NULL;
 CK_C_GetFunctionList get_func_list;
@@ -121,27 +149,7 @@ CK_RV ML_CK_C_Daemonize(unsigned char *param, unsigned long param_len)
 CK_RV ML_CK_C_SetupArch(unsigned long client_arch)
 {
   CK_RV rv;
-  unsigned int test = 0xAABBCCDD;
-  DEBUG_CALL(ML_CK_C_SetupArch, " calling with arch %ld\n", client_arch);
-
-  if (((unsigned char *)&test)[0] == 0xDD) {
-    /* LittleEndian */
-    if (sizeof(long) == 8) {
-      /* 64bit */
-      rv = LITTLE_ENDIAN_64;
-    } else {
-      rv = LITTLE_ENDIAN_32;
-    }
-  } else {
-    /* BigEndian */
-    if (sizeof(long) == 8) {
-      /* 64bit */
-      rv = BIG_ENDIAN_64;
-    } else {
-      rv = BIG_ENDIAN_32;
-    }
-  }
-
+  rv = get_local_arch();
   /* Let's detect the client_arch to activate the 32 bit code */
   switch (client_arch) {
   case LITTLE_ENDIAN_64:
@@ -2684,7 +2692,6 @@ CK_RV ML_CK_C_SetOperationState( /*in */ CK_SESSION_HANDLE session,	/*in */
 void int_to_ulong_char_array( /*in */ unsigned long input,	/*out */
 			     unsigned char *data)
 {
-  /* Handle the endianness */
   if (data != NULL) {
     *((unsigned long *)data) = input;
   }
@@ -2701,7 +2708,6 @@ void char_array_to_ulong( /*in */ unsigned char* data,	/* in */ size_t data_size
     }
     return;
   }
-  /* Handle the endianness */
   if ((data != NULL) && (output != NULL)) {
     memset(output, 0, sizeof(unsigned long));
     memcpy(output, data, data_size);
@@ -2710,4 +2716,109 @@ void char_array_to_ulong( /*in */ unsigned char* data,	/* in */ size_t data_size
 
   return;
 }
+
+/* Network char array to host char array */
+/* We only deal with 32-bit values       */
+void hton_char_array( /*in */ unsigned char *input, unsigned long input_len,
+                      /*out*/ unsigned char *output, unsigned long *output_len)
+{
+  unsigned int i;
+  unsigned long arch;
+  unsigned long data_size;
+  /* We always output a 32-bit value */
+  arch = get_local_arch();
+  if(input_len > 8){
+    *output_len = 0;
+    return;
+  }
+  if(input_len < 4){
+    data_size = input_len;
+  }
+  else{
+    data_size = 4;
+  }
+  *output_len = 4;
+  memset(output, 0, *output_len);
+  if(input != NULL){
+    switch (arch) {
+      case LITTLE_ENDIAN_32:
+      case LITTLE_ENDIAN_64:
+        for(i=0; i < data_size; i++){
+          output[3-i] = input[i];
+        }
+        break;
+      case BIG_ENDIAN_32:
+        for(i=0; i < data_size; i++){
+          output[i] = input[i];
+        }
+        break;
+      case BIG_ENDIAN_64:
+        for(i=0; i < data_size; i++){
+          output[3-i] = input[7-i];
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  return;
+}
+
+#ifdef SERVER_ROLE
+extern unsigned long peer_arch;
+#endif
+/* Host char array to network char array */
+/* We only deal with 32-bit values       */
+void ntoh_char_array( /*in */ unsigned char *input, unsigned long input_len,
+                      /*out*/ unsigned char *output, unsigned long *output_len)
+{
+  unsigned int i;
+  unsigned long arch;
+  /* We always output a 32-bit value */
+#ifdef SERVER_ROLE
+  arch = peer_arch;
+#else
+  arch = get_local_arch();
+#endif
+  if(input_len != 4){
+    *output_len = 0;
+    return;
+  }
+  if(input != NULL){
+    switch (arch) {
+      case LITTLE_ENDIAN_32:
+        *output_len = 4;
+        memset(output, 0, *output_len);
+        for(i=0; i < 4; i++){
+          output[i] = input[3-i];
+        }
+        break;
+      case LITTLE_ENDIAN_64:
+        *output_len = 8;
+        memset(output, 0, *output_len);
+        for(i=0; i < 4; i++){
+          output[i] = input[3-i];
+        }
+        break;
+      case BIG_ENDIAN_32:
+        *output_len = 4;
+        memset(output, 0, *output_len);
+        for(i=0; i < 4; i++){
+          output[i] = input[i];
+        }
+        break;
+      case BIG_ENDIAN_64:
+        *output_len = 8;
+        memset(output, 0, *output_len);
+        for(i=0; i < 4; i++){
+          output[4+i] = input[i];
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  return;
+}
+
 
