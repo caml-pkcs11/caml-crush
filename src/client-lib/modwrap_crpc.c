@@ -291,7 +291,7 @@ serialize_rpc_ck_attribute(struct ck_attribute *in,
 {
   out->rpc_ck_attribute_type = in->type_;
   out->rpc_ck_attribute_value_len = in->value_len;
-  if (in->value != NULL) {
+  if ((in->value != NULL) && ((int)in->value_len >= 0)) {
     out->rpc_ck_attribute_value.rpc_ck_attribute_value_len = in->value_len;
     out->rpc_ck_attribute_value.rpc_ck_attribute_value_val =
 	custom_malloc(sizeof(char) * in->value_len);
