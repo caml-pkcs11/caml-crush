@@ -7,7 +7,7 @@ let do_segregate_usage _ _ = (let info_string = Printf.sprintf "[User defined ex
 let critical_attributes key_segregation = if compare key_segregation true = 0 then
                            (* If we segregate key usage, we add the sign-verify in the critical attributes *)
                            [| 
-                             (* {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} ; *)
+                             {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = [||]} ;
@@ -26,7 +26,7 @@ let critical_attributes key_segregation = if compare key_segregation true = 0 th
                            |]
                            else
                            [|
-                             (* {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} ; *)
+                             {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_SENSITIVE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_EXTRACTABLE; Pkcs11.value = [||]} ;
                              {Pkcs11.type_ = Pkcs11.cKA_ALWAYS_SENSITIVE; Pkcs11.value = [||]} ;

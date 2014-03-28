@@ -105,7 +105,7 @@ let conflicting_attributes_patch fun_name arg =
         if (compare ret Pkcs11.cKR_OK <> 0) then
           (serialize (true, (Pkcs11.cKR_ATTRIBUTE_VALUE_INVALID)))
         else
-          let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...\n" in netplex_log_critical s; failwith s;
+          let s = "[User defined extensions] C_SettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...): in CONFLICTING_ATTRIBUTES\n" in netplex_log_critical s; failwith s;
       else
         let (ret, templates_values) = filter_getAttributeValue sessionh objecth templates in
         if compare ret Pkcs11.cKR_OK <> 0 then
@@ -127,7 +127,7 @@ let detect_conflicting_attributes_on_existing_object function_name sessionh obje
     if (compare ret Pkcs11.cKR_OK <> 0) then
       (true)
     else
-      let s = Printf.sprintf "[User defined extensions] %s CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...\n" function_name in netplex_log_critical s; failwith s;
+      let s = Printf.sprintf "[User defined extensions] %s CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...): in CONFLICTING_ATTRIBUTES\n" function_name in netplex_log_critical s; failwith s;
   else
     let (ret, templates_values) = filter_getAttributeValue sessionh objecth templates in
     if compare ret Pkcs11.cKR_OK <> 0 then

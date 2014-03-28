@@ -10,39 +10,67 @@ let template_array_to_char_array templates =
   let out_array = Array.map (
     fun temp ->
       let check_value = get_existing_attribute_value templates temp in 
-      if compare check_value [||] = 0 then
-          (* Attribute not found, we put a "0xff" so that we can import it *)
-          (Char.chr 0xff)
-      else
-        (* Attribute found, we add its true value *)
-        if compare (Pkcs11.char_array_to_bool check_value) Pkcs11.cK_TRUE = 0 then
-          (Char.chr 1)
+      (* Attribute found, we add its true value *)
+      (* Do we have a CKA_CLASS attribute?      *)
+      (* If yes, keep the 32-bit value          *)
+      if compare temp.Pkcs11.type_ Pkcs11.cKA_CLASS = 0 then
+        if compare check_value [||] = 0 then
+          (* Attribute not found, we put a "0xff..." so that we can import it *)
+          ([|Char.chr 0xff; Char.chr 0xff; Char.chr 0xff; Char.chr 0xff|])
         else
-          (Char.chr 0)
+          (Pkcs11.hton_char_array check_value)
+      else 
+        if compare check_value [||] = 0 then
+          ([|Char.chr 0xff|])
+        else
+          (* If it is not a CKA_CLASS attribute, it is a boolean *)
+          if compare (Pkcs11.char_array_to_bool check_value) Pkcs11.cK_TRUE = 0 then
+            ([|Char.chr 0x1|])
+          else
+            ([|Char.chr 0x0|])
   ) (critical_attributes !segregate_usage) in
-  (out_array)
+  (Array.concat (Array.to_list out_array))
 
 (* Extract critical attributes from a buffer *)
 let char_array_to_template_array buffer =
+  let i = ref 0 in
   let out_template_array = (
-  if compare (Array.length buffer) (Array.length (critical_attributes !segregate_usage)) = 0 then
-    Array.mapi (
-      fun i in_char ->
-      let the_value = (
-        if compare in_char (Char.chr 1) = 0 then
-          (Pkcs11.bool_to_char_array Pkcs11.cK_TRUE)
-        else
-          if compare in_char (Char.chr 0) = 0 then
-            (Pkcs11.bool_to_char_array Pkcs11.cK_FALSE)
-          else
+  if compare (Array.length buffer) (Array.length (critical_attributes !segregate_usage)+3) = 0 then
+    Array.map (
+      fun the_attribute ->
+      if compare the_attribute.Pkcs11.type_ Pkcs11.cKA_CLASS = 0 then
+        (* We have an ulong value *)
+        (* Take 4 bytes           *)
+        let extracted_chars = Array.sub buffer !i 4 in
+        let the_value = (
+          if compare extracted_chars [|Char.chr 0xff; Char.chr 0xff; Char.chr 0xff; Char.chr 0xff|] = 0 then
             ([||])
-      ) in
-      ({Pkcs11.type_ = (critical_attributes !segregate_usage).(i).Pkcs11.type_; 
-        Pkcs11.value = the_value})
-    ) buffer 
+          else
+            (Pkcs11.ntoh_char_array extracted_chars)
+        ) in
+        i := !i + 4;
+        ({Pkcs11.type_ = the_attribute.Pkcs11.type_; 
+          Pkcs11.value = the_value})
+      else
+        (* We have a boolean value *)
+        let the_value = (
+          if compare buffer.(!i) (Char.chr 0x1) = 0 then
+            (Pkcs11.bool_to_char_array Pkcs11.cK_TRUE)
+          else
+            if compare buffer.(!i) (Char.chr 0x0) = 0 then
+              (Pkcs11.bool_to_char_array Pkcs11.cK_FALSE)
+            else
+            ([||])
+        ) in
+        i := !i + 1;
+        ({Pkcs11.type_ = the_attribute.Pkcs11.type_; 
+          Pkcs11.value = the_value})
+    ) (critical_attributes !segregate_usage)
   else
     ([||])
   ) in
+let s = Pkcs11.sprint_template_array out_template_array in
+let _ = netplex_log_critical s in
   (* Expurge the template from empty attributes *)
   (expurge_template_from_irrelevant_attributes out_template_array)
 
@@ -88,13 +116,14 @@ let wrapping_format_patch fun_name arg =
   (* UnwrapKey *)
   | ("C_UnwrapKey")  ->
       let (sessionh, mechanism, unwrappingh, buffer, asked_attributes) = deserialize arg in
+      let attributes_array_buffer_length = (Array.length (critical_attributes !segregate_usage))+3 in
       (****)
       let extraction_error_ = false in
       let extraction_error = ref extraction_error_ in
-      let buffer_attributes = (try Array.sub buffer ((Array.length buffer) - (Array.length (critical_attributes !segregate_usage)) - 16) (Array.length (critical_attributes !segregate_usage))
+      let buffer_attributes = (try Array.sub buffer ((Array.length buffer) - attributes_array_buffer_length - 16) attributes_array_buffer_length
         with _ -> extraction_error := true; ([||])
       ) in
-      let real_wrapped_key_buffer =  (try Array.sub buffer 0 ((Array.length buffer) - (Array.length (critical_attributes !segregate_usage)) - 16)
+      let real_wrapped_key_buffer =  (try Array.sub buffer 0 ((Array.length buffer) - attributes_array_buffer_length - 16)
         with _ -> extraction_error := true; ([||])
       ) in
       if compare !extraction_error true = 0 then
