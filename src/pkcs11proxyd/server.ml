@@ -111,6 +111,16 @@ let debug_print_ret function_name ret_value =
   end
   (*********)
 
+(* Basic debug *)
+let debug_print function_name in_string =
+  (* Debug *)
+  if !ref_pkcs_debug = 1
+  then begin
+    let s = Printf.sprintf "%s in process %d: %s" function_name (Unix.getpid()) in_string in
+    Netplex_cenv.log `Info s;
+  end
+  (*********)
+
 let c_Daemonize (param) =
   debug_print_call "C_Daemonize";
   (* To keep things consistent c_Daemonize can pass through filter as well *)
@@ -119,9 +129,9 @@ let c_Daemonize (param) =
   (Int64.of_nativeint ret)
 
 let c_SetupArch (arch) = 
-  debug_print_call "C_SetupArch";
+  debug_print "C_SetupArch peer arch is" (Pkcs11.match_arch_value (Int64.to_nativeint arch)); 
   let ret = CALLP11.c_SetupArch (Int64.to_nativeint arch) in
-  debug_print_ret "C_SetupArch" ret; 
+  debug_print "C_SetupArch server arch is" (Pkcs11.match_arch_value ret); 
   (Int64.of_nativeint ret)
 
 let c_Initialize () = 
