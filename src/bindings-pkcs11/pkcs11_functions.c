@@ -2717,7 +2717,10 @@ void char_array_to_ulong( /*in */ unsigned char* data,	/* in */ size_t data_size
   return;
 }
 
-/* Network char array to host char array */
+#ifdef SERVER_ROLE
+extern unsigned long peer_arch;
+#endif
+/* Host char array to network char array */
 /* We only deal with 32-bit values       */
 void hton_char_array( /*in */ unsigned char *input, unsigned long input_len,
                       /*out*/ unsigned char *output, unsigned long *output_len)
@@ -2726,7 +2729,11 @@ void hton_char_array( /*in */ unsigned char *input, unsigned long input_len,
   unsigned long arch;
   unsigned long data_size;
   /* We always output a 32-bit value */
+#ifdef SERVER_ROLE
+  arch = peer_arch;
+#else
   arch = get_local_arch();
+#endif
   if(input_len > 8){
     *output_len = 0;
     return;
@@ -2764,10 +2771,7 @@ void hton_char_array( /*in */ unsigned char *input, unsigned long input_len,
   return;
 }
 
-#ifdef SERVER_ROLE
-extern unsigned long peer_arch;
-#endif
-/* Host char array to network char array */
+/* Network char array to host char array */
 /* We only deal with 32-bit values       */
 void ntoh_char_array( /*in */ unsigned char *input, unsigned long input_len,
                       /*out*/ unsigned char *output, unsigned long *output_len)
