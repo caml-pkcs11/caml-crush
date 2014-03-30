@@ -693,8 +693,11 @@ let get_module_config_name (modulename) =
 ENDIF
 
 let c_LoadModule (modulename) = 
-  debug_print_call "C_LoadModule"; 
-  let ret = CALLP11.c_LoadModule (Pkcs11.string_to_char_array (get_module_config_name modulename)) in
+  debug_print_call "C_LoadModule";
+  let ret =
+   (try CALLP11.c_LoadModule (Pkcs11.string_to_char_array (get_module_config_name modulename))
+    (* If we have an exception, there is a problem, return an error *)
+    with _ -> (Pkcs11.cKR_GENERAL_ERROR)) in
   debug_print_ret "C_LoadModule" ret;
   (Int64.of_nativeint ret)
 

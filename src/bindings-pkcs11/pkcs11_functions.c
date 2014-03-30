@@ -205,7 +205,7 @@ CK_RV ML_CK_C_LoadModule( /*in */ const char *libname)
 CK_RV ML_CK_C_Initialize(void)
 {
   CK_RV rv;
-  CHECK_MODULE_FUNCTION(C_Initialize);
+  CHECK_MODULE_FUNCTION_INITIALIZE(C_Initialize);
 
   DEBUG_CALL(ML_CK_C_Initialize, " calling\n");
   /* We launch C_Initialize with NULL arguments */

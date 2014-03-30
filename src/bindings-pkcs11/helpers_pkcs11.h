@@ -364,10 +364,21 @@ void print_pkcs11_error(CK_RV rv)
   }
 }
 
-#define CHECK_MODULE_FUNCTION(pointer) do {\
+#define CHECK_MODULE_FUNCTION_INITIALIZE(pointer) do {\
 	if(pkcs11 == NULL){\
 		fprintf(stderr, "PKCS11 module not loaded!\n");\
 		return CKR_GENERAL_ERROR;\
+	}\
+	if(pkcs11->pointer == NULL){\
+		fprintf(stderr, "PKCS11 function "#pointer" not supported\n");\
+		return CKR_FUNCTION_NOT_SUPPORTED;\
+	}\
+} while(0);
+
+#define CHECK_MODULE_FUNCTION(pointer) do {\
+	if(pkcs11 == NULL){\
+		fprintf(stderr, "PKCS11 module not loaded!\n");\
+		return CKR_CRYPTOKI_NOT_INITIALIZED;\
 	}\
 	if(pkcs11->pointer == NULL){\
 		fprintf(stderr, "PKCS11 function "#pointer" not supported\n");\

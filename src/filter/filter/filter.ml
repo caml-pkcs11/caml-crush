@@ -460,6 +460,12 @@ let c_SetupArch arch =
 
 (*************************************************************************)
 let c_Initialize () =
+  (* If no module is defined, return CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_GENERAL_ERROR)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Initialize" (()) in
   if take_ret = true then
@@ -480,6 +486,12 @@ let c_Initialize () =
  
 (*************************************************************************)
 let c_GetInfo () =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, {Pkcs11.ck_info_cryptoki_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}; Pkcs11.ck_info_manufacturer_id = [| |]; Pkcs11.ck_info_flags = 0n; Pkcs11.ck_info_library_description = [| |]; Pkcs11.ck_info_library_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}})
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetInfo" (()) in
   if take_ret = true then
@@ -500,6 +512,12 @@ let c_GetInfo () =
  
 (*************************************************************************)
 let c_GetSlotList token_present count =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |], 0n) 
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetSlotList" (token_present, count) in
   if take_ret = true then
@@ -520,6 +538,12 @@ let c_GetSlotList token_present count =
  
 (*************************************************************************)
 let c_GetSlotInfo ckslotidt_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, {Pkcs11.ck_slot_info_slot_description = [| |]; Pkcs11.ck_slot_info_manufacturer_id = [| |]; Pkcs11.ck_slot_info_flags = 0n; Pkcs11.ck_slot_info_hardware_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}; Pkcs11.ck_slot_info_firmware_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}})
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetSlotInfo" (ckslotidt_) in
   if take_ret = true then
@@ -535,6 +559,12 @@ let c_GetSlotInfo ckslotidt_ =
  
 (*************************************************************************)
 let c_GetTokenInfo ckslotidt_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, {Pkcs11.ck_token_info_label = [| |]; Pkcs11.ck_token_info_manufacturer_id = [| |]; Pkcs11.ck_token_info_model = [| |]; Pkcs11.ck_token_info_serial_number = [| |]; Pkcs11.ck_token_info_flags = 0n; Pkcs11.ck_token_info_max_session_count = 0n; Pkcs11.ck_token_info_session_count = 0n; Pkcs11.ck_token_info_max_rw_session_count = 0n; Pkcs11.ck_token_info_rw_session_count = 0n; Pkcs11.ck_token_info_max_pin_len = 0n; Pkcs11.ck_token_info_min_pin_len = 0n; Pkcs11.ck_token_info_total_public_memory = 0n; Pkcs11.ck_token_info_free_public_memory = 0n; Pkcs11.ck_token_info_total_private_memory = 0n; Pkcs11.ck_token_info_free_private_memory = 0n; Pkcs11.ck_token_info_hardware_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}; Pkcs11.ck_token_info_firmware_version = {Pkcs11.major = '0'; Pkcs11.minor = '0'}; Pkcs11.ck_token_info_utc_time = [| |]})
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetTokenInfo" (ckslotidt_) in
   if take_ret = true then
@@ -560,6 +590,12 @@ let c_GetTokenInfo ckslotidt_ =
 
 (*************************************************************************)
 let c_WaitForSlotEvent ckflagst_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, -1n)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_WaitForSlotEvent" (ckflagst_) in
   if take_ret = true then
@@ -580,6 +616,12 @@ let c_WaitForSlotEvent ckflagst_ =
  
 (*************************************************************************)
 let c_GetMechanismList ckslotidt_ count =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |], 0n)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetMechanismList" (ckslotidt_, count) in
   if take_ret = true then
@@ -628,6 +670,12 @@ let c_GetMechanismList ckslotidt_ count =
 
 (*************************************************************************)
 let c_GetMechanismInfo ckslotidt_ ckmechanismtypet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, {Pkcs11.ck_mechanism_info_min_key_size = 0n; Pkcs11.ck_mechanism_info_max_key_size = 0n; Pkcs11.ck_mechanism_info_flags = 0n})
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetMechanismInfo" (ckslotidt_, ckmechanismtypet_) in
   if take_ret = true then
@@ -656,6 +704,12 @@ let c_GetMechanismInfo ckslotidt_ ckmechanismtypet_ =
 
 (*************************************************************************)
 let c_InitToken ckslotidt_  so_pin label =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED) 
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_InitToken" (ckslotidt_, so_pin, label) in
   if take_ret = true then
@@ -676,6 +730,12 @@ let c_InitToken ckslotidt_  so_pin label =
  
 (*************************************************************************)
 let c_InitPIN cksessionhandlet_ pin =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_InitPIN" (cksessionhandlet_, pin) in
   if take_ret = true then
@@ -696,6 +756,12 @@ let c_InitPIN cksessionhandlet_ pin =
  
 (*************************************************************************)
 let c_SetPIN cksessionhandlet_ old_pin  new_pin =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SetPIN" (cksessionhandlet_, old_pin, new_pin) in
   if take_ret = true then
@@ -716,6 +782,12 @@ let c_SetPIN cksessionhandlet_ old_pin  new_pin =
  
 (*************************************************************************)
 let c_OpenSession ckslotid_ ckflagst_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, Pkcs11.cK_INVALID_HANDLE) 
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_OpenSession" (ckslotid_, ckflagst_) in
   if take_ret = true then
@@ -740,6 +812,12 @@ let c_OpenSession ckslotid_ ckflagst_ =
  
 (*************************************************************************)
 let c_CloseSession cksessionhandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_CloseSession" (cksessionhandlet_) in
   if take_ret = true then
@@ -760,6 +838,12 @@ let c_CloseSession cksessionhandlet_ =
  
 (*************************************************************************)
 let c_CloseAllSessions ckslotidt_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_CloseAllSessions" (ckslotidt_) in
   if take_ret = true then
@@ -780,6 +864,12 @@ let c_CloseAllSessions ckslotidt_ =
  
 (*************************************************************************)
 let c_GetSessionInfo cksessionhandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, {Pkcs11.ck_session_info_slot_id = -1n; Pkcs11.ck_session_info_state = 0n; ck_session_info_flags = 0n; ck_session_info_device_error = 0n})
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetSessionInfo" (cksessionhandlet_) in
   if take_ret = true then
@@ -800,6 +890,12 @@ let c_GetSessionInfo cksessionhandlet_ =
 
 (*************************************************************************)
 let c_GetOperationState cksessionhandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetOperationState" (cksessionhandlet_) in
   if take_ret = true then
@@ -820,6 +916,12 @@ let c_GetOperationState cksessionhandlet_ =
  
 (*************************************************************************)
 let c_SetOperationState cksessionhandlet_ state encryption_handle authentication_handle  =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SetOperationState" (cksessionhandlet_, state, encryption_handle, authentication_handle) in
   if take_ret = true then
@@ -840,6 +942,12 @@ let c_SetOperationState cksessionhandlet_ state encryption_handle authentication
 
 (*************************************************************************)
 let c_Login cksessionhandlet_ ckusertypet_ pin =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Login" (cksessionhandlet_, ckusertypet_, pin) in
   if take_ret = true then
@@ -877,6 +985,12 @@ let c_Login cksessionhandlet_ ckusertypet_ pin =
  
 (*************************************************************************)
 let c_Logout cksessionhandlet =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Logout" (cksessionhandlet) in
   if take_ret = true then
@@ -897,6 +1011,12 @@ let c_Logout cksessionhandlet =
 
 (*************************************************************************)
 let c_Finalize () =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Finalize" (()) in
   if take_ret = true then
@@ -917,6 +1037,12 @@ let c_Finalize () =
  
 (*************************************************************************)
 let c_CreateObject cksessionhandlet_ ckattributearray_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, Pkcs11.cK_INVALID_HANDLE)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_CreateObject" (cksessionhandlet_, ckattributearray_) in
   if take_ret = true then
@@ -943,6 +1069,12 @@ let c_CreateObject cksessionhandlet_ ckattributearray_ =
   
 (*************************************************************************)
 let c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, Pkcs11.cK_INVALID_HANDLE)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_CopyObject" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
   if take_ret = true then
@@ -973,6 +1105,12 @@ let c_CopyObject cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
  
 (*************************************************************************)
 let c_DestroyObject cksessionhandlet_ ckobjecthandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DestroyObject" (cksessionhandlet_, ckobjecthandlet_) in
   if take_ret = true then
@@ -997,6 +1135,12 @@ let c_DestroyObject cksessionhandlet_ ckobjecthandlet_ =
 
 (*************************************************************************)
 let c_GetObjectSize cksessionhandlet_ ckobjecthandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, -1n)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetObjectSize" (cksessionhandlet_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1021,6 +1165,12 @@ let c_GetObjectSize cksessionhandlet_ ckobjecthandlet_ =
  
 (*************************************************************************)
 let c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetAttributeValue" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
   if take_ret = true then
@@ -1057,6 +1207,12 @@ let c_GetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_ =
  
 (*************************************************************************)
 let c_SetAttributeValue cksessionhandlet_ ckobjecthandlet_ ckattributearray_  =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SetAttributeValue" (cksessionhandlet_, ckobjecthandlet_, ckattributearray_) in
   if take_ret = true then
@@ -1093,6 +1249,12 @@ let find_objects_loop_num : int ref = ref 0
 let max_objects_loop : int ref = ref 100000
 
 let c_FindObjectsInit cksessionhandlet_ ckattributearray_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_FindObjectsInit" (cksessionhandlet_, ckattributearray_) in
   if take_ret = true then
@@ -1127,6 +1289,12 @@ let c_FindObjectsInit cksessionhandlet_ ckattributearray_ =
  
 (*************************************************************************)
 let c_FindObjects cksessionhandlet_ count =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |], 0n)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_FindObjects" (cksessionhandlet_, count) in
   if take_ret = true then
@@ -1191,6 +1359,12 @@ let c_FindObjects cksessionhandlet_ count =
 
 (*************************************************************************)
 let c_FindObjectsFinal cksessionhandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_FindObjectsFinal" (cksessionhandlet_) in
   if take_ret = true then
@@ -1211,6 +1385,12 @@ let c_FindObjectsFinal cksessionhandlet_ =
  
 (*************************************************************************)
 let c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_EncryptInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1260,6 +1440,12 @@ let c_EncryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
 
 (*************************************************************************)
 let c_Encrypt cksessionhandlet_ data =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Encrypt" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1300,6 +1486,12 @@ let c_EncryptUpdate cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_EncryptFinal cksessionhandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_EncryptFinal" (cksessionhandlet_) in
   if take_ret = true then
@@ -1320,6 +1512,12 @@ let c_EncryptFinal cksessionhandlet_ =
 
 (*************************************************************************)
 let c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1353,6 +1551,12 @@ let c_DecryptInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
  
 (*************************************************************************)
 let c_Decrypt cksessionhandlet_ data =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Decrypt" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1373,6 +1577,12 @@ let c_Decrypt cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_DecryptUpdate cksessionhandlet_ data =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1393,6 +1603,12 @@ let c_DecryptUpdate cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_DecryptFinal cksessionhandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptFinal" (cksessionhandlet_) in
   if take_ret = true then
@@ -1413,6 +1629,12 @@ let c_DecryptFinal cksessionhandlet_ =
 
 (*************************************************************************)
 let c_DigestInit cksessionhandlet_ ckmechanism_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DigestInit" (cksessionhandlet_, ckmechanism_) in
   if take_ret = true then
@@ -1442,6 +1664,12 @@ let c_DigestInit cksessionhandlet_ ckmechanism_ =
 
 (*************************************************************************)
 let c_Digest cksessionhandlet_ data =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Digest" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1462,6 +1690,12 @@ let c_Digest cksessionhandlet_ data =
 
 (*************************************************************************)
 let c_DigestUpdate cksessionhandlet_ data =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DigestUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1482,6 +1716,12 @@ let c_DigestUpdate cksessionhandlet_ data =
 
 (*************************************************************************)
 let c_DigestKey cksessionhandlet_ ckobjecthandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DigestKey" (cksessionhandlet_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1506,6 +1746,12 @@ let c_DigestKey cksessionhandlet_ ckobjecthandlet_ =
  
 (*************************************************************************)
 let c_DigestFinal cksessionhandlet =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DigestFinal" (cksessionhandlet) in
   if take_ret = true then
@@ -1526,6 +1772,12 @@ let c_DigestFinal cksessionhandlet =
  
 (*************************************************************************)
 let c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SignInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1573,6 +1825,12 @@ let c_SignInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
  
 (*************************************************************************)
 let c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SignRecoverInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1606,6 +1864,12 @@ let c_SignRecoverInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
 
 (*************************************************************************)
 let c_Sign cksessionhandlet_ data =
+  (* If no module is defined, return CKR_CRYPTOKI_NOT_INITIALIZED *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Sign" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1626,6 +1890,12 @@ let c_Sign cksessionhandlet_ data =
 
 (*************************************************************************)
 let c_SignRecover cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SignRecover" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1646,6 +1916,12 @@ let c_SignRecover cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_SignUpdate cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SignUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1666,6 +1942,12 @@ let c_SignUpdate cksessionhandlet_ data =
 
 (*************************************************************************)
 let c_SignFinal cksessionhandlet_ =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SignFinal" (cksessionhandlet_) in
   if take_ret = true then
@@ -1686,6 +1968,12 @@ let c_SignFinal cksessionhandlet_ =
 
 (*************************************************************************)
 let c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyInit" (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1719,6 +2007,12 @@ let c_VerifyInit cksessionhandlet_ ckmechanism_ ckobjecthandlet_ =
  
 (*************************************************************************)
 let c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_  =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyRecoverInit " (cksessionhandlet_, ckmechanism_, ckobjecthandlet_) in
   if take_ret = true then
@@ -1752,6 +2046,12 @@ let c_VerifyRecoverInit  cksessionhandlet_ ckmechanism_ ckobjecthandlet_  =
 
 (*************************************************************************)
 let c_Verify cksessionhandlet_ data signed_data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_Verify" (cksessionhandlet_, data, signed_data) in
   if take_ret = true then
@@ -1772,6 +2072,12 @@ let c_Verify cksessionhandlet_ data signed_data =
  
 (*************************************************************************)
 let c_VerifyRecover cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyRecover" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1792,6 +2098,12 @@ let c_VerifyRecover cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_VerifyUpdate cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1812,6 +2124,12 @@ let c_VerifyUpdate cksessionhandlet_ data =
 
 (*************************************************************************)
 let c_VerifyFinal cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_VerifyFinal" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1832,6 +2150,12 @@ let c_VerifyFinal cksessionhandlet_ data =
 
 (*************************************************************************)
 let c_DigestEncryptUpdate cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DigestEncryptUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1852,6 +2176,12 @@ let c_DigestEncryptUpdate cksessionhandlet_ data =
 
 (*************************************************************************)
 let c_DecryptDigestUpdate cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptDigestUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1872,6 +2202,12 @@ let c_DecryptDigestUpdate cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_SignEncryptUpdate cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SignEncryptUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1892,6 +2228,12 @@ let c_SignEncryptUpdate cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_DecryptVerifyUpdate cksessionhandlet_ data =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DecryptVerifyUpdate" (cksessionhandlet_, data) in
   if take_ret = true then
@@ -1912,6 +2254,12 @@ let c_DecryptVerifyUpdate cksessionhandlet_ data =
  
 (*************************************************************************)
 let c_GenerateKey cksessionhandlet_ ckmechanism_ ckattributearray_ =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, Pkcs11.cK_INVALID_HANDLE)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GenerateKey" (cksessionhandlet_, ckmechanism_, ckattributearray_) in
   if take_ret = true then
@@ -1947,6 +2295,12 @@ let c_GenerateKey cksessionhandlet_ ckmechanism_ ckattributearray_ =
 
 (*************************************************************************)
 let c_GenerateKeyPair cksessionhandlet_ ckmechanism_ pub_attributes priv_attributes =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, Pkcs11.cK_INVALID_HANDLE, Pkcs11.cK_INVALID_HANDLE)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GenerateKeyPair" (cksessionhandlet_, ckmechanism_, pub_attributes, priv_attributes) in
   if take_ret = true then
@@ -1984,6 +2338,12 @@ let c_GenerateKeyPair cksessionhandlet_ ckmechanism_ pub_attributes priv_attribu
 
 (*************************************************************************)
 let c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_WrapKey" (cksessionhandlet_, ckmechanism_, wrapping_handle, wrapped_handle) in
   if take_ret = true then
@@ -2037,6 +2397,12 @@ let c_WrapKey cksessionhandlet_ ckmechanism_ wrapping_handle wrapped_handle =
 
 (*************************************************************************)
 let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key ckattributearray_   =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, Pkcs11.cK_INVALID_HANDLE)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_UnwrapKey" (cksessionhandlet_, ckmechanism_, unwrapping_handle, wrapped_key, ckattributearray_) in
   if take_ret = true then
@@ -2087,6 +2453,12 @@ let c_UnwrapKey cksessionhandlet_ ckmechanism_ unwrapping_handle wrapped_key cka
 
 (*************************************************************************)
 let c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearray_   =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, Pkcs11.cK_INVALID_HANDLE)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_DeriveKey" (cksessionhandlet_, ckmechanism_, initial_key_handle, ckattributearray_) in
   if take_ret = true then
@@ -2126,6 +2498,12 @@ let c_DeriveKey cksessionhandlet_ ckmechanism_ initial_key_handle ckattributearr
 
 (*************************************************************************)
 let c_SeedRandom cksessionhandlet_ seed =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_SeedRandom" (cksessionhandlet_, seed) in
   if take_ret = true then
@@ -2146,6 +2524,12 @@ let c_SeedRandom cksessionhandlet_ seed =
 
 (*************************************************************************)
 let c_GenerateRandom cksessionhandlet_ count =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED, [| |])
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GenerateRandom" (cksessionhandlet_, count) in
   if take_ret = true then
@@ -2166,6 +2550,12 @@ let c_GenerateRandom cksessionhandlet_ count =
 
 (*************************************************************************)
 let c_GetFunctionStatus cksessionhandlet_ =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_GetFunctionStatus" (cksessionhandlet_) in
   if take_ret = true then
@@ -2186,6 +2576,12 @@ let c_GetFunctionStatus cksessionhandlet_ =
 
 (*************************************************************************)
 let c_CancelFunction cksessionhandlet_ =
+  (* If no module is defined, return a CKR_GENERAL_ERROR *)
+  match !current_module with
+    None -> 
+      (Pkcs11.cKR_CRYPTOKI_NOT_INITIALIZED)
+  | _ ->
+  (*************************************)
   (* Early actions before other checks *)
   let (take_ret, ret) =  apply_pre_filter_actions "C_CancelFunction" (cksessionhandlet_) in
   if take_ret = true then
