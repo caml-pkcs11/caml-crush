@@ -317,7 +317,12 @@ SSL_CTX *ctx;
 SSL *ssl;
 #endif
 
+/* Environment variable holding the socket path to override */
+/* the default built-in one                                 */
 #define ENV_SOCKET_PATH_NAME "PKCS11PROXY_SOCKET_PATH"
+/* Environment variable holding the library alias name to override */
+/* the default built-in one                                        */
+#define ENV_LIBNAME "PKCS11PROXY_LIBNAME"
 
 /* --------- PKCS#11 useful defines - */
 #define CKR_OK                          (0UL)

@@ -370,6 +370,9 @@ __attribute__ ((constructor))
 void init()
 {
   ck_rv_t ret;
+  /* libname override through environment variable */
+  char *libname;
+
   /* Initialize global variables */
   pthread_mutex_init(&mutex, NULL);
 #ifndef CAMLRPC
@@ -382,11 +385,25 @@ void init()
   peer_arch = 0;
   my_arch = 0;
 
+  /* try to find user-defined libname alias */
+  libname = getenv(ENV_LIBNAME);
+
+  if(libname != NULL){
+    /* Use environment variable for libname alias */
 #ifdef CAMLRPC
-  ret = init_ml(xstr(LIBNAME));
+    ret = init_ml(libname);
 #else
-  ret = init_c(xstr(LIBNAME));
+    ret = init_c(libname);
 #endif
+  }
+  else{
+    /* Use the default built-in libname */
+#ifdef CAMLRPC
+    ret = init_ml(xstr(LIBNAME));
+#else
+    ret = init_c(xstr(LIBNAME));
+#endif
+  }
   if (ret != CKR_OK) {
     fprintf(stderr, "Init failed, EXITING\n");
     return;
