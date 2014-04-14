@@ -69,8 +69,6 @@ let char_array_to_template_array buffer =
   else
     ([||])
   ) in
-let s = Pkcs11.sprint_template_array out_template_array in
-let _ = netplex_log_critical s in
   (* Expurge the template from empty attributes *)
   (expurge_template_from_irrelevant_attributes out_template_array)
 
