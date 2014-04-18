@@ -126,12 +126,11 @@ let identity fun_name _ =
   (return_value)
 
 
+(*** Common helpers for the patches *****)
+INCLUDE "filter_actions_helpers/helpers_patch.ml"
 
 (***********************************************************************)
 (***** CryptokiX patches as user defined actions ******)
-
-(*** Common helpers for the patches *****)
-INCLUDE "p11fix_patches/helpers_patch.ml"
 
 (***********************************************************************)
 (* The patch preventing directly reading sensitive or extractable keys *)
