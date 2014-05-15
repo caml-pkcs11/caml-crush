@@ -14,8 +14,8 @@ all:
 	ocamlfind ocamlopt @filter_include@ -package "str,netplex,config-file" @caml_server_ssl_package@ -linkpkg $(bindings_dir)/pkcs11.cmxa @filter_files@ $(rpc-pkcs11_dir)/pkcs11_rpclib.cmxa server.cmx $(caml_link_dirs) $(mem_prot_opt_caml) -o $(server_name)
 
 install:
-	echo "Installing $(server_name) to ${prefix}/usr/bin/$(server_name)"
-	install -D $(server_name) ${prefix}/usr/bin/$(server_name)
+	echo "Installing $(server_name) to ${prefix}/bin/$(server_name)"
+	install -D $(server_name) ${prefix}/bin/$(server_name)
 	echo "Installing $(server_name).conf to ${prefix}/etc/$(server_name)/$(server_name).conf"
 	install -D $(server_name).conf ${prefix}/etc/$(server_name)/$(server_name).conf
 	install -D filter.conf ${prefix}/etc/$(server_name)/filter.conf
