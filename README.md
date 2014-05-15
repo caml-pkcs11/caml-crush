@@ -63,6 +63,8 @@ Here is a big picture of how the PKCS#11 proxy works:
 
 ### Build
 
+    ./autogen.sh
+
     ./configure --with-idlgen --with-rpcgen --with-libnames=foo
 
     make
