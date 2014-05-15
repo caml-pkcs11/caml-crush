@@ -18,12 +18,14 @@ install:
 	install -D $(server_name) ${prefix}/usr/bin/$(server_name)
 	echo "Installing $(server_name).conf to ${prefix}/etc/$(server_name)/$(server_name).conf"
 	install -D $(server_name).conf ${prefix}/etc/$(server_name)/$(server_name).conf
+	install -D filter.conf ${prefix}/etc/$(server_name)/filter.conf
 
 uninstall:
 	echo "Removing $(server_name) to ${prefix}/usr/bin/$(server_name)"
 	rm ${prefix}/usr/bin/$(server_name)
 	echo "Removing $(server_name).conf to ${prefix}/etc/$(server_name)/$(server_name).conf"
 	rm ${prefix}/etc/$(server_name)/$(server_name).conf
+	rm ${prefix}/etc/$(server_name)/filter.conf
 
 clean:
 	@rm -f *.cmi *.cmo *.cma *.cmx *.o *.a *.cmxa dll* packlist-* ocamldoc.dump META depend $(server_name) *.astamp *.cstamp *.s2stamp
