@@ -1,6 +1,8 @@
 #Define target systems
 APPVER = 6.1
 TARGETOS = WINNT
+#For now force AMD64, comment it if you need x86
+CPU=AMD64
 
 #You need to add the include directory to win32.mak
 # for instance (set include=%include%;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include)
@@ -18,6 +20,9 @@ RPC_LIB=C:\Users\dev\Desktop\oncrpc-win32\win32\bin\oncrpc.lib
 
 #Local include directory
 BINDING_INC=..\bindings-pkcs11
+
+# Libname to compile
+LIBNAME="softhsm"
  
 # Output LIB
 CLIENTLIB=libp11client
@@ -30,7 +35,7 @@ LCFLAGS=-I$(RPC_INC) -I$(BINDING_INC) -I. \
 	-DONCRPC_STATIC\
 	-DCRPC \
 	-DTCP_SOCKET  -DSOCKET_PATH=192.168.39.30:4444\
-	-DLIBNAME=softhsm
+	-DLIBNAME=$(LIBNAME)
 
 LINK_FLAGS=$(RPC_LIB)
 
