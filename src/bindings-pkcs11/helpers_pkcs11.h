@@ -398,11 +398,17 @@ void print_pkcs11_error(CK_RV rv)
 /* The ##__VA_ARGS__ has been introduced with C++, so we have to */
 /* use tricks to avoid it and remain ISO C compiant              */
 #ifdef DEBUG
+#ifdef WIN32 /* WIN32 __VA_ARGS__ support is crap, this debug is disabled */
+#define _DEBUG_CALL(name, string, ...) do {\
+} while(0);
+#define DEBUG_CALL(...) _DEBUG_CALL(__VA_ARGS__, "")
+#else
 #define __DEBUG_CALL(name, string, ...) do {\
 	printf(#name string, __VA_ARGS__);\
 } while(0);
 #define _DEBUG_CALL(name, string, ...) __DEBUG_CALL(name, string "%s",  __VA_ARGS__)
 #define DEBUG_CALL(...) _DEBUG_CALL(__VA_ARGS__, "")
+#endif
 #else
 #define _DEBUG_CALL(name, string, ...) do {\
 } while(0);
