@@ -465,6 +465,9 @@ ck_rv_t init_c(const char *module)
 
   /* Call C LoadModule */
   int rpc_sock = RPC_ANYSOCK;
+#ifdef RDP_SOCKET && defined(WIN32)
+  HANDLE handle;
+#endif
 #ifdef UNIX_SOCKET
   struct sockaddr_un *serv_addr;
   serv_addr = custom_malloc(sizeof(struct sockaddr_un));
@@ -509,6 +512,8 @@ ck_rv_t init_c(const char *module)
   }
 #endif
   cl = clnttcp_create(&serv_addr, P, V, &rpc_sock, 0, 0);
+#elif RDP_SOCKET && defined(WIN32)
+  cl = clntrdp_create(NULL, P, V, &handle, 0, 0);
 #endif
 
   /* Check RPC status */

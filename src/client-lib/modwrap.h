@@ -109,7 +109,7 @@
 #include "helpers_pkcs11.h"
 
 /* Check for a socket type */
-#if !defined(TCP_SOCKET) && !defined(UNIX_SOCKET)
+#if !defined(TCP_SOCKET) && !defined(UNIX_SOCKET) && !defined(RDP_SOCKET)
 #error "No socket defined at compile time"
 #endif
 

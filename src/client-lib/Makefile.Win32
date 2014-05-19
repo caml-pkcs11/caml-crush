@@ -18,6 +18,13 @@ CPU=AMD64
 RPC_INC=C:\Users\dev\Desktop\oncrpc-win32\win32\include
 RPC_LIB=C:\Users\dev\Desktop\oncrpc-win32\win32\bin\oncrpc.lib
 
+#Import for Windows TS libs
+!IF "$(CPU)" == "AMD64"
+RDP_LIB="C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib\x64\wtsapi32.lib"
+!ELSE
+RDP_LIB="C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib\wtsapi32.lib"
+!ENDIF
+
 #Local include directory
 BINDING_INC=..\bindings-pkcs11
 
@@ -34,10 +41,10 @@ LCFLAGS=-I$(RPC_INC) -I$(BINDING_INC) -I. \
 	-D__STDC__ \
 	-DONCRPC_STATIC\
 	-DCRPC \
-	-DTCP_SOCKET  -DSOCKET_PATH=192.168.39.30:4444\
+	-DRDP_SOCKET  -DSOCKET_PATH=192.168.39.35:4444\
 	-DLIBNAME=$(LIBNAME)
 
-LINK_FLAGS=$(RPC_LIB)
+LINK_FLAGS=$(RPC_LIB) $(RDP_LIB)
 
 CC=cl
 
