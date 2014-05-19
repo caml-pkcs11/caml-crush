@@ -22,9 +22,11 @@ BINDING_INC=..\bindings-pkcs11
 # Output LIB
 CLIENTLIB=libp11client
 
+#__STDC__ is needed to avoid issue with "lazy" prototypes
 #We need to define ONCRPC_STATIC to get the correct function declaration
 #Modify SOCKET_PATH LIBNAME to your convenience
 LCFLAGS=-I$(RPC_INC) -I$(BINDING_INC) -I. \
+	-D__STDC__ \
 	-DONCRPC_STATIC\
 	-DCRPC \
 	-DTCP_SOCKET  -DSOCKET_PATH=192.168.39.30:4444\
