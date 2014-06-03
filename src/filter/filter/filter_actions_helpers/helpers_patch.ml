@@ -201,6 +201,22 @@ let is_object_class_key attributes =
         | _ -> (false)
       end
 
+let is_existing_object_class_key sessionh objecth =
+  (* Get the CKA_CLASS attributes *)
+  let cka_class_template = [| {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} |] in
+  let (ret, attributes) = Backend.c_GetAttributeValue sessionh objecth cka_class_template in
+  if compare ret Pkcs11.cKR_OK = 0 then
+    let (ret, attributes) = Backend.c_GetAttributeValue sessionh objecth attributes in    
+    if compare ret Pkcs11.cKR_OK = 0 then
+      (* We have got the class, now check it *)
+      (is_object_class_key attributes)
+    else
+      (* GetAttributeValue returned an error, fail with an exception *)
+      let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting CKA_CLASS (this should not happen ...)\n" in netplex_log_critical s; failwith s
+  else
+    (* GetAttributeValue returned an error, fail with an exception *)
+    let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting CKA_CLASS (this should not happen ...)\n" in netplex_log_critical s; failwith s
+
 (* Check if two templates are compatible regarding their defined attributes *)
 let check_are_templates_nonconforming fun_name attributes new_attributes =
   let check = Array.fold_left (

@@ -39,7 +39,7 @@ let non_local_objects_patch fun_name arg =
   | ("C_CopyObject" | "C_SetAttributeValue") ->
     let (sessionh, objecth, extracted_attributes_array) = deserialize arg in
     (* First, we check if we are dealing with a key *)
-    if compare (is_object_class_key extracted_attributes_array) true = 0 then
+    if compare (is_existing_object_class_key sessionh objecth) true = 0 then
       (* Check if one of the dangerous attributes is concerned *)
       let check = Array.fold_left (
         fun curr_check attr -> (curr_check || find_existing_attribute_value extracted_attributes_array attr)
