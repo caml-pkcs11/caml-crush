@@ -240,7 +240,7 @@ let check_is_attribute_set fun_name the_attr attributes =
   let check = Array.fold_left (
     fun check_tmp attr ->
       if (compare attr.Pkcs11.type_ the_attr = 0) &&                  
-         (compare attr.Pkcs11.value (Pkcs11.bool_to_char_array Pkcs11.cK_FALSE) = 0) then
+         (compare attr.Pkcs11.value (Pkcs11.bool_to_char_array Pkcs11.cK_TRUE) = 0) then
         (check_tmp || true)
       else
         (check_tmp || false)
