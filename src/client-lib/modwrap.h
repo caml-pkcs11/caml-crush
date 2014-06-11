@@ -155,9 +155,9 @@
       /* buffer size is enough, copy back and remove item from list */\
       DEBUG_CALL(operation_type, "Buffer given is big enough, let's copy data back\n");\
       memcpy(output2, elem->out, elem->out_len);\
+      *output2_len = elem->out_len;\
       remove_elements_from_filtering_list(input0, operation_cst, input1,\
                                           input1_len);\
-      *output2_len = elem->out_len;\
       Return(CKR_OK);\
     }\
   }\
