@@ -12,13 +12,13 @@ let prevent_sensitive_leak_patch fun_name arg =
       let (ret, templates) = filter_getAttributeValue sessionh objecth (critical_attributes !segregate_usage) in
       if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
         if (compare ret Pkcs11.cKR_OK <> 0) then
-          (serialize (true, (getAttributeValueErrors ret, templates)))
+          (serialize (true, (getAttributeValueErrors ret, attributes)))
         else
           let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...): inside SENSITIVE_LEAK\n" in netplex_log_critical s; failwith s;
       else
-        let (ret, templates_values) = filter_getAttributeValue sessionh objecth templates in
+        let (ret, templates_values) = filter_getAttributeValue sessionh objecth attributes in
         if compare ret Pkcs11.cKR_OK <> 0 then
-          (serialize (true, (getAttributeValueErrors ret, templates)))
+          (serialize (true, (getAttributeValueErrors ret, templates_values)))
         else
           (* If the object is sensitive or non-extractable, and we ask for a value, we return an error *)
           if (compare (check_is_attribute_asked fun_name Pkcs11.cKA_VALUE attributes) true = 0) && 
