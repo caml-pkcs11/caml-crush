@@ -293,3 +293,32 @@ let detect_sticky_attributes fun_name attributes new_attributes the_sticky_attri
   ) false attributes in
   (check)
 
+let execute_external_command command data argvs env =
+  let buffer_size = 2048 in
+  let buffer_stdout = Buffer.create buffer_size in
+  let buffer_stderr = Buffer.create buffer_size in
+  (* Append the argvs to the command *)
+  let command = String.concat " " (List.concat [ [command]; Array.to_list argvs ]) in
+  let string = String.create buffer_size in
+  let (in_channel_stdout, out_channel, in_channel_stderr) = Unix.open_process_full command [||] in
+  (* Write data to out_channel *)
+  output out_channel data 0 (String.length data);
+  (* Close out_channel to tell it's over *)
+  flush out_channel;
+  close_out out_channel;
+  (* Read result data on the in_channel stdout *)
+  let chars_read_stdout = ref 1 in
+  while !chars_read_stdout <> 0 do
+    chars_read_stdout := input in_channel_stdout string 0 buffer_size;
+    Buffer.add_substring buffer_stdout string 0 !chars_read_stdout
+  done;
+  (* Command done, read stderr *)
+  let chars_read_stderr = ref 1 in
+  while !chars_read_stderr <> 0 do
+    chars_read_stderr := input in_channel_stderr string 0 buffer_size;
+    Buffer.add_substring buffer_stderr string 0 !chars_read_stderr
+  done;
+  let ret_status = Unix.close_process_full (in_channel_stdout, out_channel, in_channel_stderr) in
+  match ret_status with
+    Unix.WEXITED(0) -> (true, Buffer.contents buffer_stdout, Buffer.contents buffer_stderr)
+   | _ -> (false, "", Buffer.contents buffer_stderr)
