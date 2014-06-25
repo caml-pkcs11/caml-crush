@@ -301,11 +301,13 @@ int start_gnutls(int sock)
 #ifdef SSL_FILES_EMBED
   int i;
 #endif
+  gnutls_global_session_allocated = xcred_allocated = 0;
 
   gnutls_global_init();
 
   /* X509 stuff */
   gnutls_certificate_allocate_credentials(&xcred);
+  xcred_allocated = 1;
 
   /* Call our custom certificate lookup function */
   ret = provision_certificates();
@@ -354,6 +356,7 @@ int start_gnutls(int sock)
 
   /* Initialize TLS session */
   gnutls_init(&gnutls_global_session, GNUTLS_CLIENT);
+  gnutls_global_session_allocated = 1;
 
   /* Use default priorities */
   ret = gnutls_priority_set_direct(gnutls_global_session, "NORMAL", &err);
@@ -413,9 +416,13 @@ int start_gnutls(int sock)
 /* Destroy GNU_TLS SSL context */
 int purge_gnutls(void)
 {
-  gnutls_bye(gnutls_global_session, GNUTLS_SHUT_RDWR);
-  gnutls_deinit(gnutls_global_session);
-  gnutls_certificate_free_credentials(xcred);
+  if(gnutls_global_session_allocated == 1){
+    gnutls_bye(gnutls_global_session, GNUTLS_SHUT_RDWR);
+    gnutls_deinit(gnutls_global_session);
+  }
+  if(xcred_allocated == 1){
+    gnutls_certificate_free_credentials(xcred);
+  }
   gnutls_global_deinit();
 
   return 0;

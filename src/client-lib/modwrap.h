@@ -304,7 +304,9 @@ int purge_gnutls(void);
 void print_info(gnutls_session_t gsession);
 
 /* Global variables for GNU_TLS */
+unsigned char gnutls_global_session_allocated;
 gnutls_session_t gnutls_global_session;
+unsigned char xcred_allocated;
 gnutls_certificate_credentials_t xcred;
 #endif
 
