@@ -200,6 +200,8 @@ put some sanity checks and/or repair routines there.
   * When our custom allocation functions fail, they simply **exit**: we should do something 
 to avoid stopping the execution instead.
   * The configure script must be improved on some points (such as rpcgen MT support, better 
+  * The OCaml client library cannot be configured with a custom RPC timeout value, the C client
+library can use the PKCS11PROXY\_RP\_TIMEOUT environment variable, it should be ported.
 OCaml libraries detection, ...)
  
 #### OpenBSD <a name="BSD"></a>

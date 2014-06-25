@@ -211,6 +211,19 @@ Use --with-socket to configure the client socket.
   * --with-socket=tcp,127.0.0.1:4444
     * (client will establish a TCP socket with remote peer 127.0.0.1 and port 4444)
 
+### Client RPC timeout
+Each RPC operation has a timeout that is set up (25 seconds by default).
+If a **slow** cryptographic operation is performed, it is likely that the RPC layer
+will abort due to the timeout. Although on the server-side the operation will
+complete, the client application will catch the following example error:
+
+    Error RPC with C_GenerateKeyPair
+    error: PKCS11 function C_GenerateKeyPair failed: rv = unknown PKCS11 error (0xffffffff)
+
+To provide some more flexibility we introduced an environment variable that can
+be used to control the timeout value. Therefore, one can use PKCS11PROXY\_RPC\_TIMEOUT
+to configure a custom timeout setting.
+
 ### Enable SSL/TLS support
 Use --with-ssl to enable the SSL/TLS code (OpenSSL by default, can use --with-gnutls).
 

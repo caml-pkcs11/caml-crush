@@ -324,6 +324,10 @@ SSL *ssl;
 /* the default built-in one                                        */
 #define ENV_LIBNAME "PKCS11PROXY_LIBNAME"
 
+#define RPC_DEFAULT_TIMEOUT 25UL
+/* Environment variable to override default RPC_TIMEOUT */
+#define ENV_RPC_TIMEOUT "PKCS11PROXY_RPC_TIMEOUT"
+
 /* --------- PKCS#11 useful defines - */
 #define CKR_OK                          (0UL)
 #define CKR_GENERAL_ERROR               (5UL)

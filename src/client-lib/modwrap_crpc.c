@@ -459,6 +459,9 @@ ck_rv_t init_c(const char *module)
   struct timeval timeout;
   /* path to socket */
   char *env_socket_path;
+  /* environment variable to override default RPC timeout */
+  char *env_timeout_override;
+  long int timeout_value;
 
   /* Call C LoadModule */
   int rpc_sock = RPC_ANYSOCK;
@@ -547,8 +550,19 @@ ck_rv_t init_c(const char *module)
   }
 
   /* Control timeout setting */
-  timeout.tv_sec = 10;
+  env_timeout_override = getenv(ENV_RPC_TIMEOUT);
+
+  timeout.tv_sec = RPC_DEFAULT_TIMEOUT;
   timeout.tv_usec = 0;
+
+  if (env_timeout_override != NULL) {
+    timeout_value = atol(env_timeout_override);
+    /* basic check, we do not want a zero timeout */
+    if(timeout_value != 0){
+      timeout.tv_sec = timeout_value;
+    }
+  }
+
   clnt_control(cl, CLSET_TIMEOUT, (char *)&timeout);
 
   ret = myC_LoadModule_C(module);
