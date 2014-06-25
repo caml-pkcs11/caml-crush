@@ -223,7 +223,7 @@ The client can be compiled to use three modes, file lookup, environement variabl
     * (client will load files with given path at runtime)
 
   * --with-ssl-clientfiles='env'
-    * (client will lookup the following environement variables PKCS11PROXY\_SSL\_CA, PKCS11PROXY\_SSL\_CERT and PKCS11\_SSL\_PRIVKEY)
+    * (client will lookup the following environement variables PKCS11PROXY\_CA\_FILE, PKCS11PROXY\_CERT\_FILE and PKCS11\_PRIVKEY\_FILE)
 
   * --with-ssl-clientfiles='embed;ca=path-to-ca,cert=path-to-cert,privkey=path-to-key'
     * (the files will be parsed and embedded within the compiled code through C headers)
@@ -309,14 +309,17 @@ processor {
 ...
 ```
 
+Please note that the current implementation expects PEM files and that
+the private key has to be un-encrypted.
+
 The cipher\_suite parameter accepts the classic OpenSSL "colon" separated cipher list.
 Please note that the following ciphers are explicitely turned off:
 
     !aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK:!RC4
 
 
-**WARNING**: As of today, the [ocaml-ssl][] (0.4.6) bindings is ONLY capable of using TLS 1.0 and cannot provide PFS.
-If you care about PFS, please read the dedicated section in [ISSUES](../ISSUES.md).
+**WARNING**: The [ocaml-ssl][] (0.4.6) bindings is ONLY capable of using TLS 1.0 and cannot provide PFS.
+If you care about PFS, please use ocaml-ssl (0.4.7) and read the dedicated section in [ISSUES](../ISSUES.md).
 [ocaml-ssl]: https://github.com/savonet/ocaml-ssl/
 
 ### Server PKCS#11 module support configuration (when filtering is DISABLED)

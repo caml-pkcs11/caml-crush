@@ -106,27 +106,31 @@ This potentially reduces performance and could be improved in future releases.
 ### Server and filter limitations library
 
 #### [PFS][] (Perfect Forward Secrecy) support <a name="PFS"></a>
-The up-to-date package of [ocaml-ssl][] is only able to do TLS 1.0 sessions
-establishment. This means that the ciphersuites available do not include newer
+The up-to-date package of [ocaml-ssl][] shipped in Linux distributions
+is only able to do TLS 1.0 sessions establishment.
+This means that the ciphersuites available do not include newer
 algorithms (such as AES-GCM).
-[ocaml-ssl]: https://github.com/savonet/ocaml-ssl
 
 The second issue is that the code (up to 0.4.6) does not support initializing a
 Diffie-Hellman context for OpenSSL. Meaning that even on TLS 1.0, DHE-suites
 are not available. With binary versions of [ocaml-ssl][] and [ocamlnet][], [PFS][] 
 is therefore **not** available.
-[ocamlnet]: http://projects.camlcity.org/projects/ocamlnet.html
-[PFS]: http://en.wikipedia.org/wiki/Forward_secrecy
 
 We strongly recommend using PFS, this is why we pushed modifications 
 to [ocaml-ssl][] to support TLS 1.2 and to add code to initialize a DH context 
  - see [this][pull3] pull request as well as [this one][pull4].
-[pull3]: https://github.com/savonet/ocaml-ssl/pull/3
-[pull4]: https://github.com/savonet/ocaml-ssl/pull/4
+These two patch were merged and are included in ocaml-ssl 0.4.7.
 
-Until these modifications make it in the binary distribution, you need to
+Until the ocaml-ssl package is updated in the binary
+distributions, you need to
 recompile [ocaml-ssl][] and [ocamlnet][] (more details on the dependencies 
 in the [documentation](doc/INDEX.md)).
+
+[ocaml-ssl]: https://github.com/savonet/ocaml-ssl
+[pull3]: https://github.com/savonet/ocaml-ssl/pull/3
+[pull4]: https://github.com/savonet/ocaml-ssl/pull/4
+[ocamlnet]: http://projects.camlcity.org/projects/ocamlnet.html
+[PFS]: http://en.wikipedia.org/wiki/Forward_secrecy
 
 #### Client library redirection based on connection source <a name="Redir"></a>
 For now, the same PKCS#11 library (provided in the configuration file) is 
