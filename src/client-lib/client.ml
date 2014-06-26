@@ -93,13 +93,24 @@ IFDEF TCP_SOCKET THEN*)
 (*ENDIF
 ENDIF*)
 
+(* Getting the timeout if it is set in an environment variable *)
+let rpc_timeout = 
+  let check_env = (try Sys.getenv("PKCS11PROXY_RPC_TIMEOUT") 
+    (* An RPC timeout of 25 seconds is the default *)
+    with _ -> "25") in
+  let timeout = (try float_of_string check_env with
+    (* An RPC timeout of 25 seconds is the default *)
+    _ -> 25.0) in
+  (timeout)
+
 (* Getting the socket path from the defined variable or 
 from the environment *)
 (* Get the path *)
 IFDEF SOCKET_PATH THEN
 let path = SOCKET_PATH
 ELSE
-let path = Sys.getenv("PKCS11PROXY_SOCKET_PATH")
+let path = (try Sys.getenv("PKCS11PROXY_SOCKET_PATH") with
+  _ -> "")
 ENDIF
 IFDEF UNIX_SOCKET THEN
 let get_socket_path = 
@@ -134,9 +145,12 @@ let private_key_file_path = PKCS11PROXY_PRIVKEY_FILE
 ENDIF
 (* Handle the env case *)
 IFDEF SSL_FILES_ENV THEN
-let ca_file_path = Sys.getenv("PKCS11PROXY_CA_FILE")
-let cert_file_path = Sys.getenv("PKCS11PROXY_CERT_FILE")
-let private_key_file_path = Sys.getenv("PKCS11PROXY_PRIVKEY_FILE")
+let ca_file_path = (try Sys.getenv("PKCS11PROXY_CA_FILE") with
+  _ -> failwith "Error: could not get PKCS11PROXY_CA_FILE from env")
+let cert_file_path = (try Sys.getenv("PKCS11PROXY_CERT_FILE") with
+  _ -> failwith "Error: could not get PKCS11PROXY_CERT_FILE from env")
+let private_key_file_path = (try Sys.getenv("PKCS11PROXY_PRIVKEY_FILE") with
+  _ -> failwith "Error: could not get PKCS11PROXY_PRIVKEY_FILE from env")
 ENDIF
 (* Handle the embed case *)
 IFDEF SSL_FILES_EMBED THEN
@@ -182,6 +196,7 @@ let ssl_socket_config cafile certfile certkey =
 ENDIF
 
 let socket_ctx = ssl_socket_config ca_file_path cert_file_path private_key_file_path
+  
 (* WITHOUT SSL *)
 ELSE
 let socket_ctx = Rpc_client.default_socket_config
@@ -202,11 +217,14 @@ let rpc_connect () =
 	Netsys_signal.init();
 	(* UNIX SOCKET *)
 	let path = get_socket_path in
-		rpc_client := Some (Pkcs11_rpc_clnt.P.V.create_client2
+	rpc_client := Some (Pkcs11_rpc_clnt.P.V.create_client2
 		  (`Socket(Rpc.Tcp,
 			   Rpc_client.Unix(path),
 			   socket_ctx))
-		)
+  		  );
+        match !rpc_client with
+            Some client -> Rpc_client.configure client 0 rpc_timeout
+          | _ -> ()
 	end
 ELSE
 let rpc_connect () =
@@ -218,7 +236,10 @@ let rpc_connect () =
           (`Socket(Rpc.Tcp,
                Rpc_client.Inet(host, port),
                socket_ctx))
-		)
+		);
+        match !rpc_client with
+            Some client -> Rpc_client.configure client 0 rpc_timeout
+          | _ -> ()
 	end
 ENDIF
 let _ = Callback.register "RPC_connect" rpc_connect
