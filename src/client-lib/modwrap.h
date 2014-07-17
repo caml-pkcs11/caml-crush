@@ -118,6 +118,28 @@
 #error "Sorry, Apple implementation of XDR RPC does not support UNIX sockets, please use TCP"
 #endif
 
+/* This macro is used to check if the process was forked.
+ * If that is the case, the library must be re-initialized.
+ * However, we also have to free resources previously allocated
+ * by the parent process, we therefore call destroy() and
+ * instanciate another connection with the PKCS#11 proxy using
+ * init().
+ * FIXME: this might not affect WIN32 clients, ignore it for now.
+*/
+#ifndef WIN32
+#define check_pid do{\
+  pid_t current_pid = getpid();\
+  if (local_pid != current_pid){\
+    destroy();\
+    local_pid = current_pid;\
+    init();\
+  }\
+} while(0);
+#else
+#define check_pid do{\
+} while(0);
+#endif
+
 /* Wrap return code to adapt it to CRPC/CAMLRPC */
 #ifdef CRPC
 #define Return(x) do { return x; } while(0);
