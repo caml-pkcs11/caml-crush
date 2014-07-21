@@ -36,13 +36,27 @@ expression _res, _vres, _c2, _v3, _ctx;
 
 
 @rule_get_slot_list@
-expression token_present, slot_list, count, real_count;
-expression _res, _vres;
+identifier token_present, slot_list, count, real_count, _ctx, _ctxs, _res, _c1, _c2, _v3, _vres;
 @@
-
-  _res = ML_CK_C_GetSlotList(token_present, slot_list, count, real_count);
+  camlidl_pkcs11_ML_CK_C_GetSlotList(...){
   <...
++ unsigned long slots_to_cpy = 0;
+  unsigned int token_present;   /*in */
+  ck_slot_id_t *slot_list;  /*out */
+  unsigned long count;      /*in */
+  unsigned long *real_count;    /*out */
+  ck_rv_t _res;
+  struct camlidl_ctx_struct _ctxs = { CAMLIDL_TRANSIENT, NULL };
+  camlidl_ctx _ctx = &_ctxs;
+  unsigned long _c1;
+  mlsize_t _c2;
+  ...
 - _vres[1] = camlidl_alloc(count, 0);
+-   Begin_root(_vres[1]);
+-      for (...; ...; ...){
+-        _v3 = camlidl_c2ml_pkcs11_ck_slot_id_t(&slot_list[_c2], _ctx);
+-        modify(&Field(_vres[1], _c2), _v3);
+-    }
 + /* If we have got an error from PKCS#11 functions */
 + /* we return an empty array to the caml side      */
 + if(_res != CKR_OK){
@@ -50,23 +64,46 @@ expression _res, _vres;
 + }
 + if(count > *real_count){
 +   _vres[1] = camlidl_alloc(*real_count, 0);
++   slots_to_cpy = *real_count;
 + }
 + else{
 +   _vres[1] = camlidl_alloc(count, 0);
++   slots_to_cpy = count;
 + }
++   Begin_root(_vres[1]);
++    for (_c2 = 0; _c2 < slots_to_cpy; _c2++) {
++       _v3 = camlidl_c2ml_pkcs11_ck_slot_id_t(&slot_list[_c2], _ctx);
++       modify(&Field(_vres[1], _c2), _v3);
++     }
   ...
 - _vres[2] = Val_long(*real_count);
 + _vres[2] = copy_nativeint(*real_count);
   ...>
+}
 
 @rule_get_mech_list@
-expression slot_id, mechanism_list, count, real_count;
-expression _res, _vres;
+identifier slot_id, mechanism_list, count, real_count, _res, _vres;
 @@
 
-  _res = ML_CK_C_GetMechanismList(slot_id, mechanism_list, count, real_count);
+  camlidl_pkcs11_ML_CK_C_GetMechanismList(...){
   <...
++ unsigned long mech_to_cpy = 0;
+  ck_slot_id_t slot_id;     /*in */
+  ck_mechanism_type_t *mechanism_list;  /*out */
+  unsigned long count;      /*in */
+  unsigned long *real_count;    /*out */
+  ck_rv_t _res;
+  struct camlidl_ctx_struct _ctxs = { CAMLIDL_TRANSIENT, NULL };
+  camlidl_ctx _ctx = &_ctxs;
+  unsigned long _c1;
+  mlsize_t _c2;
+  ...
 - _vres[1] = camlidl_alloc(count, 0);
+- Begin_root(_vres[1]);
+-   for (...; ...; ...){
+-     _v3 = camlidl_c2ml_pkcs11_ck_mechanism_type_t(&mechanism_list[_c2], _ctx);
+-     modify(&Field(_vres[1], _c2), _v3);
+- }
 + /* If we have got an error from PKCS#11 functions */
 + /* we return an empty array to the caml side      */
 + if(_res != CKR_OK){
@@ -74,14 +111,22 @@ expression _res, _vres;
 + }
 + if(count > *real_count){
 +   _vres[1] = camlidl_alloc(*real_count, 0);
++   mech_to_cpy = *real_count;
 + }
 + else{
 +   _vres[1] = camlidl_alloc(count, 0);
++   mech_to_cpy = count;
++ }
++ Begin_root(_vres[1]);
++ for (_c2 = 0; _c2 < mech_to_cpy; _c2++) {
++   _v3 = camlidl_c2ml_pkcs11_ck_mechanism_type_t(&mechanism_list[_c2], _ctx);
++   modify(&Field(_vres[1], _c2), _v3);
 + }
   ...
 - _vres[2] = Val_long(*real_count);
 + _vres[2] = copy_nativeint(*real_count);
   ...>
+}
 
 @rule_get_object_size@
 expression session, hobject, object_size;

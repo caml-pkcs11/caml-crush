@@ -19,7 +19,7 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/local/lib
 DESC="OCaml filtering PKCS#11 proxy daemon"
 NAME=pkcs11proxyd
-DAEMON=@prefix@/usr/bin/$NAME
+DAEMON=@prefix@/bin/$NAME
 DAEMON_ARGS="-conf @prefix@/etc/pkcs11proxyd/pkcs11proxyd.conf"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME

@@ -3019,6 +3019,7 @@ value camlidl_pkcs11_ML_CK_C_Finalize(value _unit)
 
 value camlidl_pkcs11_ML_CK_C_GetSlotList(value _v_token_present, value _v_count)
 {
+  unsigned long slots_to_cpy = 0;
   unsigned int token_present;	/*in */
   ck_slot_id_t *slot_list;	/*out */
   unsigned long count;		/*in */
@@ -3055,8 +3056,10 @@ value camlidl_pkcs11_ML_CK_C_GetSlotList(value _v_token_present, value _v_count)
   }
   if (count > *real_count) {
     _vres[1] = camlidl_alloc(*real_count, 0);
+    slots_to_cpy = *real_count;
   } else {
     _vres[1] = camlidl_alloc(count, 0);
+    slots_to_cpy = count;
   }
 /* We add this because of possible shadow warning  */
 /* (this is not our code: these are camlidl macros)*/
@@ -3068,7 +3071,7 @@ value camlidl_pkcs11_ML_CK_C_GetSlotList(value _v_token_present, value _v_count)
 #if GCC_VERSION > 40600
 #pragma GCC diagnostic pop
 #endif
-  for (_c2 = 0; _c2 < count; _c2++) {
+  for (_c2 = 0; _c2 < slots_to_cpy; _c2++) {
     _v3 = camlidl_c2ml_pkcs11_ck_slot_id_t(&slot_list[_c2], _ctx);
     modify(&Field(_vres[1], _c2), _v3);
   }
@@ -3407,6 +3410,7 @@ value camlidl_pkcs11_ML_CK_C_Logout(value _v_session)
 
 value camlidl_pkcs11_ML_CK_C_GetMechanismList(value _v_slot_id, value _v_count)
 {
+  unsigned long mech_to_cpy = 0;
   ck_slot_id_t slot_id;		/*in */
   ck_mechanism_type_t *mechanism_list;	/*out */
   unsigned long count;		/*in */
@@ -3443,8 +3447,10 @@ value camlidl_pkcs11_ML_CK_C_GetMechanismList(value _v_slot_id, value _v_count)
   }
   if (count > *real_count) {
     _vres[1] = camlidl_alloc(*real_count, 0);
+    mech_to_cpy = *real_count;
   } else {
     _vres[1] = camlidl_alloc(count, 0);
+    mech_to_cpy = count;
   }
 /* We add this because of possible shadow warning  */
 /* (this is not our code: these are camlidl macros)*/
@@ -3456,7 +3462,7 @@ value camlidl_pkcs11_ML_CK_C_GetMechanismList(value _v_slot_id, value _v_count)
 #if GCC_VERSION > 40600
 #pragma GCC diagnostic pop
 #endif
-  for (_c2 = 0; _c2 < count; _c2++) {
+  for (_c2 = 0; _c2 < mech_to_cpy; _c2++) {
     _v3 = camlidl_c2ml_pkcs11_ck_mechanism_type_t(&mechanism_list[_c2], _ctx);
     modify(&Field(_vres[1], _c2), _v3);
   }
@@ -5597,6 +5603,74 @@ value camlidl_pkcs11_char_array_to_ulong(value _v_data)
   }
   char_array_to_ulong(data, _c1, &output);
   _vres = custom_copy_int(output);
+  camlidl_free(_ctx);
+  return _vres;
+}
+
+value camlidl_pkcs11_hton_char_array(value _v_in)
+{
+  unsigned char *in;		/*in */
+  unsigned char *out;		/*out */
+  unsigned long *out_len;	/*in */
+  mlsize_t _c1;
+  mlsize_t _c2;
+  value _v3;
+  mlsize_t _c4;
+  value _v5;
+  value _vres;
+  unsigned char tmp[8];
+  unsigned long tmp_out_len;
+
+  struct camlidl_ctx_struct _ctxs = { CAMLIDL_TRANSIENT, NULL };
+  camlidl_ctx _ctx = &_ctxs;
+  out = (unsigned char *)tmp;
+  out_len = &tmp_out_len;
+  _c1 = Wosize_val(_v_in);
+  in = camlidl_malloc(_c1 * sizeof(unsigned char), _ctx);
+  for (_c2 = 0; _c2 < _c1; _c2++) {
+    _v3 = Field(_v_in, _c2);
+    in[_c2] = Int_val(_v3);
+  }
+  hton_char_array(in, _c1, out, out_len);
+  _vres = camlidl_alloc(*out_len, 0);
+  for (_c4 = 0; _c4 < *out_len; _c4++) {
+    _v5 = Val_int(out[_c4]);
+    modify(&Field(_vres, _c4), _v5);
+  }
+  camlidl_free(_ctx);
+  return _vres;
+}
+
+value camlidl_pkcs11_ntoh_char_array(value _v_in)
+{
+  unsigned char *in;		/*in */
+  unsigned char *out;		/*out */
+  unsigned long *out_len;	/*in */
+  mlsize_t _c1;
+  mlsize_t _c2;
+  value _v3;
+  mlsize_t _c4;
+  value _v5;
+  value _vres;
+  unsigned char tmp[8];
+  unsigned long tmp_out_len;
+
+  struct camlidl_ctx_struct _ctxs = { CAMLIDL_TRANSIENT, NULL };
+  camlidl_ctx _ctx = &_ctxs;
+  out = (unsigned char *)tmp;
+  out_len = &tmp_out_len;
+  _c1 = Wosize_val(_v_in);
+  in = camlidl_malloc(_c1 * sizeof(unsigned char), _ctx);
+  for (_c2 = 0; _c2 < _c1; _c2++) {
+    _v3 = Field(_v_in, _c2);
+    in[_c2] = Int_val(_v3);
+  }
+  ntoh_char_array(in, _c1, out, out_len);
+  _vres = camlidl_alloc(*out_len, 0);
+  for (_c4 = 0; _c4 < *out_len; _c4++) {
+    _v5 = Val_int(out[_c4]);
+    modify(&Field(_vres, _c4), _v5);
+  }
   camlidl_free(_ctx);
   return _vres;
 }

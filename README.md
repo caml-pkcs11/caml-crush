@@ -60,7 +60,7 @@ Here is a big picture of how the PKCS#11 proxy works:
 
     sudo apt-get install autoconf make gcc ocaml-nox camlidl coccinelle \
                          libocamlnet-ocaml-dev libocamlnet-ocaml-bin \
-                         libconfig-file-ocaml-dev
+                         libconfig-file-ocaml-dev camlp4
 
 ### Build
 
