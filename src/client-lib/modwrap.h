@@ -279,6 +279,29 @@
 #include "pkcs11_rpc.h"
 #endif
 
+/* Workaround to support RPC timeout with UNIX socket
+ * eglibc does not set ct_waitset with clnt_control.
+ * Until this is patched upstream we do it the ugly way
+ * by redefining the opaque ct_data structure and setting
+ * the boolean ourselves.
+ */
+#if defined(CRPC) && defined(UNIX_SOCKET)
+#define MCALL_MSG_SIZE 24
+
+struct ct_data
+  {
+    int ct_sock;
+    bool_t ct_closeit;
+    struct timeval ct_wait;
+    bool_t ct_waitset;
+    struct sockaddr_un ct_addr;
+    struct rpc_err ct_error;
+    char ct_mcall[MCALL_MSG_SIZE];
+    u_int ct_mpos;
+    XDR ct_xdrs;
+  };
+#endif
+
 /* gethostbyname include */
 #ifdef TCP_SOCKET
 #ifdef WIN32

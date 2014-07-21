@@ -564,6 +564,10 @@ ck_rv_t init_c(const char *module)
   }
 
   clnt_control(cl, CLSET_TIMEOUT, (char *)&timeout);
+#ifdef UNIX_SOCKET
+  /* Workaround to support RPC timeout with UNIX socket, see modwrap.h */
+  ((struct ct_data *)(cl->cl_private))->ct_waitset = TRUE;
+#endif
 
   ret = myC_LoadModule_C(module);
   return ret;
