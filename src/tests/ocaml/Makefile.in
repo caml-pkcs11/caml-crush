@@ -2,13 +2,16 @@ bindings_dir = ../../bindings-pkcs11
 CFLAGS = -I $(bindings_dir)
 LDFLAGS = -cclib -lcamlidl -cclib -L$(bindings_dir)
 
-all: build_bindings_standalone p11_common complete_test digest_test encdec_test wrap_unwrap_test destroy_objects
+all: build_bindings_standalone p11_common p11_for_generic complete_test digest_test encdec_test wrap_unwrap_test destroy_objects generic_scenario
 
 build_bindings_standalone:
 	cd $(bindings_dir) && make -f Makefile.standalone && cd -
 
 p11_common:
 	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c p11_common.ml
+
+p11_for_generic:
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c p11_for_generic.ml
 
 complete_test:
 	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c test_pkcs11.ml
@@ -29,6 +32,22 @@ encdec_test:
 wrap_unwrap_test:
 	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c wrap_unwrap.ml
 	ocamlfind ocamlopt -package "config-file" -linkpkg $(bindings_dir)/pkcs11_standalone.cmxa p11_common.cmx wrap_unwrap.cmx $(LDFLAGS) -o wrap_unwrap_test.opt
+
+generic_scenario: build_bindings_standalone p11_common p11_for_generic
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c get_sensitive_key.ml 
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c sensitive_is_sticky.ml 
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c extractable_is_sticky.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c encrypt_and_unwrap.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c misc_scenario.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c double_unwrap.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c wrap_and_decrypt_1.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c wrap_and_decrypt_2.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c wrap_and_decrypt_3.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c wrap_and_decrypt_4.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c create_object_1.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c create_object_2.ml
+	ocamlfind ocamlopt -package "config-file" $(CFLAGS) -c generic_scenario.ml
+	ocamlfind ocamlopt -package "config-file" -linkpkg $(bindings_dir)/pkcs11_standalone.cmxa p11_common.cmx p11_for_generic.cmx get_sensitive_key.cmx sensitive_is_sticky.cmx extractable_is_sticky.cmx encrypt_and_unwrap.cmx misc_scenario.cmx double_unwrap.cmx wrap_and_decrypt_1.cmx wrap_and_decrypt_2.cmx wrap_and_decrypt_3.cmx wrap_and_decrypt_4.cmx create_object_1.cmx create_object_2.cmx generic_scenario.cmx $(LDFLAGS) -o generic_scenario.opt
 
 
 clean:
