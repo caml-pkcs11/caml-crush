@@ -1,7 +1,8 @@
 (************************* CeCILL-B HEADER ************************************
-    Copyright ANSSI (2013)
+    Copyright ANSSI (2014)
     Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr] and
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Thomas CALDERON [thomas.calderon@ssi.gouv.fr] and Marion
+    DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement
     a PKCS#11 proxy as well as a PKCS#11 filter with security features
@@ -160,6 +161,37 @@ exception C_SetOperationStateError
 
 exception UnsupportedRSAKeySize
 
+
+
+(* A few macro for attributes *)
+  
+let attr_decrypt = { Pkcs11.type_ =Pkcs11.cKA_DECRYPT ; Pkcs11.value = Pkcs11.true_ }
+let attr_encrypt = { Pkcs11.type_ =Pkcs11.cKA_ENCRYPT ; Pkcs11.value = Pkcs11.true_ }
+let attr_wrap = { Pkcs11.type_ =Pkcs11.cKA_WRAP ; Pkcs11.value = Pkcs11.true_ }
+let attr_unwrap = { Pkcs11.type_ =Pkcs11.cKA_UNWRAP ; Pkcs11.value = Pkcs11.true_ }
+let attr_decryptf = { Pkcs11.type_ =Pkcs11.cKA_DECRYPT ; Pkcs11.value = Pkcs11.false_ }
+let attr_encryptf = { Pkcs11.type_ =Pkcs11.cKA_ENCRYPT ; Pkcs11.value = Pkcs11.false_ }
+let attr_wrapf = { Pkcs11.type_ =Pkcs11.cKA_WRAP ; Pkcs11.value = Pkcs11.false_ }
+let attr_unwrapf = { Pkcs11.type_ =Pkcs11.cKA_UNWRAP ; Pkcs11.value = Pkcs11.false_ }
+let attr_sensitive = { Pkcs11.type_ =Pkcs11.cKA_SENSITIVE ; Pkcs11.value = Pkcs11.true_ }
+let attr_sensitivef = { Pkcs11.type_ =Pkcs11.cKA_SENSITIVE ; Pkcs11.value = Pkcs11.false_ }
+let attr_always_sensitive = { Pkcs11.type_ =Pkcs11.cKA_ALWAYS_SENSITIVE ; Pkcs11.value = Pkcs11.true_ }
+let attr_always_sensitivef = { Pkcs11.type_ =Pkcs11.cKA_ALWAYS_SENSITIVE ; Pkcs11.value = Pkcs11.false_ }
+let attr_extractable = { Pkcs11.type_ =Pkcs11.cKA_EXTRACTABLE ; Pkcs11.value = Pkcs11.true_ }
+let attr_extractablef = { Pkcs11.type_ =Pkcs11.cKA_EXTRACTABLE ; Pkcs11.value = Pkcs11.false_ }
+let attr_never_extractable = { Pkcs11.type_ =Pkcs11.cKA_NEVER_EXTRACTABLE ; Pkcs11.value = Pkcs11.true_ }
+let attr_never_extractablef = { Pkcs11.type_ =Pkcs11.cKA_NEVER_EXTRACTABLE ; Pkcs11.value = Pkcs11.false_ }
+let attr_token = { Pkcs11.type_ =Pkcs11.cKA_TOKEN ; Pkcs11.value = Pkcs11.true_ }
+let attr_tokenf = { Pkcs11.type_ =Pkcs11.cKA_TOKEN ; Pkcs11.value = Pkcs11.false_ }
+
+let template_token_wd = [| attr_wrap ; attr_decrypt ; attr_token |]
+let template_session_wd = [| attr_wrap ; attr_decrypt ; attr_tokenf |]
+let template_token_ue = [| attr_unwrap ; attr_encrypt ; attr_token |]
+let template_session_ue = [| attr_unwrap ; attr_encrypt ; attr_tokenf |]
+let template_sensitive_conflict = [| attr_sensitivef ; attr_always_sensitive |]
+let template_extractable_conflict = [| attr_extractable ; attr_never_extractable |]
+let template_wu =  [| attr_wrap ; attr_unwrap |]
+
 let init_module =
 let group = new group in
   let p11_libname = new string_cp ~group ["Libname"] "" "PKCS#11 Library to use" in
@@ -191,6 +223,11 @@ let check_ret ret_value except continue =
             "cKR_OK" -> msg
             | _ -> if continue = true then msg else failwith msg
             (*| _ -> if continue = true then msg else raise (except)*)
+
+(* Returns true if the result is cKR_OK, returns false otherwise *)
+let check_ret_ok ret_value =
+  Pkcs11.match_cKR_value ret_value = "cKR_OK" 
+
 
 (* Function for checking if one element is in a list *)
 let check_element_in_list the_list element =
@@ -290,7 +327,76 @@ let generate_rsa_template keysize keyslabel keysid =
     let priv_template = templ_append priv_template Pkcs11.cKA_EXTRACTABLE Pkcs11.true_ in
     (pub_template, priv_template)
 
-(* TODO: we force a 1024 bit key here, on might want to support other sizes *)
+let generate_generic_rsa_template keysize keyslabel keysid =
+    let pub_template = [||] in
+    let priv_template = [||] in
+
+    let pubclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PUBLIC_KEY in
+    let pub_template = templ_append pub_template Pkcs11.cKA_CLASS pubclass in
+
+    let privclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PRIVATE_KEY in
+    let priv_template = templ_append priv_template Pkcs11.cKA_CLASS privclass in
+
+    let public_exponent = Pkcs11.string_to_char_array (Pkcs11.pack "010001") in
+    let pub_template = templ_append pub_template Pkcs11.cKA_PUBLIC_EXPONENT public_exponent in
+
+    let modulus_bits = match keysize with
+        512n -> Pkcs11.int_to_ulong_char_array keysize
+        |1024n -> Pkcs11.int_to_ulong_char_array keysize
+        |2048n -> Pkcs11.int_to_ulong_char_array keysize
+        |4096n -> Pkcs11.int_to_ulong_char_array keysize
+        |8192n -> Pkcs11.int_to_ulong_char_array keysize
+        |16384n -> Pkcs11.int_to_ulong_char_array keysize
+        | _ -> raise UnsupportedRSAKeySize in
+    let pub_template = templ_append pub_template Pkcs11.cKA_MODULUS_BITS modulus_bits in
+    let (pub_template, priv_template) = append_rsa_template Pkcs11.cKA_LABEL keyslabel pub_template priv_template in
+    let (pub_template, priv_template) = append_rsa_template Pkcs11.cKA_ID keysid pub_template priv_template in
+    let priv_template = templ_append priv_template Pkcs11.cKA_PRIVATE Pkcs11.true_ in
+    (pub_template, priv_template)
+
+let generate_weak_generic_rsa_template keyslabel =
+    let pub_template = [||] in
+    let priv_template = [||] in
+
+    let pubclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PUBLIC_KEY in
+    let pub_template = templ_append pub_template Pkcs11.cKA_CLASS pubclass in
+
+    let privclass = Pkcs11.int_to_ulong_char_array Pkcs11.cKO_PRIVATE_KEY in
+    let priv_template = templ_append priv_template Pkcs11.cKA_CLASS privclass in   
+    let (pub_template, priv_template) = append_rsa_template Pkcs11.cKA_LABEL keyslabel pub_template priv_template in
+    let priv_template = templ_append priv_template Pkcs11.cKA_PRIVATE Pkcs11.true_ in
+    (pub_template, priv_template)
+
+let update_generic_rsa_template attr_template template_to_upd= 
+  let aux_update temp elem = 
+    let (pub_template, priv_template) = temp in
+    match elem with 
+    | m when m=attr_wrap -> (Array.append pub_template [|attr_wrap|], priv_template)
+    | m when m=attr_wrapf -> (Array.append pub_template [|attr_wrapf|], priv_template)
+    | m when m=attr_unwrap -> (pub_template,Array.append priv_template [|attr_unwrap|])
+    | m when m=attr_unwrapf -> (pub_template,Array.append priv_template [|attr_unwrapf|])
+    | m when m=attr_decrypt -> (pub_template,Array.append priv_template [|attr_decrypt|])
+    | m when m=attr_decryptf -> (pub_template,Array.append priv_template [|attr_decryptf|])
+    | m when m=attr_encrypt ->  (Array.append pub_template [|attr_encrypt|], priv_template)
+    | m when m=attr_encryptf ->  (Array.append pub_template [|attr_encryptf|] , priv_template)
+    | m when m=attr_sensitive -> (pub_template,Array.append priv_template [|attr_sensitive|] ) 
+    | m when m=attr_sensitivef -> (pub_template,Array.append priv_template [|attr_sensitivef|])  
+    | m when m=attr_always_sensitive -> (pub_template,Array.append priv_template [|attr_always_sensitive|])
+    | m when m=attr_always_sensitivef -> (pub_template,Array.append priv_template [|attr_always_sensitivef|])
+    | m when m=attr_extractable -> (pub_template,Array.append priv_template [|attr_extractable|] )
+    | m when m=attr_extractablef -> (pub_template,Array.append priv_template [|attr_extractablef|]) 
+    | m when m=attr_never_extractable -> (pub_template,Array.append priv_template [|attr_never_extractable|] )
+    | m when m=attr_never_extractablef -> (pub_template,Array.append priv_template [|attr_never_extractablef|])
+    | m when m=attr_token ->  (Array.append pub_template [|attr_token|],
+		     Array.append priv_template [|attr_token|])
+    | m when m=attr_tokenf -> (Array.append pub_template [|attr_tokenf|],
+		     Array.append priv_template [|attr_tokenf|])
+    | _ -> failwith "update_generic_rsa_template_error : attribute is not listed!\n"
+  in 		    
+  Array.fold_left aux_update template_to_upd attr_template
+
+
+(* TODO: we force a 1024 bit key here, one might want to support other sizes *)
 let generate_rsa_key_pair session _ pub_template priv_template = 
     (* MechanismChoice *)
     let my_mech = { Pkcs11.mechanism = Pkcs11.cKM_RSA_PKCS_KEY_PAIR_GEN ; Pkcs11.parameter = [| |] } in
@@ -299,6 +405,8 @@ let generate_rsa_key_pair session _ pub_template priv_template =
     let _ = check_ret ret_value C_GenerateKeyPairError false in
     printf "C_GenerateKeyPair ret: %s\n" (Pkcs11.match_cKR_value ret_value);
     (pubkey_, privkey_)
+
+ 
 
 let destroy_some_object session handle = 
     let ret_value = Pkcs11.mL_CK_C_DestroyObject session handle in
@@ -386,4 +494,11 @@ let find_objects session attrs maxobj =
     let _ = check_ret ret_value C_FindObjectsFinalError false in
     printf "C_FindObjectsFinal ret: %s\n" (Pkcs11.match_cKR_value ret_value);
     (found_, number_)
+
+  
+let sprintf_bool_value_of_attribute value =
+  match value with
+  | v when v=0n -> "cKA_FALSE"
+  | v when v=1n -> "cKA_TRUE"
+  | _-> "not a boolean value!"
 

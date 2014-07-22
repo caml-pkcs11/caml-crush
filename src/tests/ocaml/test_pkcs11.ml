@@ -1,7 +1,8 @@
 (************************* CeCILL-B HEADER ************************************
-    Copyright ANSSI (2013)
+    Copyright ANSSI (2014)
     Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr] and
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Thomas CALDERON [thomas.calderon@ssi.gouv.fr] and Marion
+    DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement
     a PKCS#11 proxy as well as a PKCS#11 filter with security features

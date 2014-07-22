@@ -52,6 +52,7 @@ Here is a big picture of how the PKCS#11 proxy works:
 
   * Ryad Benadjila (<mailto:ryad.benadjila@ssi.gouv.fr>)
   * Thomas Calderon (<mailto:thomas.calderon@ssi.gouv.fr>)
+  * Marion Daubignard (<mailto:marion.daubignard@ssi.gouv.fr>)
 
 ## Quickstart
 
@@ -87,7 +88,7 @@ modules = [("foo", "/usr/lib/opensc-pkcs11.so")]
 
 ### Run the proxy server
 
-    /usr/local/bin/pkcs11proxyd -fg -conf /usr/local/etc/pkcs11proxy/pkcs11proxyd.conf
+    /usr/local/bin/pkcs11proxyd -fg -conf /usr/local/etc/pkcs11proxyd/pkcs11proxyd.conf
 
 
 ### Test it
@@ -99,8 +100,11 @@ list the available slots.
 
     pkcs11-tool --module /usr/local/lib/libp11clientfoo.so -L
 
+[Dedicated tests](src/tests/ocaml/HOW_TO_PERFORM_TESTS.md) are also implemented.
+
 ## Documentation
 
   * More detailed documentation can be found [here](doc/INDEX.md).
   * Detailed documentation on the filter can be found [here](doc/FILTER.md).
   * Explanation on current issues and/or limitations can be found [here](ISSUES.md).
+  * Explanations on how to run some tests to ensure that issues are addressed can be found [here](src/tests/ocaml/HOW_TO_PERFORM_TESTS.md).
