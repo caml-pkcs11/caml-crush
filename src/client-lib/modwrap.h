@@ -285,7 +285,7 @@
  * by redefining the opaque ct_data structure and setting
  * the boolean ourselves.
  */
-#if defined(CRPC) && defined(UNIX_SOCKET)
+#if defined(CRPC) && defined(UNIX_SOCKET) && defined(_CS_GNU_LIBC_VERSION)
 #define MCALL_MSG_SIZE 24
 
 struct ct_data

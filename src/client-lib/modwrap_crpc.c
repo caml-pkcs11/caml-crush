@@ -564,7 +564,7 @@ ck_rv_t init_c(const char *module)
   }
 
   clnt_control(cl, CLSET_TIMEOUT, (char *)&timeout);
-#ifdef UNIX_SOCKET
+#if defined(UNIX_SOCKET) && defined(_CS_GNU_LIBC_VERSION)
   /* Workaround to support RPC timeout with UNIX socket, see modwrap.h */
   ((struct ct_data *)(cl->cl_private))->ct_waitset = TRUE;
 #endif
