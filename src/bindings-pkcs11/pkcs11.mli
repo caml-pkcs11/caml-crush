@@ -123,6 +123,14 @@ and ck_c_initialize_args = {
   ck_c_initialize_args_flags: ck_flags_t;
 }
 
+val lITTLE_ENDIAN_64  : nativeint
+val lITTLE_ENDIAN_32  : nativeint
+val bIG_ENDIAN_64  : nativeint
+val bIG_ENDIAN_32  : nativeint
+val uNSUPPORTED_ARCHITECTURE  : nativeint
+val nOT_INITIALIZED  : nativeint
+val match_arch_value : nativeint -> string
+
 val cRYPTOKI_VERSION_MAJOR  : nativeint
 val cRYPTOKI_VERSION_MINOR  : nativeint
 val cRYPTOKI_VERSION_REVISION : nativeint
@@ -871,6 +879,12 @@ external int_to_ulong_char_array : nativeint -> char array
 
 external char_array_to_ulong : char array -> nativeint
 	= "camlidl_pkcs11_char_array_to_ulong"
+
+external hton_char_array : char array -> char array
+	= "camlidl_pkcs11_hton_char_array"
+
+external ntoh_char_array : char array -> char array
+	= "camlidl_pkcs11_ntoh_char_array"
 
 val c_Daemonize : char array -> ck_rv_t
 val c_SetupArch : nativeint -> ck_rv_t

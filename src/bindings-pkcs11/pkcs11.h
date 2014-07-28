@@ -696,6 +696,16 @@ extern void char_array_to_ulong( /*in */ unsigned char *data,	/*in */
 				size_t data_size,	/*out */
 				unsigned long *output);
 
+extern void hton_char_array( /*in */ unsigned char *in, unsigned long in_len,
+								/*out */ unsigned char *out,
+								/*in */
+			    unsigned long *out_len);
+
+extern void ntoh_char_array( /*in */ unsigned char *in, unsigned long in_len,
+								/*out */ unsigned char *out,
+								/*in */
+			    unsigned long *out_len);
+
 /* Avoid declaring caml stuff when sharing this header with C rpc client code */
 #if !defined(CRPC)
 void camlidl_ml2c_pkcs11_ck_flags_t(value _v1, ck_flags_t * _c2,
@@ -1039,6 +1049,8 @@ value camlidl_pkcs11_ML_CK_C_GetFunctionStatus(value _v_session);
 value camlidl_pkcs11_ML_CK_C_CancelFunction(value _v_session);
 value camlidl_pkcs11_int_to_ulong_char_array(value _v_input);
 value camlidl_pkcs11_char_array_to_ulong(value _v_data);
+value camlidl_pkcs11_hton_char_array(value _v_data);
+value camlidl_pkcs11_ntoh_char_array(value _v_data);
 #ifdef SERVER_ROLE
 int decode_ck_attribute_arch(value, struct ck_attribute *, camlidl_ctx);
 int encode_ck_attribute_arch(struct ck_attribute *, struct ck_attribute *);

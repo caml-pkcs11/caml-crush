@@ -205,6 +205,20 @@ and ck_c_initialize_args = {
   ck_c_initialize_args_flags: ck_flags_t;
 }
 
+let lITTLE_ENDIAN_64  = 1n
+let lITTLE_ENDIAN_32  = 2n
+let bIG_ENDIAN_64  = 3n
+let bIG_ENDIAN_32  = 4n
+let uNSUPPORTED_ARCHITECTURE  = 5n
+let nOT_INITIALIZED  = 6n
+let match_arch_value a = match a with
+   1n -> "LITTLE_ENDIAN_64"
+ | 2n -> "LITTLE_ENDIAN_32"
+ | 3n -> "BIG_ENDIAN_64"
+ | 4n -> "BIG_ENDIAN_32"
+ | 5n -> "UNSUPPORTED_ARCHITECTURE"
+ | 6n -> "NOT_INITIALIZED"
+ | _  -> "UNKNOWN_ERROR"
 let cRYPTOKI_VERSION_MAJOR  = 2n
 let cRYPTOKI_VERSION_MINOR  = 20n
 let cRYPTOKI_VERSION_REVISION = 6n
@@ -1856,6 +1870,12 @@ external int_to_ulong_char_array : nativeint -> char array
 
 external char_array_to_ulong : char array -> nativeint
 	= "camlidl_pkcs11_char_array_to_ulong"
+
+external hton_char_array : char array -> char array
+	= "camlidl_pkcs11_hton_char_array"
+
+external ntoh_char_array : char array -> char array
+	= "camlidl_pkcs11_ntoh_char_array"
 
 let c_Daemonize = fun param -> mL_CK_C_Daemonize param
 let c_SetupArch = fun arch -> mL_CK_C_SetupArch arch
