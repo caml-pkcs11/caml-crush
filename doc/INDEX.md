@@ -153,7 +153,7 @@ Minimal package list:
 
     sudo apt-get install autoconf make gcc ocaml-nox camlidl coccinelle \
                          libocamlnet-ocaml-dev libocamlnet-ocaml-bin \
-                         libconfig-file-ocaml-dev
+                         libconfig-file-ocaml-dev camlp4
 
 Add support for TLS/SSL with OpenSSL:
 
