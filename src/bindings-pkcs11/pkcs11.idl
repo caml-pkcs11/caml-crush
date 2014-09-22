@@ -82,7 +82,7 @@
 -------------------------- CeCILL-B HEADER ----------------------------------*/
 #define CRYPTOKI_VERSION_MAJOR		2
 #define CRYPTOKI_VERSION_MINOR		20
-#define CRYPTOKI_VERSION_REVISION	6
+#define CRYPTOKI_VERSION_AMENDMENT	3
 
 quote(H, "#include <stdint.h>");
 quote(H, "#include <stdlib.h>");
@@ -228,6 +228,9 @@ unsigned long ck_notification_t;
 
 #define CKN_SURRENDER	(0UL)
 
+/* The following notification is new for PKCS #11 v2.20 amendment 3 */
+#define CKN_OTP_CHANGED     (1UL)
+
 typedef[nativeint]
 unsigned long ck_slot_id_t;
 
@@ -332,6 +335,8 @@ unsigned long ck_object_class_t;
 #define CKO_HW_FEATURE		(5UL)
 #define CKO_DOMAIN_PARAMETERS	(6UL)
 #define CKO_MECHANISM		(7UL)
+/* CKO_OTP_KEY is new for PKCS #11 v2.20 amendment 1 */
+#define CKO_OTP_KEY             (8UL)
 #define CKO_VENDOR_DEFINED	((unsigned long) (1UL << 31))
 
 typedef[nativeint]
@@ -370,6 +375,14 @@ unsigned long ck_key_type_t;
 #define CKK_AES			(0x1fUL)
 #define CKK_BLOWFISH		(0x20UL)
 #define CKK_TWOFISH		(0x21UL)
+/* SecurID, HOTP, and ACTI are new for PKCS #11 v2.20 amendment 1 */
+#define CKK_SECURID         	(0x22UL)
+#define CKK_HOTP            	(0x23UL)
+#define CKK_ACTI            	(0x24UL)
+/* Camellia is new for PKCS #11 v2.20 amendment 3 */
+#define CKK_CAMELLIA            (0x25UL)
+/* ARIA is new for PKCS #11 v2.20 amendment 3 */
+#define CKK_ARIA                (0x26UL)
 #define CKK_VENDOR_DEFINED	((unsigned long) (1UL << 31))
 
 typedef[nativeint]
@@ -382,6 +395,19 @@ unsigned long ck_certificate_type_t;
 
 typedef[nativeint]
 unsigned long ck_attribute_type_t;
+
+/* The following OTP-related defines are new for PKCS #11 v2.20 amendment 1
+   and relates to the CKA_OTP_FORMAT attribute */
+#define CK_OTP_FORMAT_DECIMAL      (0UL)
+#define CK_OTP_FORMAT_HEXADECIMAL  (1UL)
+#define CK_OTP_FORMAT_ALPHANUMERIC (2UL)
+#define CK_OTP_FORMAT_BINARY       (3UL)
+
+/* The following OTP-related defines are new for PKCS #11 v2.20 amendment 1
+   and relates to the CKA_OTP_..._REQUIREMENT attributes */
+#define CK_OTP_PARAM_IGNORED       (0UL)
+#define CK_OTP_PARAM_OPTIONAL      (1UL)
+#define CK_OTP_PARAM_MANDATORY     (2UL)
 
 #define CKA_CLASS			(0UL)
 #define CKA_TOKEN			(1UL)
@@ -447,6 +473,24 @@ unsigned long ck_attribute_type_t;
 #define CKA_AUTH_PIN_FLAGS		(0x201UL)
 #define CKA_ALWAYS_AUTHENTICATE		(0x202UL)
 #define CKA_WRAP_WITH_TRUSTED		(0x210UL)
+#define CKA_WRAP_TEMPLATE		(CKF_ARRAY_ATTRIBUTE | 0x211UL)
+#define CKA_UNWRAP_TEMPLATE		(CKF_ARRAY_ATTRIBUTE | 0x212UL)
+/* CKA_OTP... atttributes are new for PKCS #11 v2.20 amendment 3. */
+#define CKA_OTP_FORMAT                  (0x220UL)
+#define CKA_OTP_LENGTH                  (0x221UL)
+#define CKA_OTP_TIME_INTERVAL           (0x222UL)
+#define CKA_OTP_USER_FRIENDLY_MODE      (0x223UL)
+#define CKA_OTP_CHALLENGE_REQUIREMENT   (0x224UL)
+#define CKA_OTP_TIME_REQUIREMENT        (0x225UL)
+#define CKA_OTP_COUNTER_REQUIREMENT     (0x226UL)
+#define CKA_OTP_PIN_REQUIREMENT         (0x227UL)
+#define CKA_OTP_COUNTER                 (0x22EUL)
+#define CKA_OTP_TIME                    (0x22FUL)
+#define CKA_OTP_USER_IDENTIFIER         (0x22AUL)
+#define CKA_OTP_SERVICE_IDENTIFIER      (0x22BUL)
+#define CKA_OTP_SERVICE_LOGO            (0x22CUL)
+#define CKA_OTP_SERVICE_LOGO_TYPE       (0x22DUL)
+
 #define CKA_HW_FEATURE_TYPE		(0x300UL)
 #define CKA_RESET_ON_INIT		(0x301UL)
 #define CKA_HAS_RESET			(0x302UL)
@@ -464,8 +508,6 @@ unsigned long ck_attribute_type_t;
 #define CKA_REQUIRED_CMS_ATTRIBUTES	(0x501UL)
 #define CKA_DEFAULT_CMS_ATTRIBUTES	(0x502UL)
 #define CKA_SUPPORTED_CMS_ATTRIBUTES	(0x503UL)
-#define CKA_WRAP_TEMPLATE		(CKF_ARRAY_ATTRIBUTE | 0x211UL)
-#define CKA_UNWRAP_TEMPLATE		(CKF_ARRAY_ATTRIBUTE | 0x212UL)
 #define CKA_ALLOWED_MECHANISMS		(CKF_ARRAY_ATTRIBUTE | 0x600UL)
 #define CKA_VENDOR_DEFINED		((unsigned long) (1UL << 31))
 
@@ -514,6 +556,9 @@ unsigned long ck_mechanism_type_t;
 #define CKM_SHA256_RSA_PKCS_PSS		(0x43UL)
 #define CKM_SHA384_RSA_PKCS_PSS		(0x44UL)
 #define CKM_SHA512_RSA_PKCS_PSS		(0x45UL)
+/* SHA-224 RSA mechanisms are new for PKCS #11 v2.20 amendment 3 */
+#define CKM_SHA224_RSA_PKCS             (0x46UL)
+#define CKM_SHA224_RSA_PKCS_PSS         (0x47UL)
 #define CKM_RC2_KEY_GEN			(0x100UL)
 #define CKM_RC2_ECB			(0x101UL)
 #define	CKM_RC2_CBC			(0x102UL)
@@ -541,6 +586,10 @@ unsigned long ck_mechanism_type_t;
 #define CKM_CDMF_MAC			(0x143UL)
 #define CKM_CDMF_MAC_GENERAL		(0x144UL)
 #define CKM_CDMF_CBC_PAD		(0x145UL)
+#define CKM_DES_OFB64                   (0x150UL)
+#define CKM_DES_OFB8                    (0x151UL)
+#define CKM_DES_CFB64                   (0x152UL)
+#define CKM_DES_CFB8                    (0x153UL)
 #define CKM_MD2				(0x200UL)
 #define CKM_MD2_HMAC			(0x201UL)
 #define CKM_MD2_HMAC_GENERAL		(0x202UL)
@@ -559,12 +608,25 @@ unsigned long ck_mechanism_type_t;
 #define CKM_SHA256			(0x250UL)
 #define CKM_SHA256_HMAC			(0x251UL)
 #define CKM_SHA256_HMAC_GENERAL		(0x252UL)
+/* SHA-224 is new for PKCS #11 v2.20 amendment 3 */
+#define CKM_SHA224                      (0x255UL)
+#define CKM_SHA224_HMAC                 (0x256UL)
+#define CKM_SHA224_HMAC_GENERAL         (0x257UL)
 #define CKM_SHA384			(0x260UL)
 #define CKM_SHA384_HMAC			(0x261UL)
 #define CKM_SHA384_HMAC_GENERAL		(0x262UL)
 #define CKM_SHA512			(0x270UL)
 #define CKM_SHA512_HMAC			(0x271UL)
 #define CKM_SHA512_HMAC_GENERAL		(0x272UL)
+/* SecurID is new for PKCS #11 v2.20 amendment 1 */
+#define CKM_SECURID_KEY_GEN             (0x280UL)
+#define CKM_SECURID                     (0x282UL)
+/* HOTP is new for PKCS #11 v2.20 amendment 1 */
+#define CKM_HOTP_KEY_GEN     		(0x290UL)
+#define CKM_HOTP              		(0x291UL)
+/* ACTI is new for PKCS #11 v2.20 amendment 1 */
+#define CKM_ACTI              		(0x2A0UL)
+#define CKM_ACTI_KEY_GEN      		(0x2A1UL)
 #define CKM_CAST_KEY_GEN		(0x300UL)
 #define CKM_CAST_ECB			(0x301UL)
 #define CKM_CAST_CBC			(0x302UL)
@@ -615,11 +677,19 @@ unsigned long ck_mechanism_type_t;
 #define CKM_TLS_MASTER_KEY_DERIVE	(0x375UL)
 #define CKM_TLS_KEY_AND_MAC_DERIVE	(0x376UL)
 #define CKM_TLS_MASTER_KEY_DERIVE_DH	(0x377UL)
+/* CKM_TLS_PRF is new for v2.20 */
+#define CKM_TLS_PRF                     (0x378UL)
 #define CKM_SSL3_MD5_MAC		(0x380UL)
 #define CKM_SSL3_SHA1_MAC		(0x381UL)
 #define CKM_MD5_KEY_DERIVATION		(0x390UL)
 #define CKM_MD2_KEY_DERIVATION		(0x391UL)
 #define CKM_SHA1_KEY_DERIVATION		(0x392UL)
+/* CKM_SHA256/384/512 are new for v2.20 */
+#define CKM_SHA256_KEY_DERIVATION       (0x393UL)
+#define CKM_SHA384_KEY_DERIVATION       (0x394UL)
+#define CKM_SHA512_KEY_DERIVATION       (0x395UL)
+/* SHA-224 key derivation is new for PKCS #11 v2.20 amendment 3 */
+#define CKM_SHA224_KEY_DERIVATION       (0x396UL)
 #define CKM_PBE_MD2_DES_CBC		(0x3a0UL)
 #define CKM_PBE_MD5_DES_CBC		(0x3a1UL)
 #define CKM_PBE_MD5_CAST_CBC		(0x3a2UL)
@@ -636,8 +706,40 @@ unsigned long ck_mechanism_type_t;
 #define CKM_PBE_SHA1_RC2_40_CBC		(0x3abUL)
 #define CKM_PKCS5_PBKD2			(0x3b0UL)
 #define CKM_PBA_SHA1_WITH_SHA1_HMAC	(0x3c0UL)
+/* WTLS mechanisms are new for v2.20 */
+#define CKM_WTLS_PRE_MASTER_KEY_GEN        (0x3D0UL)
+#define CKM_WTLS_MASTER_KEY_DERIVE         (0x3D1UL)
+#define CKM_WTLS_MASTER_KEY_DERIVE_DH_ECC  (0x3D2UL)
+#define CKM_WTLS_PRF                       (0x3D3UL)
+#define CKM_WTLS_SERVER_KEY_AND_MAC_DERIVE (0x3D4UL)
+#define CKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE (0x3D5UL)
 #define CKM_KEY_WRAP_LYNKS		(0x400UL)
 #define CKM_KEY_WRAP_SET_OAEP		(0x401UL)
+/* CKM_CMS_SIG is new for v2.20 */
+#define CKM_CMS_SIG                     (0x500UL)
+/* CKM_KIP mechanisms are new for PKCS #11 v2.20 amendment 2 */
+#define CKM_KIP_DERIVE                   (0x510UL)
+#define CKM_KIP_WRAP                     (0x511UL)
+#define CKM_KIP_MAC                      (0x512UL)
+/* Camellia is new for PKCS #11 v2.20 amendment 3 */
+#define CKM_CAMELLIA_KEY_GEN             (0x550UL)
+#define CKM_CAMELLIA_ECB                 (0x551UL)
+#define CKM_CAMELLIA_CBC                 (0x552UL)
+#define CKM_CAMELLIA_MAC                 (0x553UL)
+#define CKM_CAMELLIA_MAC_GENERAL         (0x554UL)
+#define CKM_CAMELLIA_CBC_PAD             (0x555UL)
+#define CKM_CAMELLIA_ECB_ENCRYPT_DATA    (0x556UL)
+#define CKM_CAMELLIA_CBC_ENCRYPT_DATA    (0x557UL)
+#define CKM_CAMELLIA_CTR                 (0x558UL)
+/* ARIA is new for PKCS #11 v2.20 amendment 3 */
+#define CKM_ARIA_KEY_GEN                 (0x560UL)
+#define CKM_ARIA_ECB                     (0x561UL)
+#define CKM_ARIA_CBC                     (0x562UL)
+#define CKM_ARIA_MAC                     (0x563UL)
+#define CKM_ARIA_MAC_GENERAL             (0x564UL)
+#define CKM_ARIA_CBC_PAD                 (0x565UL)
+#define CKM_ARIA_ECB_ENCRYPT_DATA        (0x566UL)
+#define CKM_ARIA_CBC_ENCRYPT_DATA        (0x567UL)
 #define CKM_SKIPJACK_KEY_GEN		(0x1000UL)
 #define CKM_SKIPJACK_ECB64		(0x1001UL)
 #define CKM_SKIPJACK_CBC64		(0x1002UL)
@@ -679,6 +781,20 @@ unsigned long ck_mechanism_type_t;
 #define CKM_AES_MAC			(0x1083UL)
 #define CKM_AES_MAC_GENERAL		(0x1084UL)
 #define CKM_AES_CBC_PAD			(0x1085UL)
+/* AES counter mode is new for PKCS #11 v2.20 amendment 3 */
+#define CKM_AES_CTR                     (0x1086UL)
+/* BlowFish and TwoFish are new for v2.20 */
+#define CKM_BLOWFISH_KEY_GEN            (0x1090UL)
+#define CKM_BLOWFISH_CBC                (0x1091UL)
+#define CKM_TWOFISH_KEY_GEN             (0x1092UL)
+#define CKM_TWOFISH_CBC                 (0x1093UL)
+/* CKM_xxx_ENCRYPT_DATA mechanisms are new for v2.20 */
+#define CKM_DES_ECB_ENCRYPT_DATA        (0x1100UL)
+#define CKM_DES_CBC_ENCRYPT_DATA        (0x1101UL)
+#define CKM_DES3_ECB_ENCRYPT_DATA       (0x1102UL)
+#define CKM_DES3_CBC_ENCRYPT_DATA       (0x1103UL)
+#define CKM_AES_ECB_ENCRYPT_DATA        (0x1104UL)
+#define CKM_AES_CBC_ENCRYPT_DATA        (0x1105UL)
 #define CKM_DSA_PARAMETER_GEN		(0x2000UL)
 #define CKM_DH_PKCS_PARAMETER_GEN	(0x2001UL)
 #define CKM_X9_42_DH_PARAMETER_GEN	(0x2002UL)
@@ -709,6 +825,16 @@ struct ck_mechanism_info {
 #define CKF_WRAP		(1UL << 17)
 #define CKF_UNWRAP		(1UL << 18)
 #define CKF_DERIVE		(1UL << 19)
+/* CKF_EC_F_P, CKF_EC_F_2M, CKF_EC_ECPARAMETERS, CKF_EC_NAMEDCURVE,
+ * CKF_EC_UNCOMPRESS, and CKF_EC_COMPRESS are new for v2.11. They
+ * describe a token's EC capabilities not available in mechanism
+ * information. */
+#define CKF_EC_F_P             (1UL << 20)
+#define CKF_EC_F_2M            (1UL << 21)
+#define CKF_EC_ECPARAMETERS    (1UL << 22)
+#define CKF_EC_NAMEDCURVE      (1UL << 23)
+#define CKF_EC_UNCOMPRESS      (1UL << 24)
+#define CKF_EC_COMPRESS        (1UL << 25)
 #define CKF_EXTENSION		((unsigned long) (1UL << 31))
 
 /* Flags for C_WaitForSlotEvent.  */
@@ -801,6 +927,9 @@ struct ck_mechanism_info {
 #define CKR_CRYPTOKI_ALREADY_INITIALIZED	(0x191UL)
 #define CKR_MUTEX_BAD				(0x1a0UL)
 #define CKR_MUTEX_NOT_LOCKED			(0x1a1UL)
+/* The following return values are new for PKCS #11 v2.20 amendment 3 */
+#define CKR_NEW_PIN_MODE                        (0x1b0UL)
+#define CKR_NEXT_OTP                            (0x1b1UL)
 #define CKR_FUNCTION_REJECTED			(0x200UL)
 #define CKR_VENDOR_DEFINED			((unsigned long) (1UL << 31))
 
@@ -808,6 +937,7 @@ quote(mli, "val cRYPTOKI_VERSION_MAJOR  : nativeint");
 quote(mli, "val cRYPTOKI_VERSION_MINOR  : nativeint");
 quote(mli, "val cRYPTOKI_VERSION_REVISION : nativeint");
 quote(mli, "val cKN_SURRENDER : nativeint");
+quote(mli, "val cKN_OTP_CHANGED : nativeint");
 quote(mli, "val cKF_TOKEN_PRESENT : nativeint");
 quote(mli, "val cKF_REMOVABLE_DEVICE : nativeint");
 quote(mli, "val cKF_HW_SLOT  : nativeint");
@@ -851,6 +981,7 @@ quote(mli, "val cKO_SECRET_KEY  : nativeint");
 quote(mli, "val cKO_HW_FEATURE  : nativeint");
 quote(mli, "val cKO_DOMAIN_PARAMETERS : nativeint");
 quote(mli, "val cKO_MECHANISM  : nativeint");
+quote(mli, "val cKO_OTP_KEY : nativeint");
 quote(mli, "val cKO_VENDOR_DEFINED : nativeint");
 quote(mli, "val cKH_MONOTONIC_COUNTER : nativeint");
 quote(mli, "val cKH_CLOCK  : nativeint");
@@ -881,11 +1012,22 @@ quote(mli, "val cKK_CDMF  : nativeint");
 quote(mli, "val cKK_AES   : nativeint");
 quote(mli, "val cKK_BLOWFISH  : nativeint");
 quote(mli, "val cKK_TWOFISH  : nativeint");
+quote(mli, "val cKK_SECURID  : nativeint");
+quote(mli, "val cKK_HOTP  : nativeint");
+quote(mli, "val cKK_ACTI  : nativeint");
+quote(mli, "val cKK_CAMELLIA  : nativeint");
+quote(mli, "val cKK_ARIA  : nativeint");
 quote(mli, "val cKK_VENDOR_DEFINED : nativeint");
 quote(mli, "val cKC_X_509  : nativeint");
 quote(mli, "val cKC_X_509_ATTR_CERT : nativeint");
 quote(mli, "val cKC_WTLS  : nativeint");
 quote(mli, "val cKC_VENDOR_DEFINED : nativeint");
+quote(mli, "val cK_OTP_FORMAT_DECIMAL   : nativeint");
+quote(mli, "val cK_OTP_FORMAT_HEXADECIMAL   : nativeint");
+quote(mli, "val cK_OTP_FORMAT_ALPHANUMERIC   : nativeint");
+quote(mli, "val cK_OTP_PARAM_IGNORED   : nativeint");
+quote(mli, "val cK_OTP_PARAM_OPTIONAL   : nativeint");
+quote(mli, "val cK_OTP_PARAM_MANDATORY   : nativeint");
 quote(mli, "val cKA_CLASS   : nativeint");
 quote(mli, "val cKA_TOKEN   : nativeint");
 quote(mli, "val cKA_PRIVATE   : nativeint");
@@ -950,6 +1092,20 @@ quote(mli, "val cKA_SECONDARY_AUTH  : nativeint");
 quote(mli, "val cKA_AUTH_PIN_FLAGS  : nativeint");
 quote(mli, "val cKA_ALWAYS_AUTHENTICATE  : nativeint");
 quote(mli, "val cKA_WRAP_WITH_TRUSTED  : nativeint");
+quote(mli, "val cKA_OTP_FORMAT  : nativeint");
+quote(mli, "val cKA_OTP_LENGTH  : nativeint");
+quote(mli, "val cKA_OTP_TIME_INTERVAL  : nativeint");
+quote(mli, "val cKA_OTP_USER_FRIENDLY_MODE  : nativeint");
+quote(mli, "val cKA_OTP_CHALLENGE_REQUIREMENT  : nativeint");
+quote(mli, "val cKA_OTP_TIME_REQUIREMENT  : nativeint");
+quote(mli, "val cKA_OTP_COUNTER_REQUIREMENT  : nativeint");
+quote(mli, "val cKA_OTP_PIN_REQUIREMENT  : nativeint");
+quote(mli, "val cKA_OTP_COUNTER  : nativeint");
+quote(mli, "val cKA_OTP_TIME  : nativeint");
+quote(mli, "val cKA_OTP_USER_IDENTIFIER  : nativeint");
+quote(mli, "val cKA_OTP_SERVICE_IDENTIFIER  : nativeint");
+quote(mli, "val cKA_OTP_SERVICE_LOGO  : nativeint");
+quote(mli, "val cKA_OTP_SERVICE_LOGO_TYPE  : nativeint");
 quote(mli, "val cKA_HW_FEATURE_TYPE  : nativeint");
 quote(mli, "val cKA_RESET_ON_INIT  : nativeint");
 quote(mli, "val cKA_HAS_RESET   : nativeint");
@@ -1107,6 +1263,10 @@ quote(mli, "val cKM_SSL3_SHA1_MAC  : nativeint");
 quote(mli, "val cKM_MD5_KEY_DERIVATION  : nativeint");
 quote(mli, "val cKM_MD2_KEY_DERIVATION  : nativeint");
 quote(mli, "val cKM_SHA1_KEY_DERIVATION  : nativeint");
+quote(mli, "val cKM_SHA256_KEY_DERIVATION  : nativeint");
+quote(mli, "val cKM_SHA384_KEY_DERIVATION  : nativeint");
+quote(mli, "val cKM_SHA512_KEY_DERIVATION  : nativeint");
+quote(mli, "val cKM_SHA224_KEY_DERIVATION  : nativeint");
 quote(mli, "val cKM_PBE_MD2_DES_CBC  : nativeint");
 quote(mli, "val cKM_PBE_MD5_DES_CBC  : nativeint");
 quote(mli, "val cKM_PBE_MD5_CAST_CBC  : nativeint");
@@ -1123,8 +1283,35 @@ quote(mli, "val cKM_PBE_SHA1_RC2_128_CBC : nativeint");
 quote(mli, "val cKM_PBE_SHA1_RC2_40_CBC  : nativeint");
 quote(mli, "val cKM_PKCS5_PBKD2   : nativeint");
 quote(mli, "val cKM_PBA_SHA1_WITH_SHA1_HMAC : nativeint");
+quote(mli, "val cKM_WTLS_PRE_MASTER_KEY_GEN : nativeint");
+quote(mli, "val cKM_WTLS_MASTER_KEY_DERIVE : nativeint");
+quote(mli, "val cKM_WTLS_MASTER_KEY_DERIVE_DH_ECC : nativeint");
+quote(mli, "val cKM_WTLS_PRF : nativeint");
+quote(mli, "val cKM_WTLS_SERVER_KEY_AND_MAC_DERIVE : nativeint");
+quote(mli, "val cKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE : nativeint");
 quote(mli, "val cKM_KEY_WRAP_LYNKS  : nativeint");
 quote(mli, "val cKM_KEY_WRAP_SET_OAEP  : nativeint");
+quote(mli, "val cKM_CMS_SIG : nativeint");
+quote(mli, "val cKM_KIP_DERIVE : nativeint");
+quote(mli, "val cKM_KIP_WRAP : nativeint");
+quote(mli, "val cKM_KIP_MAC : nativeint");
+quote(mli, "val cKM_CAMELLIA_KEY_GEN : nativeint");
+quote(mli, "val cKM_CAMELLIA_ECB : nativeint");
+quote(mli, "val cKM_CAMELLIA_CBC : nativeint");
+quote(mli, "val cKM_CAMELLIA_MAC : nativeint");
+quote(mli, "val cKM_CAMELLIA_MAC_GENERAL : nativeint");
+quote(mli, "val cKM_CAMELLIA_CBC_PAD : nativeint");
+quote(mli, "val cKM_CAMELLIA_ECB_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_CAMELLIA_CBC_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_CAMELLIA_CTR : nativeint");
+quote(mli, "val cKM_ARIA_KEY_GEN : nativeint");
+quote(mli, "val cKM_ARIA_ECB : nativeint");
+quote(mli, "val cKM_ARIA_CBC : nativeint");
+quote(mli, "val cKM_ARIA_MAC : nativeint");
+quote(mli, "val cKM_ARIA_MAC_GENERAL : nativeint");
+quote(mli, "val cKM_ARIA_CBC_PAD : nativeint");
+quote(mli, "val cKM_ARIA_ECB_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_ARIA_CBC_ENCRYPT_DATA : nativeint");
 quote(mli, "val cKM_SKIPJACK_KEY_GEN  : nativeint");
 quote(mli, "val cKM_SKIPJACK_ECB64  : nativeint");
 quote(mli, "val cKM_SKIPJACK_CBC64  : nativeint");
@@ -1166,6 +1353,17 @@ quote(mli, "val cKM_AES_CBC   : nativeint");
 quote(mli, "val cKM_AES_MAC   : nativeint");
 quote(mli, "val cKM_AES_MAC_GENERAL  : nativeint");
 quote(mli, "val cKM_AES_CBC_PAD   : nativeint");
+quote(mli, "val cKM_AES_CTR   : nativeint");
+quote(mli, "val cKM_BLOWFISH_KEY_GEN : nativeint");
+quote(mli, "val cKM_BLOWFISH_CBC : nativeint");
+quote(mli, "val cKM_TWOFISH_KEY_GEN : nativeint");
+quote(mli, "val cKM_TWOFISH_CBC : nativeint");
+quote(mli, "val cKM_DES_ECB_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_DES_CBC_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_DES3_ECB_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_DES3_CBC_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_AES_ECB_ENCRYPT_DATA : nativeint");
+quote(mli, "val cKM_AES_CBC_ENCRYPT_DATA : nativeint");
 quote(mli, "val cKM_DSA_PARAMETER_GEN  : nativeint");
 quote(mli, "val cKM_DH_PKCS_PARAMETER_GEN : nativeint");
 quote(mli, "val cKM_X9_42_DH_PARAMETER_GEN : nativeint");
@@ -1183,6 +1381,12 @@ quote(mli, "val cKF_GENERATE_KEY_PAIR : nativeint");
 quote(mli, "val cKF_WRAP  : nativeint");
 quote(mli, "val cKF_UNWRAP  : nativeint");
 quote(mli, "val cKF_DERIVE  : nativeint");
+quote(mli, "val cKF_EC_F_P  : nativeint");
+quote(mli, "val cKF_EC_F_2M  : nativeint");
+quote(mli, "val cKF_EC_ECPARAMETERS  : nativeint");
+quote(mli, "val cKF_EC_NAMEDCURVE  : nativeint");
+quote(mli, "val cKF_EC_UNCOMPRESS  : nativeint");
+quote(mli, "val cKF_EC_COMPRESS  : nativeint");
 quote(mli, "val cKF_EXTENSION  : nativeint");
 quote(mli, "val cKF_DONT_BLOCK    : nativeint");
 quote(mli, "val cKF_LIBRARY_CANT_CREATE_OS_THREADS : nativeint");
@@ -1271,6 +1475,8 @@ quote(mli, "val cKR_CRYPTOKI_NOT_INITIALIZED  : nativeint");
 quote(mli, "val cKR_CRYPTOKI_ALREADY_INITIALIZED : nativeint");
 quote(mli, "val cKR_MUTEX_BAD    : nativeint");
 quote(mli, "val cKR_MUTEX_NOT_LOCKED   : nativeint");
+quote(mli, "val cKR_NEW_PIN_MODE   : nativeint");
+quote(mli, "val cKR_NEXT_OTP   : nativeint");
 quote(mli, "val cKR_FUNCTION_REJECTED   : nativeint");
 quote(mli, "val cKR_VENDOR_DEFINED   : nativeint");
 quote(mli, "val cK_FALSE : nativeint");
@@ -1283,6 +1489,7 @@ quote(ml, "let cRYPTOKI_VERSION_MAJOR  = 2n");
 quote(ml, "let cRYPTOKI_VERSION_MINOR  = 20n");
 quote(ml, "let cRYPTOKI_VERSION_REVISION = 6n");
 quote(ml, "let cKN_SURRENDER = 0n");
+quote(ml, "let cKN_OTP_CHANGED = 1n");
 quote(ml, "let cKF_TOKEN_PRESENT = 1n");
 quote(ml, "let cKF_REMOVABLE_DEVICE = 2n");
 quote(ml, "let cKF_HW_SLOT  = 4n");
@@ -1326,6 +1533,7 @@ quote(ml, "let cKO_SECRET_KEY  = 4n");
 quote(ml, "let cKO_HW_FEATURE  = 5n");
 quote(ml, "let cKO_DOMAIN_PARAMETERS = 6n");
 quote(ml, "let cKO_MECHANISM  = 7n");
+quote(ml, "let cKO_OTP_KEY  = 8n");
 #if __LP64__
 quote(ml, "let cKO_VENDOR_DEFINED = 2147483648n");
 #else
@@ -1364,6 +1572,11 @@ quote(ml, "let cKK_CDMF  = 30n");
 quote(ml, "let cKK_AES   = 31n");
 quote(ml, "let cKK_BLOWFISH  = 32n");
 quote(ml, "let cKK_TWOFISH  = 33n");
+quote(ml, "let cKK_SECURID  = 34n");
+quote(ml, "let cKK_HOTP  = 35n");
+quote(ml, "let cKK_ACTI  = 36n");
+quote(ml, "let cKK_CAMELLIA  = 37n");
+quote(ml, "let cKK_ARIA  = 38n");
 #ifdef __LP64__
 quote(ml, "let cKK_VENDOR_DEFINED = 2147483648n");
 #else
@@ -1377,6 +1590,12 @@ quote(ml, "let cKC_VENDOR_DEFINED = 2147483648n");
 #else
 quote(ml, "let cKC_VENDOR_DEFINED = -2147483648n");
 #endif
+quote(ml, "let cK_OTP_FORMAT_DECIMAL   = 0n");
+quote(ml, "let cK_OTP_FORMAT_HEXADECIMAL   = 1n");
+quote(ml, "let cK_OTP_FORMAT_ALPHANUMERIC   = 2n");
+quote(ml, "let cK_OTP_PARAM_IGNORED   = 0n");
+quote(ml, "let cK_OTP_PARAM_OPTIONAL   = 1n");
+quote(ml, "let cK_OTP_PARAM_MANDATORY   = 2n");
 quote(ml, "let cKA_CLASS   = 0n");
 quote(ml, "let cKA_TOKEN   = 1n");
 quote(ml, "let cKA_PRIVATE   = 2n");
@@ -1441,6 +1660,20 @@ quote(ml, "let cKA_SECONDARY_AUTH  = 512n");
 quote(ml, "let cKA_AUTH_PIN_FLAGS  = 513n");
 quote(ml, "let cKA_ALWAYS_AUTHENTICATE  = 514n");
 quote(ml, "let cKA_WRAP_WITH_TRUSTED  = 528n");
+quote(ml, "let cKA_OTP_FORMAT                   = 544n");
+quote(ml, "let cKA_OTP_LENGTH                   = 545n");
+quote(ml, "let cKA_OTP_TIME_INTERVAL            = 546n");
+quote(ml, "let cKA_OTP_USER_FRIENDLY_MODE       = 547n");
+quote(ml, "let cKA_OTP_CHALLENGE_REQUIREMENT    = 548n");
+quote(ml, "let cKA_OTP_TIME_REQUIREMENT         = 549n");
+quote(ml, "let cKA_OTP_COUNTER_REQUIREMENT      = 550n");
+quote(ml, "let cKA_OTP_PIN_REQUIREMENT          = 551n");
+quote(ml, "let cKA_OTP_COUNTER                  = 552n");
+quote(ml, "let cKA_OTP_TIME                     = 553n");
+quote(ml, "let cKA_OTP_USER_IDENTIFIER          = 554n");
+quote(ml, "let cKA_OTP_SERVICE_IDENTIFIER       = 555n");
+quote(ml, "let cKA_OTP_SERVICE_LOGO             = 556n");
+quote(ml, "let cKA_OTP_SERVICE_LOGO_TYPE        = 557n");
 quote(ml, "let cKA_HW_FEATURE_TYPE  = 768n");
 quote(ml, "let cKA_RESET_ON_INIT  = 769n");
 quote(ml, "let cKA_HAS_RESET   = 770n");
@@ -1602,6 +1835,10 @@ quote(ml, "let cKM_SSL3_SHA1_MAC  = 897n");
 quote(ml, "let cKM_MD5_KEY_DERIVATION  = 912n");
 quote(ml, "let cKM_MD2_KEY_DERIVATION  = 913n");
 quote(ml, "let cKM_SHA1_KEY_DERIVATION  = 914n");
+quote(ml, "let cKM_SHA256_KEY_DERIVATION  = 915n");
+quote(ml, "let cKM_SHA384_KEY_DERIVATION  = 916n");
+quote(ml, "let cKM_SHA512_KEY_DERIVATION  = 917n");
+quote(ml, "let cKM_SHA224_KEY_DERIVATION  = 918n");
 quote(ml, "let cKM_PBE_MD2_DES_CBC  = 928n");
 quote(ml, "let cKM_PBE_MD5_DES_CBC  = 929n");
 quote(ml, "let cKM_PBE_MD5_CAST_CBC  = 930n");
@@ -1618,8 +1855,35 @@ quote(ml, "let cKM_PBE_SHA1_RC2_128_CBC = 938n");
 quote(ml, "let cKM_PBE_SHA1_RC2_40_CBC  = 939n");
 quote(ml, "let cKM_PKCS5_PBKD2   = 944n");
 quote(ml, "let cKM_PBA_SHA1_WITH_SHA1_HMAC = 960n");
+quote(ml, "let cKM_WTLS_PRE_MASTER_KEY_GEN = 976n");
+quote(ml, "let cKM_WTLS_MASTER_KEY_DERIVE = 977n");
+quote(ml, "let cKM_WTLS_MASTER_KEY_DERIVE_DH_ECC = 978n");
+quote(ml, "let cKM_WTLS_PRF = 979n");
+quote(ml, "let cKM_WTLS_SERVER_KEY_AND_MAC_DERIVE = 980n");
+quote(ml, "let cKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE = 981n");
 quote(ml, "let cKM_KEY_WRAP_LYNKS  = 1024n");
 quote(ml, "let cKM_KEY_WRAP_SET_OAEP  = 1025n");
+quote(ml, "let cKM_CMS_SIG = 1280n");
+quote(ml, "let cKM_KIP_DERIVE = 1296n");
+quote(ml, "let cKM_KIP_WRAP = 1297n");
+quote(ml, "let cKM_KIP_MAC = 1298n");
+quote(ml, "let cKM_CAMELLIA_KEY_GEN = 1360n");
+quote(ml, "let cKM_CAMELLIA_ECB = 1361n");
+quote(ml, "let cKM_CAMELLIA_CBC = 1362n");
+quote(ml, "let cKM_CAMELLIA_MAC = 1363n");
+quote(ml, "let cKM_CAMELLIA_MAC_GENERAL = 1364n");
+quote(ml, "let cKM_CAMELLIA_CBC_PAD = 1365n");
+quote(ml, "let cKM_CAMELLIA_ECB_ENCRYPT_DATA = 1366n");
+quote(ml, "let cKM_CAMELLIA_CBC_ENCRYPT_DATA = 1367n");
+quote(ml, "let cKM_CAMELLIA_CTR = 1368n");
+quote(ml, "let cKM_ARIA_KEY_GEN = 1376n");
+quote(ml, "let cKM_ARIA_ECB = 1377n");
+quote(ml, "let cKM_ARIA_CBC = 1378n");
+quote(ml, "let cKM_ARIA_MAC = 1379n");
+quote(ml, "let cKM_ARIA_MAC_GENERAL = 1380n");
+quote(ml, "let cKM_ARIA_CBC_PAD = 1381n");
+quote(ml, "let cKM_ARIA_ECB_ENCRYPT_DATA = 1382n");
+quote(ml, "let cKM_ARIA_CBC_ENCRYPT_DATA = 1383n");
 quote(ml, "let cKM_SKIPJACK_KEY_GEN  = 4096n");
 quote(ml, "let cKM_SKIPJACK_ECB64  = 4097n");
 quote(ml, "let cKM_SKIPJACK_CBC64  = 4098n");
@@ -1661,6 +1925,17 @@ quote(ml, "let cKM_AES_CBC   = 4226n");
 quote(ml, "let cKM_AES_MAC   = 4227n");
 quote(ml, "let cKM_AES_MAC_GENERAL  = 4228n");
 quote(ml, "let cKM_AES_CBC_PAD   = 4229n");
+quote(ml, "let cKM_AES_CTR   = 4230n");
+quote(ml, "let cKM_BLOWFISH_KEY_GEN = 4240n");
+quote(ml, "let cKM_BLOWFISH_CBC = 4241n");
+quote(ml, "let cKM_TWOFISH_KEY_GEN = 4242n");
+quote(ml, "let cKM_TWOFISH_CBC = 4243n");
+quote(ml, "let cKM_DES_ECB_ENCRYPT_DATA = 4352n");
+quote(ml, "let cKM_DES_CBC_ENCRYPT_DATA = 4353n");
+quote(ml, "let cKM_DES3_ECB_ENCRYPT_DATA = 4354n");
+quote(ml, "let cKM_DES3_CBC_ENCRYPT_DATA = 4355n");
+quote(ml, "let cKM_AES_ECB_ENCRYPT_DATA = 4356n");
+quote(ml, "let cKM_AES_CBC_ENCRYPT_DATA = 4357n");
 quote(ml, "let cKM_DSA_PARAMETER_GEN  = 8192n");
 quote(ml, "let cKM_DH_PKCS_PARAMETER_GEN = 8193n");
 quote(ml, "let cKM_X9_42_DH_PARAMETER_GEN = 8194n");
@@ -1682,6 +1957,12 @@ quote(ml, "let cKF_GENERATE_KEY_PAIR = 65536n");
 quote(ml, "let cKF_WRAP  = 131072n");
 quote(ml, "let cKF_UNWRAP  = 262144n");
 quote(ml, "let cKF_DERIVE  = 524288n");
+quote(ml, "let cKF_EC_F_P  = 1048576n");
+quote(ml, "let cKF_EC_F_2M  = 2097152n");
+quote(ml, "let cKF_EC_ECPARAMETERS  = 4194304n");
+quote(ml, "let cKF_EC_NAMEDCURVE  = 8388608n");
+quote(ml, "let cKF_EC_UNCOMPRESS  = 16777216n");
+quote(ml, "let cKF_EC_COMPRESS  = 33554432n");
 #if __LP64__
 quote(ml, "let cKF_EXTENSION  = 2147483648n");
 #else
@@ -1774,6 +2055,8 @@ quote(ml, "let cKR_CRYPTOKI_NOT_INITIALIZED  = 400n");
 quote(ml, "let cKR_CRYPTOKI_ALREADY_INITIALIZED = 401n");
 quote(ml, "let cKR_MUTEX_BAD    = 416n");
 quote(ml, "let cKR_MUTEX_NOT_LOCKED   = 417n");
+quote(ml, "let cKR_NEW_PIN_MODE   = 432n");
+quote(ml, "let cKR_NEXT_OTP   = 433n");
 quote(ml, "let cKR_FUNCTION_REJECTED   = 512n");
 #if __LP64__
 quote(ml, "let cKR_VENDOR_DEFINED   = 2147483648n");
@@ -1877,6 +2160,8 @@ quote(ml, "| 400n -> \"cKR_CRYPTOKI_NOT_INITIALIZED\"");
 quote(ml, "| 401n -> \"cKR_CRYPTOKI_ALREADY_INITIALIZED\"");
 quote(ml, "| 416n -> \"cKR_MUTEX_BAD\"");
 quote(ml, "| 417n -> \"cKR_MUTEX_NOT_LOCKED\"");
+quote(ml, "| 432n -> \"cKR_NEW_PIN_MODE\"");
+quote(ml, "| 433n -> \"cKR_NEXT_OTP\"");
 quote(ml, "| 512n -> \"cKR_FUNCTION_REJECTED\"");
 #if __LP64__
 quote(ml, "| 2147483648n -> \"cKR_VENDOR_DEFINED\"");
@@ -2016,6 +2301,10 @@ quote(ml, "| 897n -> \"cKM_SSL3_SHA1_MAC\"");
 quote(ml, "| 912n -> \"cKM_MD5_KEY_DERIVATION\"");
 quote(ml, "| 913n -> \"cKM_MD2_KEY_DERIVATION\"");
 quote(ml, "| 914n -> \"cKM_SHA1_KEY_DERIVATION\"");
+quote(ml, "| 915n -> \"cKM_SHA256_KEY_DERIVATION\"");
+quote(ml, "| 916n -> \"cKM_SHA384_KEY_DERIVATION\"");
+quote(ml, "| 917n -> \"cKM_SHA512_KEY_DERIVATION\"");
+quote(ml, "| 918n -> \"cKM_SHA224_KEY_DERIVATION\"");
 quote(ml, "| 928n -> \"cKM_PBE_MD2_DES_CBC\"");
 quote(ml, "| 929n -> \"cKM_PBE_MD5_DES_CBC\"");
 quote(ml, "| 930n -> \"cKM_PBE_MD5_CAST_CBC\"");
@@ -2030,8 +2319,35 @@ quote(ml, "| 938n -> \"cKM_PBE_SHA1_RC2_128_CBC\"");
 quote(ml, "| 939n -> \"cKM_PBE_SHA1_RC2_40_CBC \"");
 quote(ml, "| 944n -> \"cKM_PKCS5_PBKD2\"");
 quote(ml, "| 960n -> \"cKM_PBA_SHA1_WITH_SHA1_HMAC\"");
+quote(ml, "| 976n -> \"cKM_WTLS_PRE_MASTER_KEY_GEN\"");
+quote(ml, "| 977n -> \"cKM_WTLS_MASTER_KEY_DERIVE\"");
+quote(ml, "| 978n -> \"cKM_WTLS_MASTER_KEY_DERIVE_DH_ECC\"");
+quote(ml, "| 979n -> \"cKM_WTLS_PRF\"");
+quote(ml, "| 980n -> \"cKM_WTLS_SERVER_KEY_AND_MAC_DERIVE\"");
+quote(ml, "| 981n -> \"cKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE\"");
 quote(ml, "| 1024n -> \"cKM_KEY_WRAP_LYNKS\"");
 quote(ml, "| 1025n -> \"cKM_KEY_WRAP_SET_OAEP\"");
+quote(ml, "| 1280n -> \"cKM_CMS_SIG\"");
+quote(ml, "| 1296n -> \"cKM_KIP_DERIVE\"");
+quote(ml, "| 1297n -> \"cKM_KIP_WRAP\"");
+quote(ml, "| 1298n -> \"cKM_KIP_MAC\"");
+quote(ml, "| 1360n -> \"cKM_CAMELLIA_KEY_GEN\"");
+quote(ml, "| 1361n -> \"cKM_CAMELLIA_ECB\"");
+quote(ml, "| 1362n -> \"cKM_CAMELLIA_CBC\"");
+quote(ml, "| 1363n -> \"cKM_CAMELLIA_MAC\"");
+quote(ml, "| 1364n -> \"cKM_CAMELLIA_MAC_GENERAL\"");
+quote(ml, "| 1365n -> \"cKM_CAMELLIA_CBC_PAD\"");
+quote(ml, "| 1366n -> \"cKM_CAMELLIA_ECB_ENCRYPT_DATA\"");
+quote(ml, "| 1367n -> \"cKM_CAMELLIA_CBC_ENCRYPT_DATA\"");
+quote(ml, "| 1368n -> \"cKM_CAMELLIA_CTR\"");
+quote(ml, "| 1376n -> \"cKM_ARIA_KEY_GEN\"");
+quote(ml, "| 1377n -> \"cKM_ARIA_ECB\"");
+quote(ml, "| 1378n -> \"cKM_ARIA_CBC\"");
+quote(ml, "| 1379n -> \"cKM_ARIA_MAC\"");
+quote(ml, "| 1380n -> \"cKM_ARIA_MAC_GENERAL\"");
+quote(ml, "| 1381n -> \"cKM_ARIA_CBC_PAD\"");
+quote(ml, "| 1382n -> \"cKM_ARIA_ECB_ENCRYPT_DATA\"");
+quote(ml, "| 1383n -> \"cKM_ARIA_CBC_ENCRYPT_DATA\"");
 quote(ml, "| 4096n -> \"cKM_SKIPJACK_KEY_GEN\"");
 quote(ml, "| 4097n -> \"cKM_SKIPJACK_ECB64\"");
 quote(ml, "| 4098n -> \"cKM_SKIPJACK_CBC64\"");
@@ -2053,7 +2369,7 @@ quote(ml, "| 4147n -> \"cKM_BATON_CBC128\"");
 quote(ml, "| 4148n -> \"cKM_BATON_COUNTER\"");
 quote(ml, "| 4149n -> \"cKM_BATON_SHUFFLE\"");
 quote(ml, "| 4150n -> \"cKM_BATON_WRAP\"");
-quote(ml, "| 4160n -> \"cKM_ECDSA_KEY_PAIR_GEN\"");
+quote(ml, "| 4160n -> \"cKM_EC_KEY_PAIR_GEN\"");
 quote(ml, "| 4161n -> \"cKM_ECDSA\"");
 quote(ml, "| 4162n -> \"cKM_ECDSA_SHA1\"");
 quote(ml, "| 4176n -> \"cKM_ECDH1_DERIVE\"");
@@ -2072,6 +2388,17 @@ quote(ml, "| 4226n -> \"cKM_AES_CBC\"");
 quote(ml, "| 4227n -> \"cKM_AES_MAC\"");
 quote(ml, "| 4228n -> \"cKM_AES_MAC_GENERAL\"");
 quote(ml, "| 4229n -> \"cKM_AES_CBC_PAD\"");
+quote(ml, "| 4230n -> \"cKM_AES_CTR\"");
+quote(ml, "| 4240n -> \"cKM_BLOWFISH_KEY_GEN\"");
+quote(ml, "| 4241n -> \"cKM_BLOWFISH_CBC\"");
+quote(ml, "| 4242n -> \"cKM_TWOFISH_KEY_GEN\"");
+quote(ml, "| 4243n -> \"cKM_TWOFISH_CBC\"");
+quote(ml, "| 4352n -> \"cKM_DES_ECB_ENCRYPT_DATA\"");
+quote(ml, "| 4353n -> \"cKM_DES_CBC_ENCRYPT_DATA\"");
+quote(ml, "| 4354n -> \"cKM_DES3_ECB_ENCRYPT_DATA\"");
+quote(ml, "| 4355n -> \"cKM_DES3_CBC_ENCRYPT_DATA\"");
+quote(ml, "| 4356n -> \"cKM_AES_ECB_ENCRYPT_DATA\"");
+quote(ml, "| 4357n -> \"cKM_AES_CBC_ENCRYPT_DATA\"");
 quote(ml, "| 8192n -> \"cKM_DSA_PARAMETER_GEN\"");
 quote(ml, "| 8193n -> \"cKM_DH_PKCS_PARAMETER_GEN\"");
 quote(ml, "| 8194n -> \"cKM_X9_42_DH_PARAMETER_GEN\"");
@@ -2216,6 +2543,10 @@ quote(ml, "| \"CKM_SSL3_SHA1_MAC\" -> 897n");
 quote(ml, "| \"CKM_MD5_KEY_DERIVATION\" -> 912n");
 quote(ml, "| \"CKM_MD2_KEY_DERIVATION\" -> 913n");
 quote(ml, "| \"CKM_SHA1_KEY_DERIVATION\" -> 914n");
+quote(ml, "| \"CKM_SHA256_KEY_DERIVATION\" -> 915n");
+quote(ml, "| \"CKM_SHA384_KEY_DERIVATION\" -> 916n");
+quote(ml, "| \"CKM_SHA512_KEY_DERIVATION\" -> 917n");
+quote(ml, "| \"CKM_SHA224_KEY_DERIVATION\" -> 918n");
 quote(ml, "| \"CKM_PBE_MD2_DES_CBC\" -> 928n");
 quote(ml, "| \"CKM_PBE_MD5_DES_CBC\" -> 929n");
 quote(ml, "| \"CKM_PBE_MD5_CAST_CBC\" -> 930n");
@@ -2230,8 +2561,35 @@ quote(ml, "| \"CKM_PBE_SHA1_RC2_128_CBC\" -> 938n");
 quote(ml, "| \"CKM_PBE_SHA1_RC2_40_CBC\" -> 939n");
 quote(ml, "| \"CKM_PKCS5_PBKD2\" -> 944n");
 quote(ml, "| \"CKM_PBA_SHA1_WITH_SHA1_HMAC\" -> 960n");
+quote(ml, "| \"CKM_WTLS_PRE_MASTER_KEY_GEN\" -> 976n");
+quote(ml, "| \"CKM_WTLS_MASTER_KEY_DERIVE\" -> 977n");
+quote(ml, "| \"CKM_WTLS_MASTER_KEY_DERIVE_DH_ECC\" -> 978n");
+quote(ml, "| \"CKM_WTLS_PRF\" -> 979n");
+quote(ml, "| \"CKM_WTLS_SERVER_KEY_AND_MAC_DERIVE\" -> 980n");
+quote(ml, "| \"CKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE\" -> 981n");
 quote(ml, "| \"CKM_KEY_WRAP_LYNKS\" -> 1024n");
 quote(ml, "| \"CKM_KEY_WRAP_SET_OAEP\" -> 1025n");
+quote(ml, "| \"CKM_CMS_SIG\" -> 1280n");
+quote(ml, "| \"CKM_KIP_DERIVE\" -> 1296n");
+quote(ml, "| \"CKM_KIP_WRAP\" -> 1297n");
+quote(ml, "| \"CKM_KIP_MAC\" -> 1298n");
+quote(ml, "| \"CKM_CAMELLIA_KEY_GEN\" -> 1360n");
+quote(ml, "| \"CKM_CAMELLIA_ECB\" -> 1361n");
+quote(ml, "| \"CKM_CAMELLIA_CBC\" -> 1362n");
+quote(ml, "| \"CKM_CAMELLIA_MAC\" -> 1363n");
+quote(ml, "| \"CKM_CAMELLIA_MAC_GENERAL\" -> 1364n");
+quote(ml, "| \"CKM_CAMELLIA_CBC_PAD\" -> 1365n");
+quote(ml, "| \"CKM_CAMELLIA_ECB_ENCRYPT_DATA\" -> 1366n");
+quote(ml, "| \"CKM_CAMELLIA_CBC_ENCRYPT_DATA\" -> 1367n");
+quote(ml, "| \"CKM_CAMELLIA_CTR\" -> 1368n");
+quote(ml, "| \"CKM_ARIA_KEY_GEN\" -> 1376n");
+quote(ml, "| \"CKM_ARIA_ECB\" -> 1377n");
+quote(ml, "| \"CKM_ARIA_CBC\" -> 1378n");
+quote(ml, "| \"CKM_ARIA_MAC\" -> 1379n");
+quote(ml, "| \"CKM_ARIA_MAC_GENERAL\" -> 1380n");
+quote(ml, "| \"CKM_ARIA_CBC_PAD\" -> 1381n");
+quote(ml, "| \"CKM_ARIA_ECB_ENCRYPT_DATA\" -> 1382n");
+quote(ml, "| \"CKM_ARIA_CBC_ENCRYPT_DATA\" -> 1383n");
 quote(ml, "| \"CKM_SKIPJACK_KEY_GEN\" -> 4096n");
 quote(ml, "| \"CKM_SKIPJACK_ECB64\" -> 4097n");
 quote(ml, "| \"CKM_SKIPJACK_CBC64\" -> 4098n");
@@ -2272,6 +2630,17 @@ quote(ml, "| \"CKM_AES_CBC\" -> 4226n");
 quote(ml, "| \"CKM_AES_MAC\" -> 4227n");
 quote(ml, "| \"CKM_AES_MAC_GENERAL\" -> 4228n");
 quote(ml, "| \"CKM_AES_CBC_PAD\" -> 4229n");
+quote(ml, "| \"CKM_AES_CTR\" -> 4230n");
+quote(ml, "| \"CKM_BLOWFISH_KEY_GEN\" -> 4240n");
+quote(ml, "| \"CKM_BLOWFISH_CBC\" -> 4241n");
+quote(ml, "| \"CKM_TWOFISH_KEY_GEN\" -> 4242n");
+quote(ml, "| \"CKM_TWOFISH_CBC\" -> 4243n");
+quote(ml, "| \"CKM_DES_ECB_ENCRYPT_DATA\" -> 4352n");
+quote(ml, "| \"CKM_DES_CBC_ENCRYPT_DATA\" -> 4353n");
+quote(ml, "| \"CKM_DES3_ECB_ENCRYPT_DATA\" -> 4354n");
+quote(ml, "| \"CKM_DES3_CBC_ENCRYPT_DATA\" -> 4355n");
+quote(ml, "| \"CKM_AES_ECB_ENCRYPT_DATA\" -> 4356n");
+quote(ml, "| \"CKM_AES_CBC_ENCRYPT_DATA\" -> 4357n");
 quote(ml, "| \"CKM_DSA_PARAMETER_GEN\" -> 8192n");
 quote(ml, "| \"CKM_DH_PKCS_PARAMETER_GEN\" -> 8193n");
 quote(ml, "| \"CKM_X9_42_DH_PARAMETER_GEN\" -> 8194n");
@@ -2410,6 +2779,10 @@ quote(ml, "| \"cKM_SSL3_SHA1_MAC\" -> 897n");
 quote(ml, "| \"cKM_MD5_KEY_DERIVATION\" -> 912n");
 quote(ml, "| \"cKM_MD2_KEY_DERIVATION\" -> 913n");
 quote(ml, "| \"cKM_SHA1_KEY_DERIVATION\" -> 914n");
+quote(ml, "| \"cKM_SHA256_KEY_DERIVATION\" -> 915n");
+quote(ml, "| \"cKM_SHA384_KEY_DERIVATION\" -> 916n");
+quote(ml, "| \"cKM_SHA512_KEY_DERIVATION\" -> 917n");
+quote(ml, "| \"cKM_SHA224_KEY_DERIVATION\" -> 918n");
 quote(ml, "| \"cKM_PBE_MD2_DES_CBC\" -> 928n");
 quote(ml, "| \"cKM_PBE_MD5_DES_CBC\" -> 929n");
 quote(ml, "| \"cKM_PBE_MD5_CAST_CBC\" -> 930n");
@@ -2424,8 +2797,35 @@ quote(ml, "| \"cKM_PBE_SHA1_RC2_128_CBC\" -> 938n");
 quote(ml, "| \"cKM_PBE_SHA1_RC2_40_CBC\" -> 939n");
 quote(ml, "| \"cKM_PKCS5_PBKD2\" -> 944n");
 quote(ml, "| \"cKM_PBA_SHA1_WITH_SHA1_HMAC\" -> 960n");
+quote(ml, "| \"cKM_WTLS_PRE_MASTER_KEY_GEN\" -> 976n");
+quote(ml, "| \"cKM_WTLS_MASTER_KEY_DERIVE\" -> 977n");
+quote(ml, "| \"cKM_WTLS_MASTER_KEY_DERIVE_DH_ECC\" -> 978n");
+quote(ml, "| \"cKM_WTLS_PRF\" -> 979n");
+quote(ml, "| \"cKM_WTLS_SERVER_KEY_AND_MAC_DERIVE\" -> 980n");
+quote(ml, "| \"cKM_WTLS_CLIENT_KEY_AND_MAC_DERIVE\" -> 981n");
 quote(ml, "| \"cKM_KEY_WRAP_LYNKS\" -> 1024n");
 quote(ml, "| \"cKM_KEY_WRAP_SET_OAEP\" -> 1025n");
+quote(ml, "| \"cKM_CMS_SIG\" -> 1280n");
+quote(ml, "| \"cKM_KIP_DERIVE\" -> 1296n");
+quote(ml, "| \"cKM_KIP_WRAP\" -> 1297n");
+quote(ml, "| \"cKM_KIP_MAC\" -> 1298n");
+quote(ml, "| \"cKM_CAMELLIA_KEY_GEN\" -> 1360n");
+quote(ml, "| \"cKM_CAMELLIA_ECB\" -> 1361n");
+quote(ml, "| \"cKM_CAMELLIA_CBC\" -> 1362n");
+quote(ml, "| \"cKM_CAMELLIA_MAC\" -> 1363n");
+quote(ml, "| \"cKM_CAMELLIA_MAC_GENERAL\" -> 1364n");
+quote(ml, "| \"cKM_CAMELLIA_CBC_PAD\" -> 1365n");
+quote(ml, "| \"cKM_CAMELLIA_ECB_ENCRYPT_DATA\" -> 1366n");
+quote(ml, "| \"cKM_CAMELLIA_CBC_ENCRYPT_DATA\" -> 1367n");
+quote(ml, "| \"cKM_CAMELLIA_CTR\" -> 1368n");
+quote(ml, "| \"cKM_ARIA_KEY_GEN\" -> 1376n");
+quote(ml, "| \"cKM_ARIA_ECB\" -> 1377n");
+quote(ml, "| \"cKM_ARIA_CBC\" -> 1378n");
+quote(ml, "| \"cKM_ARIA_MAC\" -> 1379n");
+quote(ml, "| \"cKM_ARIA_MAC_GENERAL\" -> 1380n");
+quote(ml, "| \"cKM_ARIA_CBC_PAD\" -> 1381n");
+quote(ml, "| \"cKM_ARIA_ECB_ENCRYPT_DATA\" -> 1382n");
+quote(ml, "| \"cKM_ARIA_CBC_ENCRYPT_DATA\" -> 1383n");
 quote(ml, "| \"cKM_SKIPJACK_KEY_GEN\" -> 4096n");
 quote(ml, "| \"cKM_SKIPJACK_ECB64\" -> 4097n");
 quote(ml, "| \"cKM_SKIPJACK_CBC64\" -> 4098n");
@@ -2447,7 +2847,7 @@ quote(ml, "| \"cKM_BATON_CBC128\" -> 4147n");
 quote(ml, "| \"cKM_BATON_COUNTER\" -> 4148n");
 quote(ml, "| \"cKM_BATON_SHUFFLE\" -> 4149n");
 quote(ml, "| \"cKM_BATON_WRAP\" -> 4150n");
-quote(ml, "| \"cKM_ECDSA_KEY_PAIR_GEN\" -> 4160n");
+quote(ml, "| \"cKM_EC_KEY_PAIR_GEN\" -> 4160n");
 quote(ml, "| \"cKM_ECDSA\" -> 4161n");
 quote(ml, "| \"cKM_ECDSA_SHA1\" -> 4162n");
 quote(ml, "| \"cKM_ECDH1_DERIVE\" -> 4176n");
@@ -2466,6 +2866,17 @@ quote(ml, "| \"cKM_AES_CBC\" -> 4226n");
 quote(ml, "| \"cKM_AES_MAC\" -> 4227n");
 quote(ml, "| \"cKM_AES_MAC_GENERAL\" -> 4228n");
 quote(ml, "| \"cKM_AES_CBC_PAD\" -> 4229n");
+quote(ml, "| \"cKM_AES_CTR\" -> 4230n");
+quote(ml, "| \"cKM_BLOWFISH_KEY_GEN\" -> 4240n");
+quote(ml, "| \"cKM_BLOWFISH_CBC\" -> 4241n");
+quote(ml, "| \"cKM_TWOFISH_KEY_GEN\" -> 4242n");
+quote(ml, "| \"cKM_TWOFISH_CBC\" -> 4243n");
+quote(ml, "| \"cKM_DES_ECB_ENCRYPT_DATA\" -> 4352n");
+quote(ml, "| \"cKM_DES_CBC_ENCRYPT_DATA\" -> 4353n");
+quote(ml, "| \"cKM_DES3_ECB_ENCRYPT_DATA\" -> 4354n");
+quote(ml, "| \"cKM_DES3_CBC_ENCRYPT_DATA\" -> 4355n");
+quote(ml, "| \"cKM_AES_ECB_ENCRYPT_DATA\" -> 4356n");
+quote(ml, "| \"cKM_AES_CBC_ENCRYPT_DATA\" -> 4357n");
 quote(ml, "| \"cKM_DSA_PARAMETER_GEN\" -> 8192n");
 quote(ml, "| \"cKM_DH_PKCS_PARAMETER_GEN\" -> 8193n");
 quote(ml, "| \"cKM_X9_42_DH_PARAMETER_GEN\" -> 8194n");
@@ -2590,12 +3001,26 @@ quote(ml, "| 356n -> \"cKA_NEVER_EXTRACTABLE\"");
 quote(ml, "| 357n -> \"cKA_ALWAYS_SENSITIVE\"");
 quote(ml, "| 358n -> \"cKA_KEY_GEN_MECHANISM\"");
 quote(ml, "| 368n -> \"cKA_MODIFIABLE\"");
-quote(ml, "| 384n -> \"cKA_ECDSA_PARAMS | ncKA_EC_PARAMS\"");
+quote(ml, "| 384n -> \"cKA_EC_PARAMS\"");
 quote(ml, "| 385n -> \"cKA_EC_POINT\"");
 quote(ml, "| 512n -> \"cKA_SECONDARY_AUTH\"");
 quote(ml, "| 513n -> \"cKA_AUTH_PIN_FLAGS\"");
 quote(ml, "| 514n -> \"cKA_ALWAYS_AUTHENTICATE\"");
 quote(ml, "| 528n -> \"cKA_WRAP_WITH_TRUSTED\"");
+quote(ml, "| 544n -> \"cKA_OTP_FORMAT\"");
+quote(ml, "| 545n -> \"cKA_OTP_LENGTH\"");
+quote(ml, "| 546n -> \"cKA_OTP_TIME_INTERVAL\"");
+quote(ml, "| 547n -> \"cKA_OTP_USER_FRIENDLY_MODE\"");
+quote(ml, "| 548n -> \"cKA_OTP_CHALLENGE_REQUIREMENT\"");
+quote(ml, "| 549n -> \"cKA_OTP_TIME_REQUIREMENT\"");
+quote(ml, "| 550n -> \"cKA_OTP_COUNTER_REQUIREMENT\"");
+quote(ml, "| 551n -> \"cKA_OTP_PIN_REQUIREMENT\"");
+quote(ml, "| 552n -> \"cKA_OTP_COUNTER\"");
+quote(ml, "| 553n -> \"cKA_OTP_TIME\"");
+quote(ml, "| 554n -> \"cKA_OTP_USER_IDENTIFIER\"");
+quote(ml, "| 555n -> \"cKA_OTP_SERVICE_IDENTIFIER\"");
+quote(ml, "| 556n -> \"cKA_OTP_SERVICE_LOGO\"");
+quote(ml, "| 557n -> \"cKA_OTP_SERVICE_LOGO_TYPE\"");
 quote(ml, "| 768n -> \"cKA_HW_FEATURE_TYPE\"");
 quote(ml, "| 769n -> \"cKA_RESET_ON_INIT\"");
 quote(ml, "| 770n -> \"cKA_HAS_RESET\"");
@@ -2646,7 +3071,7 @@ quote(ml, "let match_cKK_value a = match a with");
 quote(ml, "| 0n -> \"cKK_RSA\"");
 quote(ml, "| 1n -> \"cKK_DSA\"");
 quote(ml, "| 2n -> \"cKK_DH\"");
-quote(ml, "| 3n -> \"cKK_ECDSA | ncKK_EC\"");
+quote(ml, "| 3n -> \"cKK_EC\"");
 quote(ml, "| 4n -> \"cKK_X9_42_DH\"");
 quote(ml, "| 5n -> \"cKK_KEA\"");
 quote(ml, "| 16n -> \"cKK_GENERIC_SECRET\"");
