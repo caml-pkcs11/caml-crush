@@ -1273,7 +1273,7 @@ CK_RV ML_CK_C_SetAttributeValue( /*in */ CK_SESSION_HANDLE session,	/*in */
   /* Setting NULL_PTR when needed */
   for (i = 0UL; i < count; i++) {
     if (templ[i].ulValueLen == 0) {
-      printf("C_SetAttributeValue adding NULL_PTR to template\n");
+      DEBUG_CALL(ML_CK_C_SetAttributeValue, " adding NULL_PTR to template\n");
       templ[i].pValue = NULL_PTR;
     }
   }
