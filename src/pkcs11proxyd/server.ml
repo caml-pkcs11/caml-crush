@@ -833,8 +833,28 @@ let configure cf addr =
           let s = Printf.sprintf "CONFIGURATION: you did not set any cipher_suite list, it will use the OpenSSL HIGH suites!" in
           Netplex_cenv.log `Info s;
       end;
-        (use_ssl, cafile, certfile, certkey, cipher_suite)
-  | false -> (use_ssl, "", "", "", None)
+      let allowed_clients_cert_path =
+        try
+          Some (cf # string_param (cf # resolve_parameter addr "allowed_clients_cert_path"))
+        with
+          | Not_found -> (None); in
+      if allowed_clients_cert_path = None
+      then
+      begin
+          let s = Printf.sprintf "CONFIGURATION: you did not set any allowed_clients_cert_path, any client with a proper certificate will be accepted" in
+          Netplex_cenv.log `Info s;
+      end
+      else
+      begin
+        let path = (match allowed_clients_cert_path with Some x -> x | _ -> "") in
+        let check_dir = (try Sys.is_directory path with
+           _ -> false) in
+         if check_dir = false then
+           let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
+           failwith s
+      end;
+        (use_ssl, cafile, certfile, certkey, cipher_suite, allowed_clients_cert_path)
+  | false -> (use_ssl, "", "", "", None, None)
 ELSE
 let configure cf addr =
   (* Handle configuration file for the filter *)
@@ -891,8 +911,28 @@ let configure cf addr =
           let s = Printf.sprintf "CONFIGURATION: you did not set any cipher_suite list, it will use the OpenSSL HIGH suites!" in
           Netplex_cenv.log `Info s;
       end;
-        (use_ssl, cafile, certfile, certkey, cipher_suite)
-  | false -> (use_ssl, "", "", "", None)
+      let allowed_clients_cert_path =
+        try
+          Some (cf # string_param (cf # resolve_parameter addr "allowed_clients_cert_path"))
+        with
+          | Not_found -> (None); in
+      if allowed_clients_cert_path = None
+      then
+      begin
+          let s = Printf.sprintf "CONFIGURATION: you did not set any allowed_clients_cert_path, any client with a proper certificate will be accepted" in
+          Netplex_cenv.log `Info s;
+      end
+      else
+      begin
+        let path = (match allowed_clients_cert_path with Some x -> x | _ -> "") in
+        let check_dir = (try Sys.is_directory path with
+           _ -> false) in
+         if check_dir = false then
+           let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
+           failwith s
+      end;
+        (use_ssl, cafile, certfile, certkey, cipher_suite, allowed_clients_cert_path)
+  | false -> (use_ssl, "", "", "", None, None)
 
 ENDIF
 (* FIXME: ocaml-ssl does not currently support setting up PFS and other DH ciphers, 
@@ -967,8 +1007,51 @@ let check_empty_negative_only_suites ciphers =
       (ciphers)
   end
 
+(* This function checks in the allowed_clients_cert_path folder if a given client *)
+(* is allowed                                                                     *)
+let read_file f =
+  let ic = open_in f in
+  let n = in_channel_length ic in
+  let s = String.create n in
+  really_input ic s 0 n;
+  close_in ic;
+  (s)
 
-let my_socket_config use_ssl cafile certfile certkey cipher_suite =
+let check_is_client_certificate_allowed allowed_clients_cert_path client_cert =
+  match allowed_clients_cert_path with
+     None -> true
+   | Some path ->
+     (* Go through all the client certificates in the path *)
+     let check_dir = (try Sys.is_directory path with
+       _ -> false) in
+     if check_dir = true then
+       (* List all files in the directory *)
+       let cert_files = Sys.readdir path in
+       (* Get the client certificate string *)
+       let tmp_file = Filename.temp_file "pkcs11proxy_server" "client_cert" in
+       let _ = Ssl.write_certificate tmp_file client_cert in
+       (* Read the cert file as a string *)
+       let client_cert_string = read_file tmp_file in
+       let check = ref false in
+       Array.iter (
+         fun file_name ->
+           let to_compare = (try read_file (path ^ Filename.dir_sep ^ file_name) with
+             _ ->  ""
+           )  in
+           if compare to_compare "" = 0 then
+             check := !check || false
+           else
+             if compare to_compare client_cert_string = 0 then
+               check := !check || true
+             else
+               check := !check || false
+       ) cert_files;
+       (!check)
+     else
+       let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
+       failwith s
+
+let my_socket_config use_ssl cafile certfile certkey cipher_suite allowed_clients_cert_path =
   match use_ssl with
   | true ->
     flush stdout;
@@ -1006,13 +1089,21 @@ let my_socket_config use_ssl cafile certfile certkey cipher_suite =
                    prerr_endline "get_peer_user_name";
                    let cert = Ssl.get_certificate sslsock in
                    let user = Ssl.get_subject cert in
-                   prerr_endline ("user=" ^ user);
-                   Some user)
+                   (* Check peer client certificate *)
+                   let is_client_allowed = check_is_client_certificate_allowed allowed_clients_cert_path cert in
+                   if is_client_allowed = false then
+                     let s = Printf.sprintf "Unsupported client certificate for user=%s" user in
+                     (* Close the socket and quit *)
+                     let _ = Ssl.shutdown sslsock in
+                     failwith s
+                   else
+                     prerr_endline ("user=" ^ user);
+                     Some user)
         ctx
     | false -> Rpc_server.default_socket_config
 
-let socket_config (use_ssl, cafile, certfile, certkey, cipher_suite) = 
-  my_socket_config use_ssl cafile certfile certkey cipher_suite
+let socket_config (use_ssl, cafile, certfile, certkey, cipher_suite, allowed_clients_cert_path) =
+  my_socket_config use_ssl cafile certfile certkey cipher_suite allowed_clients_cert_path
 
 ELSE
 (* WITHOUT SSL *)
