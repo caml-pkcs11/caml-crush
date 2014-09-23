@@ -26,6 +26,8 @@ do
   rm -f ${clean_dirs[i]}/Makefile
 done
 rm -f ${bindings_dir}/Makefile.standalone
+#Cleaning Makefile.in which will be cp depending on platform
+rm -f ${main_dir}/Makefile.in
 echo "Cleaning initrc file ..."
 rm -rf ${scripts_dir}/pkcs11proxyd
 echo "Cleaning the SSL related files ..."

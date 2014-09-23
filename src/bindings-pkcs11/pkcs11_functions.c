@@ -80,7 +80,12 @@
     File:    src/bindings-pkcs11/pkcs11_functions.c
 
 -------------------------- CeCILL-B HEADER ----------------------------------*/
+#ifdef WIN32
+#include <windows.h>
+#include <fcntl.h>
+#else
 #include <dlfcn.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -172,11 +177,16 @@ CK_RV ML_CK_C_LoadModule( /*in */ const char *libname)
   CK_RV rv;
   DEBUG_CALL(ML_CK_C_LoadModule, " calling on %s\n", libname);
 
+#ifdef WIN32
+  module_handle = LoadLibrary(libname);
+#else
   module_handle = dlopen(libname, RTLD_NOW);
+#endif
   if (module_handle == NULL) {
 #ifdef DEBUG
     printf("ML_CK_C_LoadModule: Failed to dlopen(RTLD_NOW) module %s, trying RTLD_LAZY\n", libname);
 #endif
+#ifndef WIN32
     module_handle = dlopen(libname, RTLD_LAZY);
     if (module_handle == NULL) {
 #ifdef DEBUG
@@ -184,9 +194,16 @@ CK_RV ML_CK_C_LoadModule( /*in */ const char *libname)
 #endif
       return CKR_FUNCTION_FAILED;
     }
+#else
+    return CKR_FUNCTION_FAILED;
+#endif
   }
   /* Weird allocation for ANSI C compliance */
+#ifdef WIN32
+  *(void **)(&get_func_list) = (CK_C_GetFunctionList)GetProcAddress(module_handle, "C_GetFunctionList");
+#else
   *(void **)(&get_func_list) = dlsym(module_handle, "C_GetFunctionList");
+#endif
   if (get_func_list == NULL) {
 #ifdef DEBUG
     printf
