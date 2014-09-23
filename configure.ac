@@ -25,6 +25,7 @@ AC_ARG_WITH(idlgen, [  --with-idlgen           force regeneration of the idl hea
 AC_ARG_WITH(ssl, [  --with-ssl              use SSL authentication and encryption over the transport layer (TCP or Unix socket). Use the OpenSSL library by default if --with-gnutls is not given.])
 AC_ARG_WITH(gnutls, [  --with-gnutls           use the gnutls library instead of the OpenSSL library for native C client RPC over ssl.)])
 AC_ARG_WITH(ssl-clientfiles, [  --with-ssl-clientfiles  CA and client certificate files as well as private key (in pem format) for SSL on the target. These are paths on the client if there is a prepending path, environment variables if there is a prepending env (PKCS11PROXY_SSL_CA/PKCS11PROXY_SSL_CERT/PKCS11_SSL_PRIVKEY: this is the default), or a path of files on the host to be embedded inside the client if there is a prepending embed. E.g: --with-ssl-clientfiles='path;ca=path_to_ca,cert=path_to_cert,privkey=path_to_key')], sslfiles="$withval")
+AC_ARG_WITH(ssl-servercerts, [  --with-ssl-servercerts  enforce the client to strictly accept authentication with specific servers that use the certificates provided either in the folder or in a file (as a concatenation of certificates)], sslservercerts="$withval")
 AC_ARG_WITH(filter, [ --without-filter         compile the server without the filter: all the PKCS#11 commands are passed through to the bindings.], [], with_filter=yes)
 
 AC_ARG_WITH(aliasing, [ --with-aliasing          aliasing of the sessions and objects handles. There are two aliasing modes: incremental and random (non predictable aliases): --with-aliasing=rand or --with-aliasing=inc, default is random.], aliasing="$withval")
@@ -432,7 +433,7 @@ then
           AC_MSG_ERROR(Cannot find ocamlrpcgen: needed for RPC server generation.)
         fi
         AC_SUBST(caml_rpc_gen, rpc)
-	# rpcgen in only needed if we generate native C client RPC
+	# rpcgen is only needed if we generate native C client RPC
         if test "$with_ocamlclient" == ""
         then
         	AC_MSG_NOTICE([Native C RPC generation for client side ...])
@@ -634,8 +635,8 @@ fi
 ###################################################################
 # HANDLE SSL files
 # Macro to create the ssl headers, for C and ML clients, from the 
-# given files $1 is the file path, $2 is the file type ("ca", "cert" 
-# or "priv" for private key)
+# given files $1 is the file path, $2 is the file type ("ca", "cert",
+# "priv" for private key, "server" for the allowed servers certificates)
 AC_DEFUN(CREATE_SSL_HEADERS,[
 C_FILE="./create_ssl_files.c"
 FILE="./create_ssl_files"
@@ -696,8 +697,21 @@ size_t mygetline(char **lineptr, size_t *n, FILE *stream) {
   return p - bufptr - 1;
 }
 int write_line(FILE* fp, char* line, size_t lsize){
-  unsigned int i;
-  for(i=0; i<lsize-1; i++){
+  int i;
+  size_t end;
+  /* Check if we have a \n or \r\n at the end of the line */
+  if(lsize >= 2){
+    if(line[[lsize-2]] == '\r'){
+      end = lsize - 2;
+    }
+    else{
+      end = lsize-1;
+    }
+  }
+  else{
+    end = lsize-1;
+  }
+  for(i=0; i<end; i++){
     if((line[[i]] < 0x20) || (line[[i]] > 0x7E)){
       printf("Error: non ASCII character in PEM file!\n");
       return -1;
@@ -748,7 +762,7 @@ int main(int argc, char* argv[[]]){
       printf("Error: can't open cert header for writing\n");
       return -1;
     }
-    if(strcmp(line, "-----BEGIN CERTIFICATE-----\n") != 0){
+    if((strcmp(line, "-----BEGIN CERTIFICATE-----\n") != 0) && (strcmp(line, "-----BEGIN CERTIFICATE-----\r\n") != 0)){
       printf("Error: file %s doesn't seem to be a PEM certificate!\n", argv[[1]]);
       return -1;
     }
@@ -762,7 +776,7 @@ int main(int argc, char* argv[[]]){
     else{
       fprintf(certf, "let cert_file_buff = \"");
     }
-    while(strcmp(line, "-----END CERTIFICATE-----\n") != 0){
+    while((strcmp(line, "-----END CERTIFICATE-----\n") != 0) && (strcmp(line, "-----END CERTIFICATE-----\r\n") != 0)){
       if(write_line(certf, line, lsize) != 1){
         return -1;
       }
@@ -800,7 +814,7 @@ int main(int argc, char* argv[[]]){
     int num_certs = 0;
     int num_lines = 0;
     /* We might have to get more certificates*/
-    if(strcmp(line, "-----BEGIN CERTIFICATE-----\n") != 0){
+    if((strcmp(line, "-----BEGIN CERTIFICATE-----\n") != 0) && (strcmp(line, "-----BEGIN CERTIFICATE-----\r\n") != 0)){
       printf("Error: file %s doesn't seem to be a PEM certificate!\n", argv[[1]]);
       return -1;
     }
@@ -815,7 +829,7 @@ GET_NEW_CA_CERT:
     else{
       fprintf(caf, "let ca_file_buff%d = \"", num_certs-1);
     }
-    while(strcmp(line, "-----END CERTIFICATE-----\n") != 0){
+    while((strcmp(line, "-----END CERTIFICATE-----\n") != 0) && (strcmp(line, "-----END CERTIFICATE-----\r\n") != 0)){
       if(write_line(caf, line, lsize) != 1){
         return -1;
       }
@@ -833,14 +847,14 @@ GET_NEW_CA_CERT:
       fprintf(caf, "\"\\n\\n");
     }
     lsize = mygetline(&line, &len, f);
-    if(strcmp(line, "-----BEGIN CERTIFICATE-----\n") == 0){
+    if((strcmp(line, "-----BEGIN CERTIFICATE-----\n") == 0) || (strcmp(line, "-----BEGIN CERTIFICATE-----\r\n") == 0)){
       goto GET_NEW_CA_CERT;
     }
     /* We ve got all the certificates */
     if(output_type == OUT_C){
       fprintf(caf, "const char* ca_file_buff[[]] = {");
       unsigned int i;
-      for(i=0; i < num_certs-1; i++){  
+      for(i=0; i < num_certs-1; i++){
         fprintf(caf, "ca_file_buff%d, ", i);
       }
       fprintf(caf, "ca_file_buff%d};\n\n", num_certs-1);
@@ -872,7 +886,7 @@ GET_NEW_CA_CERT:
       printf("Error: can't open private key header for writing\n");
       return -1;
     }
-    if(strcmp(line, "-----BEGIN RSA PRIVATE KEY-----\n") != 0){
+    if((strcmp(line, "-----BEGIN RSA PRIVATE KEY-----\n") != 0) && (strcmp(line, "-----BEGIN RSA PRIVATE KEY-----\r\n") != 0)){
       printf("Error: file %s doesn't seem to be a PEM certificate!\n", argv[[1]]);
       return -1;
     }
@@ -886,7 +900,7 @@ GET_NEW_CA_CERT:
     else{
       fprintf(privkeyf, "let private_key_file_buff = \"");
     }
-    while(strcmp(line, "-----END RSA PRIVATE KEY-----\n") != 0){
+    while((strcmp(line, "-----END RSA PRIVATE KEY-----\n") != 0) && (strcmp(line, "-----END RSA PRIVATE KEY-----\r\n") != 0)){
       if(write_line(privkeyf, line, lsize) != 1){
         return -1;
       }
@@ -909,8 +923,83 @@ GET_NEW_CA_CERT:
   }
   /* --------------- */
   /* --------------- */
+  else if(strcmp(argv[[2]], "server") == 0){
+    FILE *serverf;
+    if(output_type == OUT_C){
+      serverf = fopen("src/client-lib/server_file.h", "w");
+    }
+    else{
+      serverf = fopen("src/client-lib/server_file.inc", "w");
+    }
+    if(serverf == NULL){
+      printf("Error: can't open server header for writing\n");
+      return -1;
+    }
+    int num_certs = 0;
+    int num_lines = 0;
+    /* We might have to get more certificates*/
+    if((strcmp(line, "-----BEGIN CERTIFICATE-----\n") != 0) && (strcmp(line, "-----BEGIN CERTIFICATE-----\r\n") != 0)){
+      printf("Error: file %s doesn't seem to be a PEM certificate!\n", argv[[1]]);
+      return -1;
+    }
+GET_NEW_SERVER_CERT:
+    num_certs++;
+    /* OK: we have a PEM certificate, copy everything until we reach the end */
+    if(output_type == OUT_C){
+      fprintf(serverf, "/* Override the ISO C89 max string length by locally removing warnings */\n");
+      fprintf(serverf, "#ifdef __GNUC__\n#pragma GCC diagnostic push\n#pragma GCC diagnostic ignored \"-Woverlength-strings\"\n#endif\n");
+      fprintf(serverf, "const char server_file_buff%d[[]] = \"", num_certs-1);
+    }
+    else{
+      fprintf(serverf, "let server_file_buff%d = \"", num_certs-1);
+    }
+    while((strcmp(line, "-----END CERTIFICATE-----\n") != 0) && (strcmp(line, "-----END CERTIFICATE-----\r\n") != 0)){
+      if(write_line(serverf, line, lsize) != 1){
+        return -1;
+      }
+      lsize = mygetline(&line, &len, f);
+      num_lines++;
+    }
+    if(write_line(serverf, line, lsize) != 1){
+      return -1;
+    }
+    if(output_type == OUT_C){
+      fprintf(serverf, "\";\\n\\n");
+      fprintf(serverf, "#ifdef __GNUC__\n#pragma GCC diagnostic pop\n#endif\n");
+    }
+    else{
+      fprintf(serverf, "\"\\n\\n");
+    }
+    lsize = mygetline(&line, &len, f);
+    if((strcmp(line, "-----BEGIN CERTIFICATE-----\n") == 0) || (strcmp(line, "-----BEGIN CERTIFICATE-----\r\n") == 0)){
+      goto GET_NEW_SERVER_CERT;
+    }
+    /* We ve got all the certificates */
+    if(output_type == OUT_C){
+      fprintf(serverf, "const char* server_file_buff[[]] = {");
+      unsigned int i;
+      for(i=0; i < num_certs-1; i++){  
+        fprintf(serverf, "server_file_buff%d, ", i);
+      }
+      fprintf(serverf, "server_file_buff%d};\n\n", num_certs-1);
+      fprintf(serverf, "#define SERVER_CERTS_NB %d\n", num_certs);
+    }
+    else{
+      fprintf(serverf, "let server_file_buff = [[");
+      unsigned int i;
+      for(i=0; i < num_certs-1; i++){
+        fprintf(serverf, "server_file_buff%d; ", i);
+      }
+      fprintf(serverf, "server_file_buff%d]]\n\n", num_certs-1);
+    }
+
+    fclose(serverf);
+    fclose(f);
+  }
+  /* --------------- */
+  /* --------------- */
   else{
-    printf("Error: unknown ssl file type %s (expected \"ca\", \"cert\" or \"privkey\")\n", argv[[2]]);
+    printf("Error: unknown ssl file type %s (expected \"ca\", \"cert\", \"privkey\" or \"server\")\n", argv[[2]]);
     return -1;
   }
   
@@ -920,22 +1009,36 @@ EOM
 $CC $C_FILE -o $FILE &> /dev/null
 OUT=$?
 if [[ "$OUT" != "0" ]];then
-        AC_MSG_ERROR([problem when compiling $C_FILE])
+       	AC_MSG_ERROR([problem when compiling $C_FILE])
 fi 
-$FILE "$1" "cert" $4
-OUT=$?
-if [[ "$OUT" != "0" ]];then
-	AC_MSG_ERROR([problem when importing the ssl file $1 of type cert])
-fi
-$FILE "$2" "ca" $4
-OUT=$?
-if [[ "$OUT" != "0" ]];then
-	AC_MSG_ERROR([problem when importing the ssl file $2 of type ca])
-fi
-$FILE "$3" "privkey" $4
-OUT=$?
-if [[ "$OUT" != "0" ]];then
-	AC_MSG_ERROR([problem when importing the ssl file $3 of type privkey])
+if test "$2" != "";then
+	# Case where we take care of client ssl files
+	$FILE "$1" "cert" $4
+	OUT=$?
+	if [[ "$OUT" != "0" ]];then
+		rm -f $C_FILE $FILE
+		AC_MSG_ERROR([problem when importing the ssl file $1 of type cert])
+	fi
+	$FILE "$2" "ca" $4
+	OUT=$?
+	if [[ "$OUT" != "0" ]];then
+		rm -f $C_FILE $FILE
+		AC_MSG_ERROR([problem when importing the ssl file $2 of type ca])
+	fi
+	$FILE "$3" "privkey" $4
+	OUT=$?
+	if [[ "$OUT" != "0" ]];then
+		rm -f $C_FILE $FILE
+		AC_MSG_ERROR([problem when importing the ssl file $3 of type privkey])
+	fi
+else
+	# Case where we take care of server certificate files
+	$FILE "$1" "server" $4
+	OUT=$?
+	if [[ "$OUT" != "0" ]];then
+		rm -f $C_FILE $FILE
+		AC_MSG_ERROR([problem when importing the ssl file $1 of type server certificates])
+	fi
 fi
 # Job done: remove unnecessary files
 rm -f $C_FILE $FILE
@@ -1092,6 +1195,70 @@ else
 		AC_SUBST(caml_client_ssl_privkey_file, "")
 	fi
 fi
+
+# Handling the optional strict server certificates enforcing
+if test "$with_ssl_servercerts" != ""
+	then
+	if test "$with_ssl" == ""
+	then
+        	AC_MSG_ERROR([--with-ssl-servercerts needs --with-ssl!])
+	fi
+        # Check if the user provided embed, env or path
+ 	sslserverfilestype=$(echo $sslservercerts | sed 's/\([[^;]]*\);.*/\1/g')
+        getcerts=$(echo $sslservercerts | grep "certs=")
+        if test "$getcerts" != ""
+        then
+		sslfilesserver=$(echo $sslservercerts | sed 's/.*certs=\([[^,]]*\).*/\1/g')
+        else
+        	sslfilesserver=""
+        fi
+        if test "$sslfilesserver" == ""
+        then
+        	AC_MSG_ERROR([Bad --with-ssl-servercerts option formatting, see help])
+
+        fi
+        AC_MSG_NOTICE([ssl server certificates type: $sslserverfilestype])
+	AC_MSG_NOTICE([ssl server certificates path: $sslfilesserver])
+
+	if test "$sslserverfilestype" == "embed"
+	then
+		# Check if we have a path or a file
+		if [[ -d $sslfilesserver ]]; then
+                	# We have a path, create the concatenated file
+			cat $sslfilesserver/*.pem > ./server_certs.crt
+			cat $sslfilesserver/*.crt >> ./server_certs.crt
+			if [[ ! -s ./server_certs.crt ]]; then
+				AC_MSG_ERROR([Server certificates path $sslfilesserver does not contain any certificate (please make sure they have a .crt extension)!])
+			fi
+			WRITE_TO_FILE(summary, " -SSL server certificate files", "Embedded ($sslfilesserver/*.pem and $sslfilesserver/*.crt)")
+                else
+  			# Check if the files exist, trigger an error if this is not the case
+	  		AC_CHECK_FILE($sslfilesserver, [], [AC_MSG_ERROR([Server certificates file $sslfilesserver does not exist!])])
+			cp $sslfilesserver ./server_certs.crt	
+			WRITE_TO_FILE(summary, " -SSL server certificate files", "Embedded ($sslfilesserver)")
+                fi
+		# Embed the files by creating necessary .h files for the C Client 
+		AC_SUBST(c_client_ssl_server, "-DSSL_SERVER_FILES_EMBED")
+
+		# Embed the files by creating necessary .mli files for the Client 
+		AC_SUBST(caml_client_ssl_server, "-DSSL_SERVER_FILES_EMBED")
+		if test "$with_ocamlclient" == ""
+       		then
+			CREATE_SSL_HEADERS("./server_certs.crt", "", "", "C")
+		else
+			CREATE_SSL_HEADERS("./server_certs.crt", "", "", "ML")
+		fi
+		# Purge the local crt file
+		rm ./server_certs.crt
+	else
+		AC_MSG_ERROR([Error: --with-ssl-server $sslserverfilestype is not known: should be 'embed'])
+	fi
+else
+	AC_SUBST(c_client_ssl_server, "")
+	AC_SUBST(caml_client_ssl_server, "")
+fi
+
+
 
 # Compiling with/without the filter
 if test "$with_filter" == "yes"

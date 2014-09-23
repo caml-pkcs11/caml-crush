@@ -100,6 +100,9 @@ const char *private_key_path;
 #include "ca_file.h"
 #include "cert_file.h"
 #include "private_key_file.h"
+#ifdef SSL_SERVER_FILES_EMBED
+#include "server_file.h"
+#endif
 #ifdef GNU_TLS
 /* Embedded GnuTLS data */
 gnutls_datum_t ca_file_mem[CA_CERTS_NB];
@@ -119,14 +122,124 @@ RSA *private_key_file_mem;
 #error WITH_SSL but no method were found to provide certificates
 #endif
 
+#if defined(SSL_SERVER_FILES_EMBED)
+/* Check if a given certificate is in a list of certificates */
+#ifdef GNU_TLS
+/* GnuTLS case */
+
+unsigned char is_certificate_in_list(gnutls_datum_t* cert, const char* cert_pem_list[], int cert_pem_list_num);
+unsigned char is_certificate_in_list(gnutls_datum_t* cert, const char* cert_pem_list[], int cert_pem_list_num){
+  /* In order to compare certificates, we compare their DER representation */
+  int i;
+
+  for(i=0; i<cert_pem_list_num; i++){
+    gnutls_datum_t tmp_cert_pem;
+    gnutls_datum_t tmp_cert_der;
+    int ret;
+
+    /* Get DER from PEM files */
+    tmp_cert_pem.data = (unsigned char*)cert_pem_list[i];
+    tmp_cert_pem.size = strlen(cert_pem_list[i]);
+    ret = gnutls_pem_base64_decode_alloc("CERTIFICATE", &tmp_cert_pem, &tmp_cert_der);
+    if(ret != GNUTLS_E_SUCCESS){
+      printf("Error when getting allowed server certificate from memory (embedded PEM files to DER)\n");
+      return 0;
+    }
+    if(tmp_cert_der.size == cert->size){
+      if(memcmp(tmp_cert_der.data, cert->data, cert->size) == 0){
+        /* We have found a good certificate */
+        free(tmp_cert_der.data);
+        return 1;
+      }
+    }
+    gnutls_free(tmp_cert_der.data);
+  }
+  return 0;
+}
+#else
+/* OpenSSL case: we have a X59 internal structure to be compared with PEM files */
+unsigned char is_certificate_in_list(X509* cert, const char* cert_pem_list[], int cert_pem_list_num);
+unsigned char is_certificate_in_list(X509* cert, const char* cert_pem_list[], int cert_pem_list_num){
+  /* In order to compare certificates, we compare their DER representation */
+  int i, len;
+  unsigned char *buf, *cert_der;
+  /* X509 to DER */
+  len = i2d_X509(cert, NULL);
+  buf = OPENSSL_malloc(len);
+  if(buf == NULL){
+    printf("Error when comparing allowed server certificate: client certificate X509 to DER failed \n");
+    return 0;
+  }
+  cert_der = buf;
+  i2d_X509(cert, &buf);
+
+  for(i=0; i<cert_pem_list_num; i++){
+    BIO *tmp_bio = NULL;
+    X509* tmp_cert = NULL;
+    unsigned char *tmp_buf, *tmp_cert_der;
+    int tmp_len;
+
+    /* Get the PEM of the certificate we want to compare and transform it to DER representation */
+    tmp_bio = BIO_new_mem_buf((char *)cert_pem_list[i], -1);
+    tmp_cert = PEM_read_bio_X509(tmp_bio, NULL, 0, NULL);
+    if (tmp_cert == NULL) {
+      /* Cleanup */
+      OPENSSL_free(cert_der);
+      BIO_free(tmp_bio);
+      printf("Error when getting allowed server certificate from memory (embedded PEM files)\n");
+      return 0;
+    }
+    /* X509 to DER */
+    tmp_len = i2d_X509(tmp_cert, NULL);
+    tmp_buf = (unsigned char*)malloc(tmp_len);
+    if(buf == NULL){
+      /* Cleanup */
+      OPENSSL_free(cert_der);
+      BIO_free(tmp_bio);
+      printf("Error when comparing allowed server certificate: server certificate X509 to DER failed \n");
+      return 0;
+    }
+    tmp_cert_der = tmp_buf;
+    i2d_X509(tmp_cert, &tmp_buf);
+
+    /* We have our two DER representations, compare them */
+    if(len != tmp_len){
+      goto TEST_NEXT;
+    }
+    if(memcmp(cert_der, tmp_cert_der, len) != 0){
+      goto TEST_NEXT;
+    }
+    else{
+      /* Comparison is OK */
+      OPENSSL_free(cert_der);
+      BIO_free(tmp_bio);
+      X509_free(tmp_cert);
+      OPENSSL_free(tmp_cert_der);
+      return 1;
+    }
+
+TEST_NEXT:
+    /* Cleanup */
+    BIO_free(tmp_bio);
+    X509_free(tmp_cert);
+    OPENSSL_free(tmp_cert_der);
+  }
+
+  /* Cleanup */
+  OPENSSL_free(cert_der);
+  return 0;
+}
+#endif
+#endif
+
 int provision_certificates(void)
 {
 #if defined(SSL_FILES_EMBED)
+  int i;
   /* We handle SSL_FILES_EMBED here */
 #ifdef GNU_TLS
   /* GnuTLS case */
   /* CA chain files */
-  int i;
   for (i = 0; i < CA_CERTS_NB; i++) {
     ca_file_mem[i].data = (unsigned char *)(ca_file_buff[i]);
     /* Size is statically determined, -1 for the null terminating byte */
@@ -158,7 +271,6 @@ int provision_certificates(void)
 #else
   /* OpenSSL case */
   /* CA chain files */
-  unsigned int i;
   for (i = 0; i < CA_CERTS_NB; i++) {
     ca_file_mem_bio[i] = BIO_new_mem_buf((char *)(ca_file_buff[i]), -1);
     ca_file_mem[i] = PEM_read_bio_X509(ca_file_mem_bio[i], NULL, 0, NULL);
@@ -201,9 +313,9 @@ int provision_certificates(void)
   return 0;
 }
 
-void override_net_functions(CLIENT * cl)
+void override_net_functions(CLIENT * client)
 {
-  struct ct_data *ct = (struct ct_data *)cl->cl_private;
+  struct ct_data *ct = (struct ct_data *)client->cl_private;
   xdrrec_create(&(ct->ct_xdrs), 0, 0, (caddr_t) ct, readnet, writenet);
 }
 
@@ -406,6 +518,14 @@ int start_gnutls(int sock)
     return -1;
   }
 
+#ifdef SSL_SERVER_FILES_EMBED
+  /* We have to check the provided authorized server certificates */
+  if(is_certificate_in_list((gnutls_datum_t*)&certs[0], server_file_buff, SERVER_CERTS_NB) == 0){
+    fprintf(stderr, "SSL_connect error: peer server certificate is not in the allowed list!\n");
+    return -1;
+  }
+#endif
+
   /* Print session info. */
 #ifdef DEBUG
   print_info(gnutls_global_session);
@@ -499,7 +619,7 @@ void print_info(gnutls_session_t gsession)
     break;
   }				/* switch */
 
-  /* print the protocol's name (ie TLS 1.0) 
+  /* print the protocol's name (ie TLS 1.0)
    */
   tmp = gnutls_protocol_get_name(gnutls_protocol_get_version(gsession));
   fprintf(stderr, "- Protocol: %s\n", tmp);
@@ -635,7 +755,7 @@ int start_openssl(int sock)
   }
 
   /* Check the certificate verification result.
-   * Could allow an explicit certificate validation override 
+   * Could allow an explicit certificate validation override
    */
   verifystatus = SSL_get_verify_result(ssl);
   if (verifystatus != X509_V_OK) {
@@ -643,6 +763,14 @@ int start_openssl(int sock)
 	    X509_verify_cert_error_string(verifystatus));
     return -1;
   }
+
+#ifdef SSL_SERVER_FILES_EMBED
+  /* We have to check the provided authorized server certificates */
+  if(is_certificate_in_list(&peercert[0], server_file_buff, SERVER_CERTS_NB) == 0){
+    fprintf(stderr, "SSL_connect error: peer server certificate is not in the allowed list!\n");
+    return -1;
+  }
+#endif
 
   return 0;
 }

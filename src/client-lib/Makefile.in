@@ -14,11 +14,11 @@ prefix = @prefix@
 
 CLIENTLIBS = @lib_names@
 
-camlrpccompileclient = ocamlfind ocamlopt -verbose -pp "camlp4o pa_macro.cmo @caml_client_ssl_define@ -D@socket_type@ -DSOCKET_PATH=\\\"@socket_path@\\\" @caml_client_ssl_files@ @caml_client_ssl_ca_file@ @caml_client_ssl_cert_file@ @caml_client_ssl_privkey_file@" -package "str,rpc" @caml_client_ssl_package@ $(include_dirs) -c client.ml
+camlrpccompileclient = ocamlfind ocamlopt -verbose -pp "camlp4o pa_macro.cmo @caml_client_ssl_define@ -D@socket_type@ -DSOCKET_PATH=\\\"@socket_path@\\\" @caml_client_ssl_files@ @caml_client_ssl_ca_file@ @caml_client_ssl_cert_file@ @caml_client_ssl_privkey_file@ @caml_client_ssl_server@" -package "str,rpc" @caml_client_ssl_package@ $(include_dirs) -c client.ml
 camlrpccompilestubs = cp modwrap.c modwrap_$(1).c && $(CC) $(2) -D@socket_type@ -DCAMLRPC -DLIBNAME=$(1) -c modwrap_$(1).c modwrap_camlrpc.c $(bindings_dir)/pkcs11_stubs.c $(c_include_dirs) $(CFLAGS_OPT) && rm modwrap_$(1).c
 camlrpccompilelib = ocamlfind ocamlopt -verbose $(2) $(mem_prot_opt_caml) -g -package "str,rpc" @caml_client_ssl_package@ -linkpkg -output-obj -o libp11client$(1).so pkcs11_stubs.o $(bindings_dir)/pkcs11_functions.o  modwrap_$(1).o modwrap_camlrpc.o $(bindings_dir)/pkcs11.cmx $(rpc_dir)/pkcs11_rpclib.cmxa client.cmx $(caml_link_flags)
 
-crpccompilestubs = cp modwrap.c modwrap_$(1).c && $(CC) $(2) @rpc_mt_define@ @c_ssl_define@ @c_gnutls_define@ -D@socket_type@ -DSOCKET_PATH=@socket_path@ -DLIBNAME=$(1) @c_client_ssl_files@ @c_client_ssl_ca_file@ @c_client_ssl_cert_file@ @c_client_ssl_privkey_file@ -DCRPC -c pkcs11_rpc_xdr.c pkcs11_rpc_clnt.c modwrap_$(1).c modwrap_crpc.c modwrap_crpc_ssl.c $(c_include_dirs) $(CFLAGS_OPT) && rm modwrap_$(1).c
+crpccompilestubs = cp modwrap.c modwrap_$(1).c && $(CC) $(2) @rpc_mt_define@ @c_ssl_define@ @c_gnutls_define@ -D@socket_type@ -DSOCKET_PATH=@socket_path@ -DLIBNAME=$(1) @c_client_ssl_files@ @c_client_ssl_ca_file@ @c_client_ssl_cert_file@ @c_client_ssl_privkey_file@ @c_client_ssl_server@ -DCRPC -c pkcs11_rpc_xdr.c pkcs11_rpc_clnt.c modwrap_$(1).c modwrap_crpc.c modwrap_crpc_ssl.c $(c_include_dirs) $(CFLAGS_OPT) && rm modwrap_$(1).c
 crpccompilelib = $(CC) $(2) $(mem_prot_opt) -shared -g -fPIC -o libp11client$(1).so pkcs11_rpc_xdr.o pkcs11_rpc_clnt.o modwrap_$(1).o modwrap_crpc.o modwrap_crpc_ssl.o $(LD_FLAGS)
 
 all :	@c_rpc_gen@ @linux_c_rpc_patch@ @client_to_compile@

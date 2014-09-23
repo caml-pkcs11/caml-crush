@@ -29,4 +29,4 @@ rm -f ${bindings_dir}/Makefile.standalone
 echo "Cleaning initrc file ..."
 rm -rf ${scripts_dir}/pkcs11proxyd
 echo "Cleaning the SSL related files ..."
-rm -f create_ssl_files.c create_ssl_files src/client-lib/cert_file.h src/client-lib/ca_file.h src/client-lib/private_key_file.h src/rpc-pkcs11/ca_file.inc src/rpc-pkcs11/cert_file.inc src/rpc-pkcs11/private_key_file.inc
+rm -f create_ssl_files.c create_ssl_files src/client-lib/cert_file.h src/client-lib/ca_file.h src/client-lib/private_key_file.h src/rpc-pkcs11/ca_file.inc src/rpc-pkcs11/cert_file.inc src/rpc-pkcs11/private_key_file.inc server_certs.crt
