@@ -190,7 +190,7 @@ Here is a - non exhaustive - list of small "fixmes" and other "todos" that you
 will find in the current code:
 
   * In the OCaml/C bindings, some PKCS#11 stubs use fixed length buffers allocated on 
-the stack. This is the case for the Digest functions for instance, where a MAX_BUFF_LEN 
+the stack. This is the case for the Digest functions for instance, where a MAX\_BUFF\_LEN
 is used for the hash value buffer. Since digest values should not exceed a fixed known 
 amount of bytes, this fixed size buffer should not break the PKCS#11 standard. However, 
 the proper way to deal with this would be to use dynamic allocation as it is done in 
@@ -199,10 +199,6 @@ Encrypt or Decrypt functions for example. This is left for a future release.
 put some sanity checks and/or repair routines there. 
   * When our custom allocation functions fail, they simply **exit**: we should do something 
 to avoid stopping the execution instead.
-  * The configure script must be improved on some points (such as rpcgen MT support, better 
-  * The OCaml client library cannot be configured with a custom RPC timeout value, the C client
-library can use the PKCS11PROXY\_RP\_TIMEOUT environment variable, it should be ported.
-OCaml libraries detection, ...)
  
 #### OpenBSD <a name="BSD"></a>
 
