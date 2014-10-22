@@ -118,7 +118,7 @@ Some features are embedded at compile-time and enabled through the
 use of *autoconf* and a *configure* script.
 
 Users compiling Caml Crush should read the [pre-build checklist](PRE-BUILD.md)
-in order to get a better grasp the various parameters available.
+in order to get a better grasp of the various parameters available.
 
 We use autoconf to configure some of the compile time options.
 
