@@ -352,9 +352,11 @@ val cKM_X9_42_MQV_DERIVE  : nativeint
 val cKM_SHA256_RSA_PKCS  : nativeint
 val cKM_SHA384_RSA_PKCS  : nativeint
 val cKM_SHA512_RSA_PKCS  : nativeint
+val cKM_SHA224_RSA_PKCS  : nativeint
 val cKM_SHA256_RSA_PKCS_PSS  : nativeint
 val cKM_SHA384_RSA_PKCS_PSS  : nativeint
 val cKM_SHA512_RSA_PKCS_PSS  : nativeint
+val cKM_SHA224_RSA_PKCS_PSS  : nativeint
 val cKM_RC2_KEY_GEN   : nativeint
 val cKM_RC2_ECB   : nativeint
 val cKM_RC2_CBC   : nativeint
@@ -406,6 +408,15 @@ val cKM_SHA384_HMAC_GENERAL  : nativeint
 val cKM_SHA512   : nativeint
 val cKM_SHA512_HMAC   : nativeint
 val cKM_SHA512_HMAC_GENERAL  : nativeint
+val cKM_SHA224   : nativeint
+val cKM_SHA224_HMAC   : nativeint
+val cKM_SHA224_HMAC_GENERAL  : nativeint
+val cKM_SECURID_KEY_GEN  : nativeint
+val cKM_SECURID  : nativeint
+val cKM_HOTP_KEY_GEN  : nativeint
+val cKM_HOTP  : nativeint
+val cKM_ACTI_KEY_GEN  : nativeint
+val cKM_ACTI  : nativeint
 val cKM_CAST_KEY_GEN  : nativeint
 val cKM_CAST_ECB   : nativeint
 val cKM_CAST_CBC   : nativeint
@@ -456,6 +467,7 @@ val cKM_TLS_PRE_MASTER_KEY_GEN : nativeint
 val cKM_TLS_MASTER_KEY_DERIVE : nativeint
 val cKM_TLS_KEY_AND_MAC_DERIVE : nativeint
 val cKM_TLS_MASTER_KEY_DERIVE_DH : nativeint
+val cKM_TLS_PRF  : nativeint
 val cKM_SSL3_MD5_MAC  : nativeint
 val cKM_SSL3_SHA1_MAC  : nativeint
 val cKM_MD5_KEY_DERIVATION  : nativeint
