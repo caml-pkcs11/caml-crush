@@ -323,6 +323,9 @@ p11_request_struct *check_operation_active_in_filtering_list(ck_session_handle_t
 
 void custom_sanitize_ck_mechanism(struct ck_mechanism *mech)
 {
+  /* FIXME: We only sanitize the most commonly used mechanisms.
+   * This should also be done for other mechs that do not require params.
+   */
   switch ((*mech).mechanism) {
   case CKM_RSA_PKCS:
   case CKM_RSA_9796:
@@ -332,19 +335,14 @@ void custom_sanitize_ck_mechanism(struct ck_mechanism *mech)
   case CKM_SHA1_RSA_PKCS:
   case CKM_RIPEMD128_RSA_PKCS:
   case CKM_RIPEMD160_RSA_PKCS:
-  case CKM_RSA_PKCS_OAEP:
   case CKM_RSA_X9_31:
   case CKM_SHA1_RSA_X9_31:
-  case CKM_RSA_PKCS_PSS:
-  case CKM_SHA1_RSA_PKCS_PSS:
   case CKM_DSA:
   case CKM_DSA_SHA1:
   case CKM_SHA256_RSA_PKCS:
   case CKM_SHA384_RSA_PKCS:
   case CKM_SHA512_RSA_PKCS:
-  case CKM_SHA256_RSA_PKCS_PSS:
-  case CKM_SHA384_RSA_PKCS_PSS:
-  case CKM_SHA512_RSA_PKCS_PSS:
+  case CKM_SHA224_RSA_PKCS:
     {
       (*mech).parameter = NULL;
       (*mech).parameter_len = 0;
