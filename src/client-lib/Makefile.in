@@ -9,7 +9,7 @@ include_dirs = -I $(bindings_dir) -I $(rpc_dir)
 caml_link_flags = -cclib -lcamlidl -cclib -L@OCAMLLIB@
 bindings_dir = ../bindings-pkcs11
 rpc_dir = ../rpc-pkcs11
-prefix = @prefix@
+prefix = ${DESTDIR}@prefix@
 
 
 CLIENTLIBS = @lib_names@

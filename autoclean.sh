@@ -19,7 +19,7 @@ clean_dirs=($main_dir $bindings_dir $rpc_dir $server_dir $client_dir $filter_dir
 echo "Cleaning the project ..."
 make clean &> /dev/null
 echo "Cleaning AUTOCONF files ..."
-rm -rf autom4te.cache config.log config.status configure 
+rm -rf autom4te.cache config.log config.status configure summary
 echo "Cleaning Makefiles ..."
 for (( i = 0 ; i < ${#clean_dirs[*]} ; i++ ))
 do

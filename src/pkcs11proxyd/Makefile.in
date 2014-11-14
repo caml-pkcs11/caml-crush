@@ -6,7 +6,8 @@ bindings_dir =  ../bindings-pkcs11
 rpc-pkcs11_dir =  ../rpc-pkcs11
 mem_prot_opt_caml=-ccopt -fPIC -ccopt -fPIE -ccopt -Wl,-z,relro,-z,now -ccopt -fstack-protector
 server_name = pkcs11proxyd
-prefix=@prefix@
+prefix=${DESTDIR}@prefix@
+sysconf=${DESTDIR}@sysconfdir@
 
 all:
 	#Compile Server
@@ -16,16 +17,16 @@ all:
 install:
 	echo "Installing $(server_name) to ${prefix}/bin/$(server_name)"
 	install -D $(server_name) ${prefix}/bin/$(server_name)
-	echo "Installing $(server_name).conf to ${prefix}/etc/$(server_name)/$(server_name).conf"
-	install -m 640 -D $(server_name).conf ${prefix}/etc/$(server_name)/$(server_name).conf
-	install -m 640 -D filter.conf ${prefix}/etc/$(server_name)/filter.conf
+	echo "Installing $(server_name).conf to ${sysconf}/$(server_name)/$(server_name).conf"
+	install -m 640 -D $(server_name).conf ${sysconf}/$(server_name)/$(server_name).conf
+	install -m 640 -D filter.conf ${sysconf}/$(server_name)/filter.conf
 
 uninstall:
 	echo "Removing $(server_name) to ${prefix}/bin/$(server_name)"
 	rm ${prefix}/bin/$(server_name)
-	echo "Removing $(server_name).conf to ${prefix}/etc/$(server_name)/$(server_name).conf"
-	rm ${prefix}/etc/$(server_name)/$(server_name).conf
-	rm ${prefix}/etc/$(server_name)/filter.conf
+	echo "Removing $(server_name).conf to ${sysconf}/$(server_name)/$(server_name).conf"
+	rm ${sysconf}/etc/$(server_name)/$(server_name).conf
+	rm ${sysconf}/etc/$(server_name)/filter.conf
 
 clean:
 	@rm -f *.cmi *.cmo *.cma *.cmx *.o *.a *.cmxa dll* packlist-* ocamldoc.dump META depend $(server_name) *.astamp *.cstamp *.s2stamp
