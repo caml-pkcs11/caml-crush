@@ -361,6 +361,89 @@ void custom_sanitize_ck_mechanism(struct ck_mechanism *mech)
   }
 }
 
+/* Functions when LIBNAME is read from a file */
+#ifdef LIBNAME_FILE
+/* Portable getline() function */
+size_t mygetline(char *lineptr, FILE *stream) {
+  char *p = lineptr;
+  int c;
+
+  if (lineptr == NULL) {
+    fprintf(stderr, "mygetline: lineptr is NULL\n");
+    return -1;
+  }
+  if (stream == NULL) {
+    fprintf(stderr, "mygetline: stream is NULL\n");
+    return -1;
+  }
+  c = fgetc(stream);
+  if (c == EOF) {
+    return -1;
+  }
+  while(c != EOF) {
+    if ((p - lineptr) > (MAX_LIBNAME_LEN - 1)) {
+      fprintf(stderr, "mygetline: line is > to %d\n", MAX_LIBNAME_LEN);
+      return -2;
+    }
+    *p++ = c;
+    c = fgetc(stream);
+    if (c == '\n') {
+      break;
+    }
+  }
+  *p++ = '\0';
+  return p - lineptr - 1;
+}
+
+/* Function that returns the parsed LIBNAME from a file
+ * the file is located in $HOME/.camlcrushlibname, caller has
+ * to free the passed libname parameter.
+ */
+int get_libname_from_file(char *libname){
+    int   count;
+    char *home;
+    size_t home_len = 0;
+    char *file_path;
+    size_t file_path_len = 0;
+    FILE *file;
+
+    home = getenv("HOME");
+    if(!home){
+        fprintf(stderr, "get_libname_from_file: HOME variable not found\n");
+        return -1;
+    }
+    home_len = strnlen(home, MAX_ENV_LEN);
+
+	file_path_len = home_len + strlen(LIBNAME_FILE_NAME) + 2;
+    file_path = custom_malloc(file_path_len);
+    if(!file_path){
+        fprintf(stderr, "get_libname_from_file: malloc failed\n");
+        return -1;
+    }
+	memset(file_path, 0, file_path_len);
+
+    strncat(file_path, home, home_len);
+    strncat(file_path+home_len, "/", 1);
+    strncat(file_path+home_len+1, LIBNAME_FILE_NAME, strlen(LIBNAME_FILE_NAME));
+
+    file = fopen(file_path, "r");
+    if(!file){
+        fprintf(stderr,
+				"get_libname_from_file: open failed for file %s\n",file_path);
+        return -1;
+    }
+
+    count = mygetline(libname, file);
+    if(count < 0){
+        fprintf(stderr, "get_libname_from_file: LIBNAME could not be read\n");
+        return -1;
+    }
+    fclose(file);
+    custom_free((void**)&file_path);
+    return 0;
+}
+#endif /* LIBNAME_FILE */
+
 /* Keep the pid of current process */
 #ifndef WIN32
 pid_t local_pid = 0;
@@ -375,6 +458,9 @@ void init()
   ck_rv_t ret;
   /* libname override through environment variable */
   char *libname;
+#ifdef LIBNAME_FILE
+  char libname_file[32] = {0};
+#endif
 
   /* Store the PID to match it in case of a fork */
 #ifndef WIN32
@@ -405,16 +491,25 @@ void init()
 #endif
   }
   else{
+#ifdef LIBNAME_FILE
+    /* Find the LIBNAME in a file */
+	if(get_libname_from_file(libname_file) != 0){
+		fprintf(stderr, "Init failed, could not find a LIBNAME EXITING\n");
+		exit(-1);
+	}
+#ifdef CAMLRPC
+    ret = init_ml(libname_file);
+#else
+    ret = init_c(libname_file);
+#endif
+#else
     /* Use the default built-in libname */
 #ifdef CAMLRPC
     ret = init_ml(xstr(LIBNAME));
 #else
     ret = init_c(xstr(LIBNAME));
 #endif
-  }
-  if (ret != CKR_OK) {
-    fprintf(stderr, "Init failed, EXITING\n");
-    return;
+#endif /* LIBNAME_FILE */
   }
 
   /* Did we manage to detect arch ? */
@@ -424,16 +519,22 @@ void init()
   }
 
   if (ret != CKR_OK) {
-#ifdef DEBUG
-#ifdef CAMLRPC
+	if(libname != NULL){
+      fprintf(stderr,
+		"C_LoadModule: failed loading PKCS#11 module %s (read from env)\n",
+		libname);
+	}
+	else{
+#ifdef LIBNAME_FILE
     fprintf(stderr,
-	    "C_LoadModule: failed loading PKCS#11 module %s from CAML\n",
-	    xstr(LIBNAME));
+	    "C_LoadModule: failed loading PKCS#11 module %s (read from file)\n",
+	    libname_file);
 #else
-    fprintf(stderr, "C_LoadModule: failed loading PKCS#11 module %s from C\n",
+    fprintf(stderr, "C_LoadModule: failed loading PKCS#11 module %s (builtin)\n",
 	    xstr(LIBNAME));
 #endif
-#endif
+	}
+    fprintf(stderr, "Init failed, EXITING\n");
     exit(-1);
   }
   return;

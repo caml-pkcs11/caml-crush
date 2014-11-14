@@ -312,6 +312,14 @@ struct ct_data
 #define MAX_HOSTNAME_LEN 1024
 #endif
 
+#ifdef LIBNAME_FILE
+#define MAX_LIBNAME_LEN 32 /* LIBNAME e.g. "softhsm", "opensc", ... */
+#define LIBNAME_FILE_NAME ".camlcrushlibname"
+#define MAX_ENV_LEN 128
+size_t mygetline(char *, FILE *);
+int get_libname_from_file(char *);
+#endif
+
 #ifdef WITH_SSL
 #include <sys/poll.h>
 #include <errno.h>
@@ -826,7 +834,7 @@ pthread_mutex_t mutex;
 volatile unsigned long is_Blocking;
 
 /* ----------- COMPILER HELPER for passing LIBRARY NAME to LoadModule ---------- */
-#ifndef LIBNAME
+#if !defined(LIBNAME) && !defined(LIBNAME_FILE)
 #error "NO LIBNAME PROVIDED: YOU MUST PROVIDE ONE!"
 #endif
 
