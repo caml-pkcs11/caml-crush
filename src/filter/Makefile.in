@@ -12,6 +12,6 @@ clean:
 	@MAKEPROG@ clean -C $(backend_dir)
 	@MAKEPROG@ clean -C $(filter_dir)
 	@MAKEPROG@ clean -C $(frontend_dir)
-	@rm -f *.cmi *.cmx *.o *.cmo *~ *.opt 
+	@rm -f @srcdir@/*.cmi @srcdir@/*.cmx @srcdir@/*.o @srcdir@/*.cmo @srcdir@/*~ @srcdir@/*.opt
 	
 	

@@ -1,6 +1,6 @@
 filter_dir = ../filter
 
 all:
-	ocamlopt -I $(filter_dir) -c frontend.ml
+	ocamlopt -I $(filter_dir) -o frontend -c @srcdir@/frontend.ml
 clean:
-	@rm -f *.cmi *.cmx *.o *.cmo *~ *.opt 
+	@rm -f @srcdir@/*.cmi @srcdir@/*.cmx @srcdir@/*.o @srcdir@/*.cmo @srcdir@/*~ @srcdir@/*.opt

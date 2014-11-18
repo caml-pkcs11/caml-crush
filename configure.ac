@@ -1,4 +1,5 @@
 AC_INIT(myconfig, version-0.1)
+AC_CONFIG_SRCDIR([src/client-lib/modwrap.c])
 
 bindings_dir="src/bindings-pkcs11"
 rpc_dir="src/rpc-pkcs11"
@@ -42,7 +43,7 @@ cat $1 && rm -f $1
 ])
 
 #Try to detect host_type and set variable
-if host_type=`./config.guess`; then :; else
+if host_type=`${srcdir}/config.guess`; then :; else
   echo "Cannot guess host type"
   exit 2
 fi
