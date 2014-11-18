@@ -140,8 +140,9 @@ From the top directory do:
 
 It will perform the following action:
 
-  * install the **pkcs11proxyd** daemon in the *${PREFIX}/usr/bin* directory
-  * copy default configuration files to *${PREFIX}/etc/pkcs11proxyd/*
+  * install the **pkcs11proxyd** daemon into *${PREFIX}/usr/bin*
+  * install the client library to *${PREFIX}/usr/lib/*
+  * copy default configuration files to *${SYSCONFDIR}/pkcs11proxyd/*
 
 ## Server configuration <a name="ServerConfiguration"></a>
 The server process is based on the Netplex library from ocamlnet.
