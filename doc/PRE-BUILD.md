@@ -35,19 +35,19 @@ To compile the hybrid OCaml/C client library:
 When the client connects to the proxy server it asks for a specific PKCS#11 module to be loaded. This allows the proxy server to support
 multiple PKCS#11 libraries (so called "middlewares").
 The server looks up in its configuration file for a matching module name (ex: "opensc") with a library path to load (ex: /usr/lib/opensc-pkcs11.so).
-By default, there will be as many client libraries as supported modules.
-The generated client libraries have the following syntax `libp11client<modulename>.so`
-If no choice are given a library will be generated, when loaded, this library
-will ask the server to load a module with an empty string, it is the server's
-role to decide whether to fall-back on a default module or to block the call.
+By default, the client library will read the module name from the **.camlcrushlibname** file located in the current user's directory. In this case, a single client library is compiled `libp11client.so`
 
+The --with-libname-file flag enables the behavior previously described (this is the DEFAULT).
+
+This behavior can be modified to compile as many client libraries as supported modules.
+The generated client libraries have the following syntax `libp11client<modulename>.so`
 
 The --with-libnames can be used to compile multiple client libraries with different module names.
 
   * --with-libnames="opensc,mysuperhsm"
     * (libp11clientopensc.so and libp11clientmysuperhsm.so are generated)
 
-However, an environment variable can be used to change the module name that will be sent to the proxy server.
+In the two cases described above, an environment variable can be used to change the module name that will be sent to the proxy server.
 This behavior is controlled using the `PKCS11PROXY_LIBNAME` variable.
 
 ### Client socket configuration
