@@ -1,0 +1,1 @@
+adduser --system --home /var/lib/pkcs11proxyd --group pkcs11proxyd

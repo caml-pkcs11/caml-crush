@@ -1,0 +1,4 @@
+#!/usr/bin/dh-exec
+debian/tmp/build-SERVER/usr/bin/pkcs11proxyd => /usr/bin/pkcs11proxyd
+debian/pkcs11proxyd.conf => /etc/pkcs11proxyd/pkcs11proxyd.conf
+debian/tmp/build-SERVER/etc/pkcs11proxyd/filter.conf => /etc/pkcs11proxyd/filter.conf

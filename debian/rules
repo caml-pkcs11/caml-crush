@@ -1,0 +1,49 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+VARIANT := SERVER UNIX_CLIENT TCP_CLIENT
+
+CONFIGURE_SERVER_OPTS := \
+  --with-idlgen\
+  --with-rpcgen\
+  --with-ssl\
+  --with-ssl-clientfiles=env
+
+CONFIGURE_TCP_CLIENT_OPTS := \
+	--with-client-socket="tcp,127.0.0.1:4444"
+
+CONFIGURE_UNIX_CLIENT_OPTS := \
+	--with-client-socket="unix,/var/run/pkcs11proxyd.socket"
+
+override_dh_auto_clean:
+	./autoclean.sh
+	#Files are auto-generated
+	find ./src -name pkcs11.h -delete
+	find ./src -name pkcs11.ml -delete
+	find ./src -name pkcs11_stubs.c -delete
+	find ./src -name pkcs11_rpc.h -delete
+	find ./src/client-lib -name "pkcs11_rpc_*.c" -delete
+	find ./src/rpc-pkcs11 -name "pkcs11_rpc_*" -delete
+	rm -rf build-*
+
+override_dh_auto_configure: $(VARIANT:%=override_dh_auto_configure-%)
+
+override_dh_auto_configure-%:
+	./autogen.sh
+	dh_auto_configure -Bbuild-$* -- --srcdir=.. $(CONFIGURE_$*_OPTS)
+
+override_dh_auto_build: $(VARIANT:%=override_dh_auto_build-%)
+
+override_dh_auto_build-%:
+	dh_auto_build -Bbuild-$*
+
+override_dh_auto_install: $(VARIANT:%=override_dh_auto_install-%)
+
+override_dh_auto_install-%:
+	dh_auto_install -Bbuild-$* --destdir=debian/tmp/build-$*
+
+%:
+	dh $@ --with autotools-dev,autoreconf
