@@ -4,7 +4,7 @@ filter_frontend_dir = ../filter/frontend
 caml_link_dirs = -cclib -lpthread -cclib -lcamlidl -cclib -L$(bindings_dir)
 bindings_dir =  ../bindings-pkcs11
 rpc-pkcs11_dir =  ../rpc-pkcs11
-mem_prot_opt_caml=-ccopt -fPIC -ccopt -fPIE -ccopt -Wl,-z,relro,-z,now -ccopt -fstack-protector
+mem_prot_opt_caml=-ccopt -O2 -ccopt -fPIC -ccopt -fPIE -ccopt -Wl,-z,relro,-z,now -ccopt -fstack-protector -ccopt -DFORTIFY_SOURCE=2
 server_name = pkcs11proxyd
 prefix=${DESTDIR}@prefix@
 sysconf=${DESTDIR}@sysconfdir@

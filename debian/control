@@ -1,20 +1,21 @@
 Source: caml-crush
-Section: network
+Section: net
 Priority: optional
 Maintainer: Thomas Calderon <calderon.thomas@gmail.com>
-Build-Depends: debhelper (>= 9), gcc, ocaml-nox, camlidl, coccinelle, libocamlnet-ocaml-dev (>= 3.5.1), libocamlnet-ssl-ocaml-dev (>= 3.5.1), libocamlnet-ocaml-bin (>= 3.5.1), libssl-dev, libconfig-file-ocaml-dev, camlp4, dh-exec, dh-autoreconf
-Standards-Version: 3.9.4
+Build-Depends: debhelper (>= 9), ocaml-nox, camlidl, coccinelle, libocamlnet-ocaml-dev (>= 3.5.1), libocamlnet-ssl-ocaml-dev (>= 3.5.1), libocamlnet-ocaml-bin (>= 3.5.1), libssl-dev, libconfig-file-ocaml-dev, camlp4, dh-exec, dh-autoreconf
+Standards-Version: 3.9.6
 Homepage: https://github.com/ANSSI-FR/caml-crush
 Vcs-Git: git://github.com/ANSSI-FR/caml-crush.git
 Vcs-Browser: https://github.com/ANSSI-FR/caml-crush
 
 Package: caml-crush-server
 Architecture: amd64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel powerpc s390 s390x sparc
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser (>= 3.10)
 Description: Caml Crush: an OCaml PKCS#11 filtering proxy - server
- This software is a computer program whose purpose is to implement a PKCS#11 proxy as well as a PKCS#11 filter with security features in mind.
+ This software is a computer program whose purpose is to implement a PKCS#11
+ proxy as well as a PKCS#11 filter with security features in mind.
  .
- For instance, the filtering engine allows to:
+ For instance, the filtering engine include the following features:
   * dynamically block PKCS#11 attacks
   * disable PKCS#11 functions and weak mechanisms
   * perform object filtering on a resource
@@ -23,15 +24,18 @@ Description: Caml Crush: an OCaml PKCS#11 filtering proxy - server
  This package is the server component of Caml Crush.
 
 Package: caml-crush-clients
+Section: libs
 Architecture: amd64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel powerpc s390 s390x sparc
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Caml Crush: an OCaml PKCS#11 filtering proxy - clients
- This software is a computer program whose purpose is to implement a PKCS#11 proxy as well as a PKCS#11 filter with security features in mind.
+ This software is a computer program whose purpose is to implement a PKCS#11
+ proxy as well as a PKCS#11 filter with security features in mind.
  .
- For instance, the filtering engine allows to:
+ For instance, the filtering engine include the following features:
   * dynamically block PKCS#11 attacks
   * disable PKCS#11 functions and weak mechanisms
   * perform object filtering on a resource
   * force read-only use of the cryptographic resource
  .
- This package is the client component of Caml Crush, it contains the TCP, TCP+TLS and a UNIX client libraries to connect to the server component.
+ This package is the client component of Caml Crush, it contains the TCP,
+ TCP+TLS and a UNIX client libraries to connect to the server component.

@@ -1,0 +1,5 @@
+caml-crush-clients: shlib-without-versioned-soname usr/lib/libp11clientunix.so libp11clientunix.so
+caml-crush-clients: shlib-without-versioned-soname usr/lib/libp11clienttcp.so libp11clienttcp.so
+caml-crush-clients: shlib-without-versioned-soname usr/lib/libp11clienttcpssl.so libp11clienttcpssl.so
+caml-crush-clients: package-name-doesnt-match-sonames libp11clienttcp libp11clienttcpssl libp11clientunix
+caml-crush-clients: postinst-must-call-ldconfig usr/lib/libp11clientunix.so
