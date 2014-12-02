@@ -1,4 +1,0 @@
-#!/usr/bin/dh-exec
-debian/tmp/build-UNIX_CLIENT/usr/lib/libp11client.so => /usr/lib/libp11clientunix.so
-debian/tmp/build-TCP_CLIENT/usr/lib/libp11client.so => /usr/lib/libp11clienttcp.so
-debian/tmp/build-SERVER/usr/lib/libp11client.so => /usr/lib/libp11clienttcpssl.so
