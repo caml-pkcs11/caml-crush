@@ -33,6 +33,11 @@ AC_ARG_WITH(filter, [ --without-filter         compile the server without the fi
 AC_ARG_WITH(aliasing, [ --with-aliasing          aliasing of the sessions and objects handles. There are two aliasing modes: incremental and random (non predictable aliases): --with-aliasing=rand or --with-aliasing=inc, default is random.], aliasing="$withval")
 AC_ARG_WITH(daemonize, [ --with-daemonize        compile with daemonization primitives support (User can amend C_Daemonize function to provide its own privilege reduction primitives inside the server process instead of using the sandbox launcher).])
 
+full_libdir=`eval eval eval eval eval echo "${libdir}" | sed "s#NONE#${prefix}#" | sed "s#NONE#${ac_default_prefix}#"`
+
+# Install the library in a sub-directory
+full_libdir="$full_libdir/caml-crush"
+libdir=$full_libdir
 
 # Summary helpers
 AC_DEFUN(WRITE_TO_FILE,[

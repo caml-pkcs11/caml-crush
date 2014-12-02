@@ -12,6 +12,7 @@ bindings_dir = @top_srcdir@/src/bindings-pkcs11
 rpc_dir = @top_srcdir@/src/rpc-pkcs11
 build_bindings_dir = ../bindings-pkcs11
 build_rpc_dir = ../rpc-pkcs11
+libdir = @libdir@
 prefix = ${DESTDIR}@prefix@
 
 
@@ -65,8 +66,8 @@ linux_c_rpc_patch:
 
 debug:  @c_rpc_gen@ @linux_c_rpc_patch@ @client_to_compile_debug@
 
-install_lib = echo "Installing libp11client$(1).so to ${prefix}/lib/libp11client$(1).so" && install -D libp11client$(1).so ${prefix}/lib/libp11client$(1).so
-uninstall_lib = echo "Uninstalling ${prefix}/lib/libp11client$(1).so" && rm ${prefix}/lib/libp11client$(1).so
+install_lib = echo "Installing libp11client$(1).so to $(DESTDIR)$(libdir)/libp11client$(1).so" && install -D libp11client$(1).so $(DESTDIR)$(libdir)/libp11client$(1).so
+uninstall_lib = echo "Uninstalling $(DESTDIR)$(libdir)/libp11client$(1).so" && rm $(DESTDIR)$(libdir)/libp11client$(1).so
 
 install:
 	@$(foreach lib,$(CLIENTLIBS),$(call install_lib,$(lib));)
