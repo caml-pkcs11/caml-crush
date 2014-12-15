@@ -1,3 +1,10 @@
+caml-crush (1.0.4-1) unstable; urgency=low
+
+  * New upstream release
+    - Install library in dedicated directory
+
+ -- Thomas Calderon <calderon.thomas@gmail.com>  Tue, 02 Dec 2014 10:55:24 +0100
+
 caml-crush (1.0.3-1) unstable; urgency=low
 
   * Initial release (Closes: #770296)

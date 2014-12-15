@@ -2,14 +2,14 @@ Source: caml-crush
 Section: net
 Priority: optional
 Maintainer: Thomas Calderon <calderon.thomas@gmail.com>
-Build-Depends: debhelper (>= 9), ocaml-nox, camlidl, coccinelle, libocamlnet-ocaml-dev (>= 3.5.1), libocamlnet-ssl-ocaml-dev (>= 3.5.1), libocamlnet-ocaml-bin (>= 3.5.1), libssl-dev, libconfig-file-ocaml-dev, camlp4, dh-exec, dh-autoreconf
+Build-Depends: debhelper (>= 9), ocaml-native-compilers, camlidl, coccinelle, libocamlnet-ocaml-dev (>= 3.5.1), libocamlnet-ssl-ocaml-dev (>= 3.5.1), libocamlnet-ocaml-bin (>= 3.5.1), libssl-dev, libconfig-file-ocaml-dev, camlp4, dh-exec, dh-autoreconf
 Standards-Version: 3.9.6
 Homepage: https://github.com/ANSSI-FR/caml-crush
 Vcs-Git: git://github.com/ANSSI-FR/caml-crush.git
 Vcs-Browser: https://github.com/ANSSI-FR/caml-crush
 
 Package: caml-crush-server
-Architecture: amd64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel powerpc s390 s390x sparc
+Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser (>= 3.10)
 Description: Caml Crush: an OCaml PKCS#11 filtering proxy - server
  This software is a computer program whose purpose is to implement a PKCS#11
@@ -25,7 +25,7 @@ Description: Caml Crush: an OCaml PKCS#11 filtering proxy - server
 
 Package: caml-crush-clients
 Section: libs
-Architecture: amd64 armel armhf i386 ia64 kfreebsd-amd64 kfreebsd-i386 mips mipsel powerpc s390 s390x sparc
+Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Caml Crush: an OCaml PKCS#11 filtering proxy - clients
  This software is a computer program whose purpose is to implement a PKCS#11
