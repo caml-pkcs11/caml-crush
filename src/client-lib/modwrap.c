@@ -409,23 +409,60 @@ int get_libname_from_file(char *libname){
     size_t file_path_len = 0;
     FILE *file;
 
+#ifdef WIN32
+    char *homedrive;
+    size_t homedrive_len;
+    char *homepath;
+    size_t homepath_len;
+
+   /*
+    * FIXME: should we use USERPROFILE ?
+    */
+    getenv_s( &homedrive_len, NULL, 0, "HOMEDRIVE");
+    getenv_s( &homepath_len, NULL, 0, "HOMEPATH");
+    if (homedrive_len == 0 || homepath_len == 0){
+        fprintf(stderr,
+            "get_libname_from_file: HOMEDRIVE/HOMEPATH variable not found\n");
+        return -1;
+    }
+    /* We have to allocate ourselves to fetch from getenv_s */
+    homedrive = custom_malloc(homedrive_len * sizeof(char));
+    homepath = custom_malloc(homepath_len * sizeof(char));
+    home_len = homedrive_len + homepath_len + 1;
+    home = custom_malloc(home_len);
+
+    if (!homedrive || !homepath || !home){
+        fprintf(stderr, "get_libname_from_file: malloc failed\n");
+        return -1;
+    }
+    getenv_s( &homedrive_len, homedrive, homedrive_len, "HOMEDRIVE");
+    getenv_s( &homepath_len, homepath, homepath_len, "HOMEPATH");
+
+    strcpy_s(home, home_len, homedrive);
+    strcat_s(home, home_len, homepath);
+#else
     home = getenv("HOME");
     if(!home){
         fprintf(stderr, MODNAME"get_libname_from_file: HOME variable not found\n");
         return -1;
     }
+#endif
     home_len = strnlen(home, MAX_ENV_LEN);
 
-	file_path_len = home_len + strlen(LIBNAME_FILE_NAME) + 2;
+    file_path_len = home_len + strlen(LIBNAME_FILE_NAME) + 2;
     file_path = custom_malloc(file_path_len);
     if(!file_path){
         fprintf(stderr, MODNAME"get_libname_from_file: malloc failed\n");
         return -1;
     }
-	memset(file_path, 0, file_path_len);
+    memset(file_path, 0, file_path_len);
 
     strncat(file_path, home, home_len);
+#ifdef WIN32
+    strncat(file_path+home_len, "\\", 1);
+#else
     strncat(file_path+home_len, "/", 1);
+#endif
     strncat(file_path+home_len+1, LIBNAME_FILE_NAME, strlen(LIBNAME_FILE_NAME));
 
     file = fopen(file_path, "r");
@@ -442,6 +479,11 @@ int get_libname_from_file(char *libname){
     }
     fclose(file);
     custom_free((void**)&file_path);
+#ifdef WIN32
+    custom_free((void**)&homedrive);
+    custom_free((void**)&homepath);
+    custom_free((void**)&home);
+#endif
     return 0;
 }
 #endif /* LIBNAME_FILE */
