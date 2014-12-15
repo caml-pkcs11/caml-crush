@@ -2,8 +2,9 @@
 set -e
 
 setup_pkcs11proxyd_user() {
-        if ! getent passwd pkcs11proxyd >/dev/null; then
-                adduser --quiet --system --home /var/lib/pkcs11proxyd --group pkcs11proxyd
+        if ! getent passwd Debian-pkcs11proxyd >/dev/null; then
+                adduser --system --group --quiet --home /var/lib/pkcs11proxyd \
+                        --force-badname Debian-pkcs11proxyd
         fi
 }
 
