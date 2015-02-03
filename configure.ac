@@ -1,4 +1,8 @@
-AC_INIT(myconfig, version-0.1)
+define([PACKAGE_VERSION_MAJOR], [1])
+define([PACKAGE_VERSION_MINOR], [0])
+define([PACKAGE_VERSION_FIX], [4])
+
+AC_INIT(cam-crush, [PACKAGE_VERSION_MAJOR.PACKAGE_VERSION_MINOR.PACKAGE_VERSION_FIX])
 AC_CONFIG_SRCDIR([src/client-lib/modwrap.c])
 
 bindings_dir="src/bindings-pkcs11"
@@ -16,6 +20,7 @@ scripts_dir="scripts"
 
 AC_CONFIG_FILES([$bindings_dir/Makefile $bindings_dir/Makefile.standalone $rpc_dir/Makefile $server_dir/Makefile $client_dir/Makefile $filter_filter_dir/Makefile $filter_backend_dir/Makefile $filter_frontend_dir/Makefile $filter_dir/Makefile $tests_dir/Makefile $ocaml_tests_dir/Makefile $c_tests_dir/Makefile $scripts_dir/pkcs11proxyd])
 
+AC_ARG_WITH(caml-crush, [  --without-caml-crush    compile only pkcs11 bindings, (this is NOT the default)], [], with_caml_crush=yes)
 AC_ARG_WITH(client-socket, [  --with-client-socket    configure client socket type and path, default is tcp with 127.0.0.1 (format is --with-client-socket="unix,path" or --with-client-socket="tcp,address:port")])
 AC_ARG_WITH(libname_file, [  --with-libname-file     configure library to fetch libname from a disk file (default)])
 AC_ARG_WITH(libnames, [  --with-libnames         configure library names to be generated, comma deparated (default is the empty string). E.g: --with-libnames=foo,bar])
@@ -252,39 +257,6 @@ AC_CHECK_OCAML_PKG([config-file], configfile)
 # CHECK for the camlidl library
 AC_CHECK_OCAML_PKG([camlidl], camlidl)
 
-
-############# OCAML RELATED CHECKS #########
-# CHECK if OCaml runtime was build with 
-# -fPIC: if yes, build the ocaml client 
-# against the local lib. If no, fail
-# and advise user to either use the C client
-# or to rebuild the OCaml binaries. 
-if test "$with_ocamlclient" != ""
-    then
-    AC_MSG_CHECKING(OCaml support for fPIC)
-    # Try to compile a sample program
-    ML_TEST_FILE="mltest"
-    ML=".ml"
-    CMI=".cmi"
-    CMX=".cmx"
-    OBJ=".o"
-    cat <<EOM >$ML_TEST_FILE$ML
-let _ = Printf.printf "Testing -fPIC\n"
-EOM
-    $OCAMLOPT -output-obj -o a.so $ML_TEST_FILE$ML 2> ocamlopt.log
-    OCAMLOPT_ERR=`cat ocamlopt.log | grep -i error`
-    if test "$OCAMLOPT_ERR" != ""
-    then
-        rm -f $ML_TEST_FILE$CMI $ML_TEST_FILE$CMX $ML_TEST_FILE$OBJ $ML_TEST_FILE$ML a.so ocamlopt.log
-        AC_MSG_RESULT(no)
-        AC_MSG_WARN(OCaml is not compiled with fPIC support either use --with-cclient or recompile the OCaml suite)
-        AC_MSG_ERROR(OCaml client cannot be compiled. Read the documentation for more details.)
-    else
-        AC_MSG_RESULT(yes)
-    fi
-    rm -f $ML_TEST_FILE$CMI $ML_TEST_FILE$CMX $ML_TEST_FILE$OBJ $ML_TEST_FILE$ML a.so ocamlopt.log
-fi
-
 ##########
 # CHECK LIBS for basic linking
 # CHECK for dl
@@ -300,6 +272,69 @@ esac
 # CHECK pthread
 AC_CHECK_LIB(pthread, pthread_mutex_init, THREAD_LIB="-lpthread",
                AC_MSG_ERROR(Cannot find pthread library.))
+
+# IDL generation handling
+####
+# CHECK for the camlidl program, 
+# only needed if we need to generate the idl files again
+if test "$with_idlgen" != ""
+then
+	AC_CHECK_PROG(CAMLIDL,camlidl,yes,no)
+        if test "$CAMLIDL" == "no"
+        then
+          AC_MSG_ERROR(Cannot find camlidl: needed for PKCS11 bindings generation.)
+        fi
+        AC_SUBST(idl_gen, "idl")
+  	WRITE_TO_FILE(summary, "IDL gen", "YES")
+else
+  	WRITE_TO_FILE(summary, "IDL gen", "NO")
+fi
+
+# DEBUG MODE HANDLING
+if test "$with_debuglibs" != ""
+then
+        AC_MSG_NOTICE([Using debug mode libs])
+        AC_SUBST(debug_mode, "debug")
+        WRITE_TO_FILE(summary, "debug libs", "YES")
+else
+        AC_SUBST(debug_mode, "")
+        WRITE_TO_FILE(summary, "debug libs", "NO")
+fi
+
+if test "$with_caml_crush" == "yes" #--without-caml-crush was not set
+    then
+  
+############# OCAML RELATED CHECKS #########
+# CHECK if OCaml runtime was build with 
+# -fPIC: if yes, build the ocaml client 
+# against the local lib. If no, fail
+# and advise user to either use the C client
+# or to rebuild the OCaml binaries. 
+if test "$with_ocamlclient" != ""
+    then
+    AC_MSG_CHECKING(OCaml support for fPIC)
+    # Try to compile a sample program
+    ML_TEST_FILE="mltest"
+    ML=".ml"
+    CMI=".cmi"
+    CMX=".cmx"
+    OBJ=".o"
+cat <<EOM >$ML_TEST_FILE$ML
+let _ = Printf.printf "Testing -fPIC\n"
+EOM
+    $OCAMLOPT -output-obj -o a.so $ML_TEST_FILE$ML 2> ocamlopt.log
+    OCAMLOPT_ERR=`cat ocamlopt.log | grep -i error`
+    if test "$OCAMLOPT_ERR" != ""
+    then
+        rm -f $ML_TEST_FILE$CMI $ML_TEST_FILE$CMX $ML_TEST_FILE$OBJ $ML_TEST_FILE$ML a.so ocamlopt.log
+        AC_MSG_RESULT(no)
+        AC_MSG_WARN(OCaml is not compiled with fPIC support either use --with-cclient or recompile the OCaml suite)
+        AC_MSG_ERROR(OCaml client cannot be compiled. Read the documentation for more details.)
+    else
+        AC_MSG_RESULT(yes)
+    fi
+    rm -f $ML_TEST_FILE$CMI $ML_TEST_FILE$CMX $ML_TEST_FILE$OBJ $ML_TEST_FILE$ML a.so ocamlopt.log
+fi
 
 
 ########## INTERNAL OPTIONS ###########
@@ -328,16 +363,6 @@ else
 fi
 
 
-# DEBUG MODE HANDLING
-if test "$with_debuglibs" != ""
-then
-        AC_MSG_NOTICE([Using debug mode libs])
-        AC_SUBST(debug_mode, "debug")
-        WRITE_TO_FILE(summary, "debug libs", "YES")
-else
-        AC_SUBST(debug_mode, "")
-        WRITE_TO_FILE(summary, "debug libs", "NO")
-fi
 
 # LIBNAME HANDLING
 if test "$with_libnames" != "" && test "$with_libname_file" != ""
@@ -429,22 +454,6 @@ then
 
 fi
 
-# IDL generation handling
-####
-# CHECK for the camlidl program, 
-# only needed if we need to generate the idl files again
-if test "$with_idlgen" != ""
-then
-	AC_CHECK_PROG(CAMLIDL,camlidl,yes,no)
-        if test "$OCAMLRPCGEN" == "no"
-        then
-          AC_MSG_ERROR(Cannot find camlidl: needed for PKCS11 bindings generation.)
-        fi
-        AC_SUBST(idl_gen, "idl")
-	WRITE_TO_FILE(summary, "IDL gen", "YES")
-else
-	WRITE_TO_FILE(summary, "IDL gen", "NO")
-fi
 
 
 # RPC generation handling
@@ -1338,6 +1347,34 @@ else
 	AC_SUBST(caml_server_daemonize_define, "")
 	WRITE_TO_FILE(summary, "Compiling daemonization support", "NO")
 fi
+
+  #Enable compiling other components
+  AC_SUBST(with_bindings, "bindings")
+  AC_SUBST(with_bindings_clean, "bindings_clean")
+  AC_SUBST(with_rpc, "rpc")
+  AC_SUBST(with_rpc_clean, "rpc_clean")
+  AC_SUBST(with_client, "client")
+  AC_SUBST(with_client_clean, "client_clean")
+  AC_SUBST(with_server, "server")
+  AC_SUBST(with_server_clean, "server_clean")
+
+else # --without-caml-crush was set
+  #Disable compiling other components
+  AC_SUBST(with_bindings, "bindings")
+  AC_SUBST(with_bindings_clean, "bindings_clean")
+  AC_SUBST(with_rpc, "")
+  AC_SUBST(with_rpc_clean, "")
+  AC_SUBST(with_filter, "")
+  AC_SUBST(with_filter_clean, "")
+  AC_SUBST(with_client, "")
+  AC_SUBST(with_client_clean, "")
+  AC_SUBST(with_server, "")
+  AC_SUBST(with_server_clean, "")
+
+  WRITE_TO_FILE(summary, "bindings only", "OCaml PKCS11 bindings only")
+  AC_MSG_NOTICE([Compiling OCaml bindings only])
+fi #END COMPILE CAML CRUSH
+
 
 AC_OUTPUT(Makefile)
 
