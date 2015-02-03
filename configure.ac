@@ -248,6 +248,8 @@ AC_CHECK_HEADERS([pthread.h],,AC_MSG_ERROR(Could not find pthread headers.))
 
 AC_PROG_CAMLP4
 AC_PROG_FINDLIB
+if test "$with_caml_crush" == "yes" #--without-caml-crush was not set
+then
 # CHECK for ocamlnet RPC
 AC_CHECK_OCAML_PKG([rpc], rpc)
 # CHECK for ocaml str regexp package
@@ -255,6 +257,7 @@ AC_CHECK_OCAML_PKG([str], rpc)
 # CHECK for the config-file package
 AC_CHECK_OCAML_PKG([config-file], configfile)
 # CHECK for the camlidl library
+fi
 AC_CHECK_OCAML_PKG([camlidl], camlidl)
 
 ##########
