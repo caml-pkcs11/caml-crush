@@ -368,12 +368,12 @@ fi
 
 
 # LIBNAME HANDLING
-if test "$with_libnames" != "" && test "$with_libname_file" != ""
+if test -n "${with_libnames+x}" && test -n "${with_libname_file+x}"
 then
 	AC_MSG_ERROR([--with-libname-file incompatible --with-libnames!, choose one])
 fi
 #default no choice
-if test "$with_libnames" == "" && test "$with_libname_file" == ""
+if test -z "${with_libnames+x}" && test -z "${with_libname_file+x}"
 then
         AC_MSG_NOTICE([Client library configured to read libname from a file])
 	AC_SUBST(lib_names, "\"\"")
@@ -382,7 +382,7 @@ then
 fi
 
 #using builtin
-if test "$with_libnames" != ""
+if test -n "${with_libnames+x}"
 then
 	libraries=$(echo $with_libnames | sed 's/\([[^,]]*\)/\"\1\"/g' | tr ',' ' ')
 	AC_MSG_NOTICE([Client libraries configured for $libraries])
@@ -391,7 +391,7 @@ then
 fi
 
 #using disk file
-if test "$with_libname_file" != ""
+if test -n "${with_libname_file+x}"
 then
         AC_MSG_NOTICE([Client library configured to read libname from a file])
 	AC_SUBST(lib_names, "\"\"")
