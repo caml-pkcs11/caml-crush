@@ -11,14 +11,14 @@ all:	@idl_gen@
 	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -c $(CFLAGS)
 	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.mli
 	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.ml
-	ocamlmklib -o pkcs11 pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
+	ocamlmklib -o pkcs11_standalone pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 debug:	@idl_gen@
 	$(CC) @srcdir@/pkcs11_stubs.c -DDEBUG -c $(CFLAGS_DBG)
 	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -DDEBUG -c $(CFLAGS_DBG)
 	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.mli
 	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.ml
-	ocamlmklib -o pkcs11 pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
+	ocamlmklib -o pkcs11_standalone pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 idl:	
 	@rm -f @idl_clean@
