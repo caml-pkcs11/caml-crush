@@ -253,7 +253,7 @@ then
 # CHECK for ocamlnet RPC
 AC_CHECK_OCAML_PKG([rpc], rpc)
 # CHECK for ocaml str regexp package
-AC_CHECK_OCAML_PKG([str], rpc)
+AC_CHECK_OCAML_PKG([str], str)
 # CHECK for the config-file package
 AC_CHECK_OCAML_PKG([config-file], configfile)
 # CHECK for the camlidl library
