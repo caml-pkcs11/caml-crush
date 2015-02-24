@@ -268,11 +268,11 @@ let cKO_HW_FEATURE  = 5n
 let cKO_DOMAIN_PARAMETERS = 6n
 let cKO_MECHANISM  = 7n
 let cKO_OTP_KEY  = 8n
-let cKO_VENDOR_DEFINED = 2147483648n
+let cKO_VENDOR_DEFINED = -2147483648n
 let cKH_MONOTONIC_COUNTER = 1n
 let cKH_CLOCK  = 2n
 let cKH_USER_INTERFACE = 3n
-let cKH_VENDOR_DEFINED = 2147483648n
+let cKH_VENDOR_DEFINED = -2147483648n
 let cKK_RSA   = 0n
 let cKK_DSA   = 1n
 let cKK_DH   = 2n
@@ -303,11 +303,11 @@ let cKK_HOTP  = 35n
 let cKK_ACTI  = 36n
 let cKK_CAMELLIA  = 37n
 let cKK_ARIA  = 38n
-let cKK_VENDOR_DEFINED = 2147483648n
+let cKK_VENDOR_DEFINED = -2147483648n
 let cKC_X_509  = 0n
 let cKC_X_509_ATTR_CERT = 1n
 let cKC_WTLS  = 2n
-let cKC_VENDOR_DEFINED = 2147483648n
+let cKC_VENDOR_DEFINED = -2147483648n
 let cK_OTP_FORMAT_DECIMAL   = 0n
 let cK_OTP_FORMAT_HEXADECIMAL   = 1n
 let cK_OTP_FORMAT_ALPHANUMERIC   = 2n
@@ -412,7 +412,7 @@ let cKA_SUPPORTED_CMS_ATTRIBUTES = 1283n
 let cKA_WRAP_TEMPLATE  = 1073742353n
 let cKA_UNWRAP_TEMPLATE  = 1073742354n
 let cKA_ALLOWED_MECHANISMS  = 1073743360n
-let cKA_VENDOR_DEFINED  = 2147483648n
+let cKA_VENDOR_DEFINED  = -2147483648n
 let cKM_RSA_PKCS_KEY_PAIR_GEN = 0n
 let cKM_RSA_PKCS   = 1n
 let cKM_RSA_9796   = 2n
@@ -664,7 +664,7 @@ let cKM_AES_CBC_ENCRYPT_DATA = 4357n
 let cKM_DSA_PARAMETER_GEN  = 8192n
 let cKM_DH_PKCS_PARAMETER_GEN = 8193n
 let cKM_X9_42_DH_PARAMETER_GEN = 8194n
-let cKM_VENDOR_DEFINED  = 2147483648n
+let cKM_VENDOR_DEFINED  = -2147483648n
 let cKF_HW   = 1n
 let cKF_ENCRYPT  = 256n
 let cKF_DECRYPT  = 512n
@@ -684,7 +684,7 @@ let cKF_EC_ECPARAMETERS  = 4194304n
 let cKF_EC_NAMEDCURVE  = 8388608n
 let cKF_EC_UNCOMPRESS  = 16777216n
 let cKF_EC_COMPRESS  = 33554432n
-let cKF_EXTENSION  = 2147483648n
+let cKF_EXTENSION  = -2147483648n
 let cKF_DONT_BLOCK    = 1n
 let cKF_LIBRARY_CANT_CREATE_OS_THREADS = 1n
 let cKF_OS_LOCKING_OK   = 2n
@@ -775,7 +775,7 @@ let cKR_MUTEX_NOT_LOCKED   = 417n
 let cKR_NEW_PIN_MODE   = 432n
 let cKR_NEXT_OTP   = 433n
 let cKR_FUNCTION_REJECTED   = 512n
-let cKR_VENDOR_DEFINED   = 2147483648n
+let cKR_VENDOR_DEFINED   = -2147483648n
 let cK_FALSE = 0n
 let cK_TRUE = 1n
 let fALSE = 0n
@@ -873,7 +873,7 @@ let match_cKR_value a = match a with
 | 432n -> "cKR_NEW_PIN_MODE"
 | 433n -> "cKR_NEXT_OTP"
 | 512n -> "cKR_FUNCTION_REJECTED"
-| 2147483648n -> "cKR_VENDOR_DEFINED"
+| -2147483648n -> "cKR_VENDOR_DEFINED"
 | _ -> "cKR_UNKNOWN!"
 let match_cKM_value a = match a with
   0n -> "cKM_RSA_PKCS_KEY_PAIR_GEN"
@@ -1119,7 +1119,7 @@ let match_cKM_value a = match a with
 | 8192n -> "cKM_DSA_PARAMETER_GEN"
 | 8193n -> "cKM_DH_PKCS_PARAMETER_GEN"
 | 8194n -> "cKM_X9_42_DH_PARAMETER_GEN"
-| 2147483648n -> "cKM_VENDOR_DEFINED"
+| -2147483648n -> "cKM_VENDOR_DEFINED"
 | _ -> "cKM_UNKNOWN!"
 exception Mechanism_unknown of string
 (* Our mechanisms for getting a mechanism from a string *)
@@ -1355,7 +1355,7 @@ let string_to_cKM_value a = match a with
 | "CKM_DSA_PARAMETER_GEN" -> 8192n
 | "CKM_DH_PKCS_PARAMETER_GEN" -> 8193n
 | "CKM_X9_42_DH_PARAMETER_GEN" -> 8194n
-| "CKM_VENDOR_DEFINED" -> 2147483648n
+| "CKM_VENDOR_DEFINED" -> -2147483648n
 | "cKM_RSA_PKCS_KEY_PAIR_GEN" -> 0n
 | "cKM_RSA_PKCS" -> 1n
 | "cKM_RSA_9796" -> 2n
@@ -1590,7 +1590,7 @@ let string_to_cKM_value a = match a with
 | "cKM_DSA_PARAMETER_GEN" -> 8192n
 | "cKM_DH_PKCS_PARAMETER_GEN" -> 8193n
 | "cKM_X9_42_DH_PARAMETER_GEN" -> 8194n
-| "cKM_VENDOR_DEFINED" -> 2147483648n
+| "cKM_VENDOR_DEFINED" -> -2147483648n
 | _ -> raise (Mechanism_unknown a)
 let match_cKF_value a = match a with
 | 1n -> "cKF_TOKEN_PRESENT | ncKF_RNG | ncKF_HW | ncKF_DONT_BLOCK | ncKF_LIBRARY_CANT_CREATE_OS_THREADS"
@@ -1616,7 +1616,7 @@ let match_cKF_value a = match a with
 | 8192n -> "cKF_VERIFY"
 | 16384n -> "cKF_VERIFY_RECOVER"
 | 32768n -> "cKF_GENERATE"
-| 2147483648n -> "cKF_EXTENSION"
+| -2147483648n -> "cKF_EXTENSION"
 | _ -> "cKF_UNKNOWN!"
 let match_cKO_value a = match a with
 | 0n -> "cKO_DATA"
@@ -1627,7 +1627,7 @@ let match_cKO_value a = match a with
 | 5n -> "cKO_HW_FEATURE"
 | 6n -> "cKO_DOMAIN_PARAMETERS"
 | 7n -> "cKO_MECHANISM"
-| 2147483648n -> "cKO_VENDOR_DEFINED"
+| -2147483648n -> "cKO_VENDOR_DEFINED"
 | _ -> "cKO_UNKNOWN!"
 let match_cKU_value a = match a with
 | 0n -> "cKU_SO"
@@ -1732,7 +1732,7 @@ let match_cKA_value a = match a with
 | 1073742353n -> "cKA_WRAP_TEMPLATE"
 | 1073742354n -> "cKA_UNWRAP_TEMPLATE"
 | 1073743360n -> "cKA_ALLOWED_MECHANISMS"
-| 2147483648n -> "cKA_VENDOR_DEFINED"
+| -2147483648n -> "cKA_VENDOR_DEFINED"
 | _ -> "cKA_UNKNOWN!"
 let match_cKS_value a = match a with
 | 0n -> "cKS_RO_PUBLIC_SESSION"
@@ -1745,7 +1745,7 @@ let match_cKH_value a = match a with
 | 1n -> "cKH_MONOTONIC_COUNTER"
 | 2n -> "cKH_CLOCK"
 | 3n -> "cKH_USER_INTERFACE"
-| 2147483648n -> "cKH_VENDOR_DEFINED"
+| -2147483648n -> "cKH_VENDOR_DEFINED"
 | _ -> "cKH_UNKNOWN!"
 let match_cKK_value a = match a with
 | 0n -> "cKK_RSA"
@@ -1772,13 +1772,13 @@ let match_cKK_value a = match a with
 | 31n -> "cKK_AES"
 | 32n -> "cKK_BLOWFISH"
 | 33n -> "cKK_TWOFISH"
-| 2147483648n -> "cKK_VENDOR_DEFINED"
+| -2147483648n -> "cKK_VENDOR_DEFINED"
 | _ -> "cKK_UNKNOWN!"
 let match_cKC_value a = match a with
 | 0n -> "cKC_X_509"
 | 1n -> "cKC_X_509_ATTR_CERT"
 | 2n -> "cKC_WTLS"
-| 2147483648n -> "cKC_VENDOR_DEFINED"
+| -2147483648n -> "cKC_VENDOR_DEFINED"
 | _ -> "cKC_UNKNOWN!"
 let char_array_to_string = fun a -> let s = String.create (Array.length a) in
 
