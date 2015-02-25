@@ -1,4 +1,9 @@
-AC_INIT(myconfig, version-0.1)
+define([PACKAGE_VERSION_MAJOR], [1])
+define([PACKAGE_VERSION_MINOR], [0])
+define([PACKAGE_VERSION_FIX], [4])
+
+AC_INIT(cam-crush, [PACKAGE_VERSION_MAJOR.PACKAGE_VERSION_MINOR.PACKAGE_VERSION_FIX])
+AC_CONFIG_SRCDIR([src/client-lib/modwrap.c])
 
 bindings_dir="src/bindings-pkcs11"
 rpc_dir="src/rpc-pkcs11"
@@ -11,12 +16,13 @@ filter_frontend_dir="src/filter/frontend"
 tests_dir="src/tests"
 ocaml_tests_dir="src/tests/ocaml"
 c_tests_dir="src/tests/c-based"
-sandbox_dir="src/sandbox/generic"
 scripts_dir="scripts"
 
-AC_CONFIG_FILES([$bindings_dir/Makefile $bindings_dir/Makefile.standalone $client_dir/Makefile $tests_dir/Makefile $ocaml_tests_dir/Makefile $c_tests_dir/Makefile])
+AC_CONFIG_FILES([$bindings_dir/Makefile $bindings_dir/Makefile.standalone $rpc_dir/Makefile $server_dir/Makefile $client_dir/Makefile $filter_filter_dir/Makefile $filter_backend_dir/Makefile $filter_frontend_dir/Makefile $filter_dir/Makefile $tests_dir/Makefile $ocaml_tests_dir/Makefile $c_tests_dir/Makefile $scripts_dir/pkcs11proxyd])
 
+AC_ARG_WITH(caml-crush, [  --without-caml-crush    compile only pkcs11 bindings, (this is NOT the default)], [], with_caml_crush=yes)
 AC_ARG_WITH(client-socket, [  --with-client-socket    configure client socket type and path, default is tcp with 127.0.0.1 (format is --with-client-socket="unix,path" or --with-client-socket="tcp,address:port")])
+AC_ARG_WITH(libname_file, [  --with-libname-file     configure library to fetch libname from a disk file (default)])
 AC_ARG_WITH(libnames, [  --with-libnames         configure library names to be generated, comma deparated (default is the empty string). E.g: --with-libnames=foo,bar])
 AC_ARG_WITH(ocamlclient, [  --with-ocamlclient      use OCaml client library and RPC instead of default native C one])
 AC_ARG_WITH(cclient, [  --with-cclient          use C based client library and RPC (this is the default)])
@@ -26,6 +32,17 @@ AC_ARG_WITH(idlgen, [  --with-idlgen           force regeneration of the idl hea
 AC_ARG_WITH(ssl, [  --with-ssl              use SSL authentication and encryption over the transport layer (TCP or Unix socket). Use the OpenSSL library by default if --with-gnutls is not given.])
 AC_ARG_WITH(gnutls, [  --with-gnutls           use the gnutls library instead of the OpenSSL library for native C client RPC over ssl.)])
 AC_ARG_WITH(ssl-clientfiles, [  --with-ssl-clientfiles  CA and client certificate files as well as private key (in pem format) for SSL on the target. These are paths on the client if there is a prepending path, environment variables if there is a prepending env (PKCS11PROXY_SSL_CA/PKCS11PROXY_SSL_CERT/PKCS11_SSL_PRIVKEY: this is the default), or a path of files on the host to be embedded inside the client if there is a prepending embed. E.g: --with-ssl-clientfiles='path;ca=path_to_ca,cert=path_to_cert,privkey=path_to_key')], sslfiles="$withval")
+AC_ARG_WITH(ssl-servercerts, [  --with-ssl-servercerts  enforce the client to strictly accept authentication with specific servers that use the certificates provided either in the folder or in a file (as a concatenation of certificates)], sslservercerts="$withval")
+AC_ARG_WITH(filter, [ --without-filter         compile the server without the filter: all the PKCS#11 commands are passed through to the bindings.], [], with_filter=yes)
+
+AC_ARG_WITH(aliasing, [ --with-aliasing          aliasing of the sessions and objects handles. There are two aliasing modes: incremental and random (non predictable aliases): --with-aliasing=rand or --with-aliasing=inc, default is random.], aliasing="$withval")
+AC_ARG_WITH(daemonize, [ --with-daemonize        compile with daemonization primitives support (User can amend C_Daemonize function to provide its own privilege reduction primitives inside the server process instead of using the sandbox launcher).])
+
+full_libdir=`eval eval eval eval eval echo "${libdir}" | sed "s#NONE#${prefix}#" | sed "s#NONE#${ac_default_prefix}#"`
+
+# Install the library in a sub-directory
+full_libdir="$full_libdir/caml-crush"
+libdir=$full_libdir
 
 # Summary helpers
 AC_DEFUN(WRITE_TO_FILE,[
@@ -36,7 +53,7 @@ cat $1 && rm -f $1
 ])
 
 #Try to detect host_type and set variable
-if host_type=`./config.guess`; then :; else
+if host_type=`${srcdir}/config.guess`; then :; else
   echo "Cannot guess host type"
   exit 2
 fi
@@ -50,12 +67,24 @@ echo "###########################################" >> ./summary
 ##########
 # CHECK Make
 
-AC_CHECK_PROG(MAKEPROG,make,make,no)
-if test "$MAKEPROG" == "no"
-then
-  AC_MSG_ERROR(Cannot find GNU make.)
-fi
-AC_SUBST(MAKEPROG,$MAKEPROG)
+case $host_type in
+   *freebsd*)
+	AC_CHECK_PROG(MAKEPROG,gmake,gmake,no)
+	if test "$MAKEPROG" == "no"
+	then
+	  AC_MSG_ERROR(Cannot find GNU gmake.)
+	fi
+	AC_SUBST(MAKEPROG,$MAKEPROG)
+	;;
+   *)
+	AC_CHECK_PROG(MAKEPROG,make,make,no)
+	if test "$MAKEPROG" == "no"
+	then
+	  AC_MSG_ERROR(Cannot find GNU make.)
+	fi
+	AC_SUBST(MAKEPROG,$MAKEPROG)
+	;;
+esac
 
 ##########
 # CHECK OCaml an needed binaries
@@ -67,9 +96,9 @@ if test "$OCAMLC" == "no"
 then
   AC_MSG_ERROR(Cannot find ocamlc.)
 fi
-OCAMLVERSION=$(ocamlc -version)
+OCAMLVERSION=$(ocamlc -version | tr -d '\r')
 AC_MSG_RESULT(OCaml version is $OCAMLVERSION)
-OCAMLLIB=$(ocamlc -where)
+OCAMLLIB=$(ocamlc -where | tr -d '\r')
 AC_MSG_RESULT(OCaml library path is $OCAMLLIB)
 # checking for ocamlopt
 AC_CHECK_PROG(OCAMLOPT,ocamlopt,ocamlopt)
@@ -217,15 +246,88 @@ AC_CHECK_HEADERS([caml/mlvalues.h],,AC_MSG_ERROR(Could not find OCaml headers.))
 # OCAML IDL
 AC_CHECK_HEADERS([caml/camlidlruntime.h],,AC_MSG_ERROR(Could not find OCaml IDL headers.))
 # Dynamic linker
-AC_CHECK_HEADERS([fcntl.h],,AC_MSG_ERROR(Could not find fcntl headers.))
+case $host_type in
+   *cygwin*)
+	AC_CHECK_HEADERS([fcntl.h],,AC_MSG_ERROR(Could not find fcntl headers.))
+        ;;
+   *)
+	AC_CHECK_HEADERS([dlfcn.h],,AC_MSG_ERROR(Could not find dlfcn headers.))
+	;;
+esac
+
+# pthread
+AC_CHECK_HEADERS([pthread.h],,AC_MSG_ERROR(Could not find pthread headers.))
 
 AC_PROG_CAMLP4
 AC_PROG_FINDLIB
+if test "$with_caml_crush" == "yes" #--without-caml-crush was not set
+then
+case $host_type in
+   *cygwin*)
+        ;;
+   *)
+	# CHECK for ocamlnet RPC
+	AC_CHECK_OCAML_PKG([rpc], rpc)
+	# CHECK for ocaml str regexp package
+	AC_CHECK_OCAML_PKG([str], str)
+	# CHECK for the config-file package
+	AC_CHECK_OCAML_PKG([config-file], configfile)
+	;;
+esac
 # CHECK for the camlidl library
+fi
 AC_CHECK_OCAML_PKG([camlidl], camlidl)
 
+##########
+# CHECK LIBS for basic linking
+# CHECK for dl
+case $host_type in
+   *freebsd*)
+	AC_MSG_NOTICE(System is FreeBSD skip libdl check)
+        ;;
+   *cygwin*)
+	AC_MSG_NOTICE(System is Cygwin skip libdl check)
+        ;;
+   *)
+	AC_CHECK_LIB(dl, dlopen, DL_LIB="-ldl",
+               AC_MSG_ERROR(Cannot find dl library.))
+	;;
+esac
+# CHECK pthread
+AC_CHECK_LIB(pthread, pthread_mutex_init, THREAD_LIB="-lpthread",
+               AC_MSG_ERROR(Cannot find pthread library.))
 
+# IDL generation handling
+####
+# CHECK for the camlidl program, 
+# only needed if we need to generate the idl files again
+if test "$with_idlgen" != ""
+then
+	AC_CHECK_PROG(CAMLIDL,camlidl,yes,no)
+        if test "$CAMLIDL" == "no"
+        then
+          AC_MSG_ERROR(Cannot find camlidl: needed for PKCS11 bindings generation.)
+        fi
+        AC_SUBST(idl_gen, "idl")
+  	WRITE_TO_FILE(summary, "IDL gen", "YES")
+else
+  	WRITE_TO_FILE(summary, "IDL gen", "NO")
+fi
 
+# DEBUG MODE HANDLING
+if test "$with_debuglibs" != ""
+then
+        AC_MSG_NOTICE([Using debug mode libs])
+        AC_SUBST(debug_mode, "debug")
+        WRITE_TO_FILE(summary, "debug libs", "YES")
+else
+        AC_SUBST(debug_mode, "")
+        WRITE_TO_FILE(summary, "debug libs", "NO")
+fi
+
+if test "$with_caml_crush" == "yes" #--without-caml-crush was not set
+    then
+  
 ############# OCAML RELATED CHECKS #########
 # CHECK if OCaml runtime was build with 
 # -fPIC: if yes, build the ocaml client 
@@ -241,7 +343,7 @@ if test "$with_ocamlclient" != ""
     CMI=".cmi"
     CMX=".cmx"
     OBJ=".o"
-    cat <<EOM >$ML_TEST_FILE$ML
+cat <<EOM >$ML_TEST_FILE$ML
 let _ = Printf.printf "Testing -fPIC\n"
 EOM
     $OCAMLOPT -output-obj -o a.so $ML_TEST_FILE$ML 2> ocamlopt.log
@@ -257,6 +359,7 @@ EOM
     fi
     rm -f $ML_TEST_FILE$CMI $ML_TEST_FILE$CMX $ML_TEST_FILE$OBJ $ML_TEST_FILE$ML a.so ocamlopt.log
 fi
+
 
 ########## INTERNAL OPTIONS ###########
 #########
@@ -285,28 +388,37 @@ else
 fi
 
 
-# DEBUG MODE HANDLING
-if test "$with_debuglibs" != ""
-then
-        AC_MSG_NOTICE([Using debug mode libs])
-        AC_SUBST(debug_mode, "debug")
-        WRITE_TO_FILE(summary, "debug libs", "YES")
-else
-        AC_SUBST(debug_mode, "")
-        WRITE_TO_FILE(summary, "debug libs", "NO")
-fi
 
 # LIBNAME HANDLING
-if test "$with_libnames" != ""
+if test -n "${with_libnames+x}" && test -n "${with_libname_file+x}"
+then
+	AC_MSG_ERROR([--with-libname-file incompatible --with-libnames!, choose one])
+fi
+#default no choice
+if test -z "${with_libnames+x}" && test -z "${with_libname_file+x}"
+then
+        AC_MSG_NOTICE([Client library configured to read libname from a file])
+	AC_SUBST(lib_names, "\"\"")
+        AC_SUBST(libname_file, "-DLIBNAME_FILE")
+        WRITE_TO_FILE(summary, "client lib",  "Using .camlcrushlibname file")
+fi
+
+#using builtin
+if test -n "${with_libnames+x}"
 then
 	libraries=$(echo $with_libnames | sed 's/\([[^,]]*\)/\"\1\"/g' | tr ',' ' ')
 	AC_MSG_NOTICE([Client libraries configured for $libraries])
 	AC_SUBST(lib_names, $libraries)
 	WRITE_TO_FILE(summary, "client libs", "$libraries")
-else
-        AC_MSG_NOTICE([No libname chosen, using the empty string])
+fi
+
+#using disk file
+if test -n "${with_libname_file+x}"
+then
+        AC_MSG_NOTICE([Client library configured to read libname from a file])
 	AC_SUBST(lib_names, "\"\"")
-	WRITE_TO_FILE(summary, "client libs",  "\"\"")
+        AC_SUBST(libname_file, "-DLIBNAME_FILE")
+        WRITE_TO_FILE(summary, "client lib",  "Using .camlcrushlibname file")
 fi
 
 # SOCKET HANDLING
@@ -317,8 +429,8 @@ then
         socket_type=$(echo $with_client_socket | sed 's/\(.*\),.*/\1/g')
         case $socket_type in
                 unix)
-			AC_MSG_ERROR(UNIX socket unsupported on Win32 platforms)
-			;;
+                        AC_MSG_ERROR(UNIX socket unsupported on Win32 platforms)
+                        ;;
                 tcp)
 			tcp_host=$(echo $with_client_socket | sed 's/tcp,\(.*\)/\1/g')
 			AC_MSG_NOTICE([Client library configured to use Tcp socket with host $tcp_path])
@@ -350,7 +462,7 @@ then
 			;;
                 TCP_SOCKET)
 			AC_MSG_NOTICE([Should fix configure to look for Win32 RPC library])
-			#AC_MSG_ERROR(TCP socket unsupported on Win32 platorms)
+			# Check the library against RPC tcp client creation
 			#AC_CHECK_LIB(c, clnttcp_create, ,
 			#AC_MSG_ERROR(Cannot find RPC clnttcp_create symbol in C library.))
 			;;
@@ -361,22 +473,6 @@ then
 
 fi
 
-# IDL generation handling
-####
-# CHECK for the camlidl program, 
-# only needed if we need to generate the idl files again
-if test "$with_idlgen" != ""
-then
-	AC_CHECK_PROG(CAMLIDL,camlidl,yes,no)
-        if test "$OCAMLRPCGEN" == "no"
-        then
-          AC_MSG_ERROR(Cannot find camlidl: needed for PKCS11 bindings generation.)
-        fi
-        AC_SUBST(idl_gen, "idl")
-	WRITE_TO_FILE(summary, "IDL gen", "YES")
-else
-	WRITE_TO_FILE(summary, "IDL gen", "NO")
-fi
 
 
 # RPC generation handling
@@ -593,7 +689,7 @@ fi
 ###################################################################
 # HANDLE SSL files
 # Macro to create the ssl headers, for C and ML clients, from the 
-# given files $1 is the file path, $2 is the file type ("ca", "cert",  
+# given files $1 is the file path, $2 is the file type ("ca", "cert",
 # "priv" for private key, "server" for the allowed servers certificates)
 AC_DEFUN(CREATE_SSL_HEADERS,[
 C_FILE="./create_ssl_files.c"
@@ -812,7 +908,7 @@ GET_NEW_CA_CERT:
     if(output_type == OUT_C){
       fprintf(caf, "const char* ca_file_buff[[]] = {");
       unsigned int i;
-      for(i=0; i < num_certs-1; i++){  
+      for(i=0; i < num_certs-1; i++){
         fprintf(caf, "ca_file_buff%d, ", i);
       }
       fprintf(caf, "ca_file_buff%d};\n\n", num_certs-1);
@@ -959,7 +1055,8 @@ GET_NEW_SERVER_CERT:
   else{
     printf("Error: unknown ssl file type %s (expected \"ca\", \"cert\", \"privkey\" or \"server\")\n", argv[[2]]);
     return -1;
-  } 
+  }
+  
   return 0;
 }
 EOM
@@ -1153,17 +1250,150 @@ else
 	fi
 fi
 
-AC_SUBST(c_client_ssl_server, "")
-AC_SUBST(caml_client_ssl_server, "")
+# Handling the optional strict server certificates enforcing
+if test "$with_ssl_servercerts" != ""
+	then
+	if test "$with_ssl" == ""
+	then
+        	AC_MSG_ERROR([--with-ssl-servercerts needs --with-ssl!])
+	fi
+        # Check if the user provided embed, env or path
+ 	sslserverfilestype=$(echo $sslservercerts | sed 's/\([[^;]]*\);.*/\1/g')
+        getcerts=$(echo $sslservercerts | grep "certs=")
+        if test "$getcerts" != ""
+        then
+		sslfilesserver=$(echo $sslservercerts | sed 's/.*certs=\([[^,]]*\).*/\1/g')
+        else
+        	sslfilesserver=""
+        fi
+        if test "$sslfilesserver" == ""
+        then
+        	AC_MSG_ERROR([Bad --with-ssl-servercerts option formatting, see help])
 
-WRITE_TO_FILE(summary, "Using PKCS11 filter on server side", "Unsupported on platform")
+        fi
+        AC_MSG_NOTICE([ssl server certificates type: $sslserverfilestype])
+	AC_MSG_NOTICE([ssl server certificates path: $sslfilesserver])
 
-AC_SUBST(aliasing_def, "")
-WRITE_TO_FILE(summary, "Aliasing ", "Unsupported on platform")
+	if test "$sslserverfilestype" == "embed"
+	then
+		# Check if we have a path or a file
+		if [[ -d $sslfilesserver ]]; then
+                	# We have a path, create the concatenated file
+			cat $sslfilesserver/*.pem > ./server_certs.crt
+			cat $sslfilesserver/*.crt >> ./server_certs.crt
+			if [[ ! -s ./server_certs.crt ]]; then
+				AC_MSG_ERROR([Server certificates path $sslfilesserver does not contain any certificate (please make sure they have a .crt extension)!])
+			fi
+			WRITE_TO_FILE(summary, " -SSL server certificate files", "Embedded ($sslfilesserver/*.pem and $sslfilesserver/*.crt)")
+                else
+  			# Check if the files exist, trigger an error if this is not the case
+	  		AC_CHECK_FILE($sslfilesserver, [], [AC_MSG_ERROR([Server certificates file $sslfilesserver does not exist!])])
+			cp $sslfilesserver ./server_certs.crt	
+			WRITE_TO_FILE(summary, " -SSL server certificate files", "Embedded ($sslfilesserver)")
+                fi
+		# Embed the files by creating necessary .h files for the C Client 
+		AC_SUBST(c_client_ssl_server, "-DSSL_SERVER_FILES_EMBED")
 
-WRITE_TO_FILE(summary, "Compiling sandbox", "Unsupported on platform")
+		# Embed the files by creating necessary .mli files for the Client 
+		AC_SUBST(caml_client_ssl_server, "-DSSL_SERVER_FILES_EMBED")
+		if test "$with_ocamlclient" == ""
+       		then
+			CREATE_SSL_HEADERS("./server_certs.crt", "", "", "C")
+		else
+			CREATE_SSL_HEADERS("./server_certs.crt", "", "", "ML")
+		fi
+		# Purge the local crt file
+		rm ./server_certs.crt
+	else
+		AC_MSG_ERROR([Error: --with-ssl-server $sslserverfilestype is not known: should be 'embed'])
+	fi
+else
+	AC_SUBST(c_client_ssl_server, "")
+	AC_SUBST(caml_client_ssl_server, "")
+fi
 
-WRITE_TO_FILE(summary, "Compiling daemonization support", "Unsupported on platform")
+
+
+# Compiling with/without the filter
+if test "$with_filter" == "yes"
+then
+        AC_SUBST(filter_include, "-I \$(filter_filter_dir) -I \$(filter_frontend_dir)")
+        AC_SUBST(filter_files, "\$(filter_backend_dir)/backend.cmx \$(filter_filter_dir)/filter_common.cmx \$(filter_filter_dir)/filter_actions.cmx \$(filter_filter_dir)/filter_configuration.cmx \$(filter_filter_dir)/filter.cmx  \$(filter_frontend_dir)/frontend.cmx")
+        AC_SUBST(filter_define, "")
+        AC_SUBST(with_filter, "filter")
+        AC_SUBST(with_filter_clean, "filter_clean")
+        WRITE_TO_FILE(summary, "Using PKCS11 filter on server side", "YES")
+else
+        AC_SUBST(filter_include, "-package \"str\"")
+        AC_SUBST(filter_files, "")
+        AC_SUBST(filter_define, "-DWITHOUT_FILTER")
+        AC_SUBST(with_filter, "")
+        AC_SUBST(with_filter_clean, "")
+        WRITE_TO_FILE(summary, "Using PKCS11 filter on server side", "NO")
+fi
+
+# With or without the sessions and objects handles aliasing
+if test "$with_aliasing" != ""
+then
+        if test "$aliasing" == "yes"
+        then
+                aliasing="rand"
+        fi
+        if test "$aliasing" == "inc"
+        then
+                AC_SUBST(aliasing_def, "-DUSE_ALIASING")
+                WRITE_TO_FILE(summary, "Aliasing (sessions and objects handles)", "inc (incremental)")
+        else
+                if test "$aliasing" == "rand"
+                then
+                        AC_SUBST(aliasing_def, "-DUSE_ALIASING -DRANDOM_ALIASING")
+                        WRITE_TO_FILE(summary, "Aliasing (sessions and objects handles)", "rand (random)")
+                else
+                        AC_SUBST(aliasing_def, "")
+                        AC_MSG_ERROR([Unknown aliasing method $aliasing])
+                fi
+        fi
+else
+        WRITE_TO_FILE(summary, "Aliasing (sessions and objects handles)", "none")
+fi
+
+# Compiling with the daemonization primitives
+if test "$with_daemonize" == "yes"
+then
+	AC_SUBST(caml_server_daemonize_define, "-DDAEMONIZE")
+	WRITE_TO_FILE(summary, "Compiling daemonization support", "YES")
+else
+	AC_SUBST(caml_server_daemonize_define, "")
+	WRITE_TO_FILE(summary, "Compiling daemonization support", "NO")
+fi
+
+  #Enable compiling other components
+  AC_SUBST(with_bindings, "bindings")
+  AC_SUBST(with_bindings_clean, "bindings_clean")
+  #AC_SUBST(with_rpc, "rpc")
+  #AC_SUBST(with_rpc_clean, "rpc_clean")
+  AC_SUBST(with_client, "client")
+  AC_SUBST(with_client_clean, "client_clean")
+  #AC_SUBST(with_server, "server")
+  #AC_SUBST(with_server_clean, "server_clean")
+
+else # --without-caml-crush was set
+  #Disable compiling other components
+  AC_SUBST(with_bindings, "bindings")
+  AC_SUBST(with_bindings_clean, "bindings_clean")
+  AC_SUBST(with_rpc, "")
+  AC_SUBST(with_rpc_clean, "")
+  AC_SUBST(with_filter, "")
+  AC_SUBST(with_filter_clean, "")
+  AC_SUBST(with_client, "")
+  AC_SUBST(with_client_clean, "")
+  AC_SUBST(with_server, "")
+  AC_SUBST(with_server_clean, "")
+
+  WRITE_TO_FILE(summary, "bindings only", "OCaml PKCS11 bindings only")
+  AC_MSG_NOTICE([Compiling OCaml bindings only])
+fi #END COMPILE CAML CRUSH
+
 
 AC_OUTPUT(Makefile)
 
