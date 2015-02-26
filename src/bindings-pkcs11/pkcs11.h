@@ -92,7 +92,7 @@
 #endif
 
 #ifdef _WIN32
-#pragma pack(push,8)		/* necessary for COM interfaces */
+#pragma pack(push,1)		/* necessary for COM interfaces */
 #endif
 
 #include <stdint.h>
