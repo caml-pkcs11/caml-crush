@@ -415,6 +415,8 @@ void destroy_list(alias_type type)
 
 /* Aliasing main functions layer to deal with 32-bit handles */
 /* This is here to deal with OCaml 31-bit integer limitation */
+/* as well as 32/64-bit cross architectures where a 32-bit   */
+/* client interacts with a 64-bit server                     */
 unsigned long alias(unsigned long in, alias_type type);
 
 unsigned long alias(unsigned long in, alias_type type)
@@ -463,7 +465,7 @@ unsigned long unalias(unsigned long in, alias_type type)
 	  ("Unaliasing %s: 0x%lx error! New TRANSPATENT alias creation forced\n",
 	   alias_type_str[type], in);
 #endif
-      add_alias(in, SLOTID, TRANSPARENT);
+      out = add_alias(in, SLOTID, TRANSPARENT);
     } else {
       out = in;
 #ifdef DEBUG
