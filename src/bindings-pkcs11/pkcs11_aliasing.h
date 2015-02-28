@@ -172,6 +172,21 @@ unsigned long list_size(alias_type type)
   return size;
 }
 
+/* Purge a list */
+void purge_list(alias_type type);
+
+void purge_list(alias_type type)
+{
+  alias_struct *node, *next;
+  node = aliases_lists[type];
+  while (node != NULL) {
+    next = node->next;
+    custom_free((void**)&node);
+    node = next;
+  }
+  return;
+}
+
 /* Helpers for aliases */
 unsigned long get_original(unsigned long alias, alias_type type,
 			   boolean * found);
@@ -242,20 +257,6 @@ unsigned long add_alias(unsigned long original, alias_type type,
   newnode = (alias_struct *) custom_malloc(sizeof(alias_struct));
   newnode->original = original;
   if (mode == INCREMENTAL) {
-    /* If we are adding a new slotid, we might have used transparent         */
-    /* creation ... Let's try to find if we can still use current last alias */
-    if (type == SLOTID) {
-#ifdef __GNUC__
-      __attribute__ ((unused)) unsigned long found_original;
-#else
-      unsigned long found_original;
-#endif
-      found_original = get_original(last_alias[type], type, &found);
-      while (found == TRUE) {
-	(last_alias[type])++;
-	found_original = get_original(last_alias[type], type, &found);
-      }
-    }
     newnode->alias = last_alias[type];
     (last_alias[type])++;
   } else if (mode == RANDOM) {
@@ -263,20 +264,12 @@ unsigned long add_alias(unsigned long original, alias_type type,
     /* Pick up a random number with 32th bit not positionned */
     /* We probably *don't* want to randomize the slot ids    */
     if (type == SLOTID) {
-#ifdef __GNUC__
-      __attribute__ ((unused)) unsigned long found_original;
-#else
-      unsigned long found_original;
-#endif
-      found_original = get_original(last_alias[type], type, &found);
-      while (found == TRUE) {
-	(last_alias[type])++;
-	found_original = get_original(last_alias[type], type, &found);
-      }
+      /* For the slot ids, we only use the incremental mode */
+      /* since we do not want to mess up with the absolute  */
+      /* slot id numbers                                    */
       newnode->alias = last_alias[type];
       (last_alias[type])++;
     } else {
-      /* For the slot ids, we only use the incremental mode */
       newnode->alias = random_permute(original);
     }
   } else {
@@ -422,58 +415,77 @@ unsigned long alias(unsigned long in, alias_type type);
 unsigned long alias(unsigned long in, alias_type type)
 {
   unsigned long out;
+  alias_mode mode;
+
 #ifdef RANDOM_ALIASING
-  out = add_alias(in, type, RANDOM);
-#ifdef DEBUG
-  if (type != SLOTID) {
-    printf("Aliasing %s: 0x%lx -> 0x%lx (RANDOM)\n", alias_type_str[type], in,
-	   out);
-  } else {
-    printf("Aliasing %s: 0x%lx -> 0x%lx (INCREMENTAL)\n", alias_type_str[type],
-	   in, out);
-  }
-#endif
+  mode = RANDOM;
 #else
-  out = add_alias(in, type, INCREMENTAL);
-#ifdef DEBUG
-  printf("Aliasing %s: 0x%lx -> 0x%lx (INCREMENTAL)\n", alias_type_str[type],
-	 in, out);
+  mode = INCREMENTAL;
 #endif
+  out = add_alias(in, type, mode);
+#ifdef DEBUG
+  printf("Aliasing %s: 0x%lx -> 0x%lx (%s)\n", alias_type_str[type], in, out, alias_mode_str[mode]);
 #endif
 
   return out;
 }
 
-unsigned long unalias(unsigned long in, alias_type type);
+unsigned long unalias(unsigned long in, alias_type type, boolean *found);
 
-unsigned long unalias(unsigned long in, alias_type type)
+unsigned long unalias(unsigned long in, alias_type type, boolean *found)
 {
   unsigned long out;
-  boolean found;
 
-  out = get_original(in, type, &found);
-  if (found == TRUE) {
+  out = get_original(in, type, found);
+  if (*found == TRUE) {
 #ifdef DEBUG
     printf("Unaliasing %s: 0x%lx -> 0x%lx\n", alias_type_str[type], out, in);
 #endif
   } else {
-    /* For the slot ids, since there is no creation "per se", we force the */
-    /* alias creation whenever we need it                                  */
-    if (type == SLOTID) {
+    out = in;
 #ifdef DEBUG
-      printf
-	  ("Unaliasing %s: 0x%lx error! New TRANSPATENT alias creation forced\n",
-	   alias_type_str[type], in);
-#endif
-      out = add_alias(in, SLOTID, TRANSPARENT);
-    } else {
-      out = in;
-#ifdef DEBUG
-      printf("Unaliasing %s: 0x%lx error! (falling back)\n",
+    printf("Unaliasing %s: 0x%lx error! (falling back)\n",
 	     alias_type_str[type], in);
 #endif
-    }
   }
   return out;
 }
+
+/* Function to handle slot id list refresh */
+/* in case of slot status           update */
+void refresh_slot_id_list(CK_FUNCTION_LIST *pkcs11);
+
+void refresh_slot_id_list(CK_FUNCTION_LIST *pkcs11){
+  /* Handle the SLOTID aliasing */
+  CK_SLOT_ID* slot_id_list;
+  CK_RV rv_slot_list;
+  unsigned long i;
+  unsigned long count = 0;
+
+#ifdef DEBUG
+    printf("Aliasing refresh SLOTID list (purge the list)\n");
+#endif
+ 
+  /* If we are not initialized, return */
+  if(pkcs11 == NULL){
+    return;
+  }
+  /* Purge the existing list */
+  purge_list(SLOTID); 
+  /* List all the slots and alias them in our */
+  /* local list                               */
+  rv_slot_list = pkcs11->C_GetSlotList(CK_FALSE, NULL, &count);
+  slot_id_list = (CK_SLOT_ID*)custom_malloc(count * sizeof(CK_SLOT_ID));
+  rv_slot_list = pkcs11->C_GetSlotList(CK_FALSE, slot_id_list, &count);
+  for(i=0; i < count; i++){
+#ifdef DEBUG
+    printf("Aliasing refresh SLOTID list, adding 0x%lx\n", slot_id_list[i]);
+#endif
+    alias(slot_id_list[i], SLOTID);
+  }
+  custom_free((void**)&slot_id_list);
+
+  return;
+}
+
 #endif
