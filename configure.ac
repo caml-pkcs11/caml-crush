@@ -22,7 +22,7 @@ AC_CONFIG_FILES([$bindings_dir/Makefile $bindings_dir/Makefile.standalone $rpc_d
 
 AC_ARG_WITH(caml-crush, [  --without-caml-crush    compile only pkcs11 bindings, (this is NOT the default)], [], with_caml_crush=yes)
 AC_ARG_WITH(client-socket, [  --with-client-socket    configure client socket type and path, default is tcp with 127.0.0.1 (format is --with-client-socket="unix,path" or --with-client-socket="tcp,address:port")])
-AC_ARG_WITH(libname_file, [  --with-libname-file     configure library to fetch libname from a disk file (default)])
+AC_ARG_WITH(libname-file, [  --with-libname-file     configure library to fetch libname from a disk file (default)])
 AC_ARG_WITH(libnames, [  --with-libnames         configure library names to be generated, comma deparated (default is the empty string). E.g: --with-libnames=foo,bar])
 AC_ARG_WITH(ocamlclient, [  --with-ocamlclient      use OCaml client library and RPC instead of default native C one])
 AC_ARG_WITH(cclient, [  --with-cclient          use C based client library and RPC (this is the default)])
@@ -366,7 +366,6 @@ else
 fi
 
 
-
 # LIBNAME HANDLING
 if test -n "${with_libnames+x}" && test -n "${with_libname_file+x}"
 then
@@ -396,7 +395,7 @@ then
         AC_MSG_NOTICE([Client library configured to read libname from a file])
 	AC_SUBST(lib_names, "\"\"")
         AC_SUBST(libname_file, "-DLIBNAME_FILE")
-        WRITE_TO_FILE(summary, "client lib",  "Using .camlcrushlibname file")
+        WRITE_TO_FILE(summary, "client lib",  "Using ${with_libname_file} file")
 fi
 
 # SOCKET HANDLING
