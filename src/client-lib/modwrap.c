@@ -446,8 +446,10 @@ int get_libname_from_file(char *libname){
 
 /* Keep the pid of current process */
 #ifndef WIN32
-pid_t local_pid = 0;
+static pid_t local_pid = 0;
 #endif
+
+static ck_rv_t init_rv;
 
 /* Init function is called when loading library */
 #ifndef WIN32
@@ -462,6 +464,7 @@ void init()
   char libname_file[32] = {0};
 #endif
 
+  init_rv = CKR_OK;
   /* Store the PID to match it in case of a fork */
 #ifndef WIN32
   local_pid = getpid();
@@ -494,8 +497,9 @@ void init()
 #ifdef LIBNAME_FILE
     /* Find the LIBNAME in a file */
 	if(get_libname_from_file(libname_file) != 0){
-		fprintf(stderr, "Init failed, could not find a LIBNAME EXITING\n");
-		exit(-1);
+		fprintf(stderr, "Init failed, could not find a LIBNAME\n");
+		init_rv = CKR_DEVICE_ERROR;
+		goto fail;
 	}
 #ifdef CAMLRPC
     ret = init_ml(libname_file);
@@ -515,7 +519,8 @@ void init()
   /* Did we manage to detect arch ? */
   if ((peer_arch == 0 || peer_arch == 5) || (my_arch == 0 || my_arch == 5)) {
     fprintf(stderr, "C_SetupArch: failed detecting architecture\n");
-    exit(-1);
+    init_rv = CKR_DEVICE_ERROR;
+    goto fail;
   }
 
   if (ret != CKR_OK) {
@@ -534,10 +539,17 @@ void init()
 	    xstr(LIBNAME));
 #endif
 	}
-    fprintf(stderr, "Init failed, EXITING\n");
-    exit(-1);
+    fprintf(stderr, "Init failed\n");
+    init_rv = CKR_DEVICE_ERROR;
+    goto fail;
   }
   return;
+
+fail:
+  pthread_mutex_destroy(&mutex);
+#ifndef CAMLRPC
+  pthread_mutex_destroy(&linkedlist_mutex);
+#endif
 }
 
 /* Disconnect all stuff */
@@ -651,8 +663,12 @@ struct ck_function_list function_list = {
 ck_rv_t C_Initialize(void *init_args)
 {
   ck_rv_t ret;
-  pthread_mutex_lock(&mutex);
   check_pid;
+  if (init_rv != CKR_OK)
+    return init_rv;
+
+  pthread_mutex_lock(&mutex);
+
 #ifdef CAMLRPC
   ret = myC_Initialize(init_args);
 #else
