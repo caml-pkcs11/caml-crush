@@ -82,7 +82,7 @@
 -------------------------- CeCILL-B HEADER ----------------------------------*/
 /* ------- Flags ------------ */
 #ifdef USE_ALIASING
-#include "des.h"
+#include "PRESENT_tables.h"
 #warning "WARNING: using slots, sessions and objects aliasing!"
 #ifdef RANDOM_ALIASING
 #warning "WARNING: using RANDOM aliasing for sessions and objects handles"
@@ -92,43 +92,46 @@
 
 /* ------- Code to handle random permutation for the handles ---------- */
 /* We want to produce unique handles with high bit set to zero */
-/* We use DES feistel network as a random permutation          */
+/* We use PRESENT128 as a random permutation          */
 unsigned char startup = 0;
-des_context des_ctx;
 #define RANDSOURCE "/dev/urandom"
 unsigned long random_permute(unsigned long in);
+
+#define PRESENT128_KEY_SIZE (sizeof(u16) * KEY128)
 
 unsigned long random_permute(unsigned long in)
 {
   unsigned long out;
-  unsigned char input[DES_BLOCK_SIZE] = { 0 };
-  unsigned char output[DES_BLOCK_SIZE] = { 0 };
+  unsigned char input[sizeof(u64)] = { 0 };
+  unsigned char output[sizeof(u64)] = { 0 };
+  u8 subkeys[TABLE_P * PRESENT128_SUBKEYS_SIZE] = {0};
 
   /* Copy our input */
   memcpy(input, &in, sizeof(in));
 
-  /* Initialize the DES with a random key if it is not the */
+  /* Initialize the PRESENT algo with a random key if it is not the */
   /* first time we are here                                */
   if (startup == 0) {
-    unsigned char key[DES_BLOCK_SIZE] = { 0 };
+    unsigned char key[PRESENT128_KEY_SIZE] = { 0 };
     int ret;
     /* Get the key from /dev/urandom */
     FILE *f_rand = fopen(RANDSOURCE, "r");
     if (f_rand == NULL) {
       goto NULLKEY;
     }
-    ret = fread(key, DES_BLOCK_SIZE, 1, f_rand);
-    if (ret != DES_BLOCK_SIZE) {
+    ret = fread(key, PRESENT128_KEY_SIZE, 1, f_rand);
+    if (ret != PRESENT128_KEY_SIZE) {
       goto NULLKEY;
     }
  NULLKEY:
-    des_set_key(&des_ctx, key);
+    /* Compute the subkeys */
+    PRESENT128table_key_schedule((const u8*)key, subkeys);
     startup = 1;
   }
   /* Encrypt */
-  des_encrypt(&des_ctx, input, output);
+  PRESENT128table_core((const u8*)input, subkeys, (u8*)output);
 
-  /* Make the output as half of the DES final state        */
+  /* Make the output as half of the PRESENT final state        */
   memcpy(&out, output, sizeof(out));
 
   return out;
