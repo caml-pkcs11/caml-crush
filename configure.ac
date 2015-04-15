@@ -1095,19 +1095,19 @@ if test "$with_ssl_clientfiles" != ""
 	fi
 	# Parse the given arguments
 	sslfilestype=$(echo $sslfiles | sed 's/\([[^;]]*\);.*/\1/g')
-        if test $(echo $sslfiles | grep "ca=") != ""
+        if test "$(echo $sslfiles | grep "ca=")" != ""
         then
 	  sslfilesca=$(echo $sslfiles | sed 's/.*ca=\([[^,]]*\).*/\1/g')
         else
           sslfilesca=""
         fi
-        if test $(echo $sslfiles | grep "cert=") != ""
+        if test "$(echo $sslfiles | grep "cert=")" != ""
         then
 	  sslfilescert=$(echo $sslfiles | sed 's/.*cert=\([[^,]]*\).*/\1/g')
         else
           sslfilescert=""
         fi
-        if test $(echo $sslfiles | grep "privkey=") != ""
+        if test "$(echo $sslfiles | grep "privkey=")" != ""
         then
 	  sslfilesprivkey=$(echo $sslfiles | sed 's/.*privkey=\([[^,]]*\).*/\1/g')
         else
