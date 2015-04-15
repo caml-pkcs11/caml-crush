@@ -287,6 +287,11 @@ then
         then
           AC_MSG_ERROR(Cannot find camlidl: needed for PKCS11 bindings generation.)
         fi
+	AC_CHECK_PROG(COCCINELLE,spatch,yes,no)
+        if test "$COCCINELLE" == "no"
+        then
+          AC_MSG_ERROR(Cannot find spatch binary: needed for PKCS11 bindings generation - install coccinelle.)
+        fi
         AC_SUBST(idl_gen, "idl")
   	WRITE_TO_FILE(summary, "IDL gen", "YES")
 else
