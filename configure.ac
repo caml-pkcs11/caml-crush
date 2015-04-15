@@ -1120,11 +1120,6 @@ if test "$with_ssl_clientfiles" != ""
 	# If the files are a path, put them in the makefiles
 	if test "$sslfilestype" == "path"
 	then
-		# Check if the files exist, trigger an error if this is not the case
-		AC_CHECK_FILE($sslfilesca, [], [AC_MSG_ERROR([CA file $sslfilesca does not exist!])])
-		AC_CHECK_FILE($sslfilescert, [], [AC_MSG_ERROR([CA file $sslfilescert does not exist!])])
-		AC_CHECK_FILE($sslfilesprivkey, [], [AC_MSG_ERROR([CA file $sslfilesprivkey does not exist!])])
-		
 		AC_SUBST(c_client_ssl_files, "-DSSL_FILES_PATH")
 		AC_SUBST(c_client_ssl_ca_file, "-DPKCS11PROXY_CA_FILE=\\\"$sslfilesca\\\"")
 		AC_SUBST(c_client_ssl_cert_file, "-DPKCS11PROXY_CERT_FILE=\\\"$sslfilescert\\\"")
