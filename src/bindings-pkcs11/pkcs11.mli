@@ -543,7 +543,6 @@ val cKM_BATON_CBC128  : nativeint
 val cKM_BATON_COUNTER  : nativeint
 val cKM_BATON_SHUFFLE  : nativeint
 val cKM_BATON_WRAP   : nativeint
-val cKM_ECDSA_KEY_PAIR_GEN  : nativeint
 val cKM_EC_KEY_PAIR_GEN  : nativeint
 val cKM_ECDSA   : nativeint
 val cKM_ECDSA_SHA1   : nativeint
