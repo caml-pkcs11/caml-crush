@@ -46,9 +46,11 @@ The SSL/TLS support can be turned on with the following configuration directives
 processor {
   ...
   use_ssl = true;
+  (* Provide full certificate chain in cafile *)
   cafile = "/etc/pkcs11proxy/certs/ca.crt";
   certfile = "/etc/pkcs11proxy/certs/server.crt";
   certkey = "/etc/pkcs11proxy/certs/server.key";
+  (* OpenSSL cipher syntax, one or many suites can be configured, or alias such as HIGH *)
   cipher_suite = "AES256-SHA256";
   (* Optional, allows to use DHE cipher suites, generate custom DH paramerters *)
   dh_params = "/usr/local/etc/tests/certs/dhparams.pem";
@@ -70,9 +72,7 @@ Please note that the following ciphers are explicitely turned off:
     !aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK:!RC4
 
 
-**WARNING**: The [ocaml-ssl][] (0.4.6) bindings is ONLY capable of using TLS 1.0 and cannot provide PFS.
-If you care about PFS, please use ocaml-ssl (0.4.7) and read the dedicated section in [ISSUES](../ISSUES.md).
-[ocaml-ssl]: https://github.com/savonet/ocaml-ssl/
+**WARNING**: Since Caml Crush 1.0.5, we require ocaml-ssl 0.4.7. This allows to enable PFS support and force TLS 1.2. Hence, if you want to link against older ocaml-ssl, you must manually modify the source code or use an older release.
 
 ### Server PKCS#11 module support configuration (when filtering is DISABLED)
 As mentionned previously, the client asks for a specific module name.
