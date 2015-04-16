@@ -536,6 +536,23 @@ let set_wrapping_key wrapping_format_key_string =
       print_error error_string; raise Wrapping_key_except;) in
     (wrapping_format_key_bin)
 
+(* Check if the wrapping or unwrapping action are called  *)
+(* during pre or post actions                             *)
+(* FIXME: this is not a clean way to check for this since *)
+(* we are mixing the filter core with specific actions    *)
+let check_for_wraping_post_pre actions = 
+  let found = ref false in
+  List.iter (fun (_, embedded_list) -> 
+    List.iter (fun (_, the_action) ->
+      if compare the_action "wrapping_format_patch" = 0 then
+        found := !found || true
+      else
+        found := !found || false
+    ) embedded_list;
+  ) actions;
+  (!found)
+
+
 (******** External interfaces ***************)
 (******** Modules aliases     ***************)
 (* Generic function to get lists associated to an alias *)
@@ -664,7 +681,7 @@ let get_config configuration_file =
   then
   begin
     (* First, we check for multiple entries for the same field *)
-    let options_list = ["debug"; "modules"; "forbidden_mechanisms"; "allowed_labels"; "allowed_ids"; "forbidden_functions"; "log_subchannel"] in
+    let options_list = ["debug"; "modules"; "forbidden_mechanisms"; "allowed_labels"; "allowed_ids"; "forbidden_functions"; "log_subchannel"; "wrapping_format_key"] in
     let file_content = load_file configuration_file in
     let file_content = Str.global_replace (Str.regexp "\n") "\b" file_content in
     let file_content = Str.global_replace (Str.regexp "^") "\b" file_content in
@@ -724,11 +741,20 @@ let get_config configuration_file =
     let _ = try check_actions !modules !filter_actions_pre with Actions_except -> raise Actions_except in
     print_filter_actions !filter_actions_pre "Specific pre actions are:" 3;
     print_filter_actions !filter_actions_post "Specific post actions are:" 3;
-    (* Get the wrapping format key *)
-    let wrapping_format_key_string = wrapping_format_key_#get in
-    (* Parse the hexadecimal key and set the global variable *)
-    let the_wrapping_format_key = try (set_wrapping_key wrapping_format_key_string) with _ -> raise Wrapping_key_except in
-    wrapping_format_key := the_wrapping_format_key;
+    (* Check if we have a post or pre actions matching the wrapping key format patch *)
+    if (check_for_wraping_post_pre !filter_actions_post = true) || (check_for_wraping_post_pre !filter_actions_pre = true) then
+      (* Get the wrapping format key *)
+      let wrapping_format_key_string = wrapping_format_key_#get in
+      (* Parse the hexadecimal key and set the global variable *)
+      let the_wrapping_format_key = try (set_wrapping_key wrapping_format_key_string) with _ -> raise Wrapping_key_except in
+      wrapping_format_key := the_wrapping_format_key;
+    else
+      (* Try to get the wrapping format key *)
+      let wrapping_format_key_check_existing = try Some wrapping_format_key_#get with _ -> None in
+      if compare wrapping_format_key_check_existing None <> 0 then
+        let warning_string = Printf.sprintf "Warning: found a wrapping_format_key in the configuration file '%s' without any post or pre action using it!" configuration_file in netplex_log_warning warning_string;     
+      else
+        ();
     ()
   end
   else
