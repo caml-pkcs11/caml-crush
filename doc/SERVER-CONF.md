@@ -50,6 +50,12 @@ processor {
   certfile = "/etc/pkcs11proxy/certs/server.crt";
   certkey = "/etc/pkcs11proxy/certs/server.key";
   cipher_suite = "AES256-SHA256";
+  (* Optional, allows to use DHE cipher suites, generate custom DH paramerters *)
+  dh_params = "/usr/local/etc/tests/certs/dhparams.pem";
+  (* Optional, allows to use ECDHE cipher suites *)
+  ec_curve_name = "prime256v1";
+  (* Optional, allows to use a custom certificate verification depth *)
+  verify_depth = 4;
   ...
 };
 ...
