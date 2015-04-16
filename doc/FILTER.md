@@ -98,6 +98,7 @@ lists of tuples and regular expressions.
 The accepted options keywords, with their OCaml style syntax, are:
 
   * **debug** = integer between 0 and 3
+  * **wrapping\_format\_key** = a 32 long string that must use hexadecimal values to setup the wrapping format key
   * **modules** = [(a1, b1), (a2, b2) ...] is a **list** of **couples** of strings (a, b) with 'a' being an alias, and 'b' 
 being a PATH to the aliased PKCS#11 module
   * **log_subchannel** = **string** representing the filter log subchannel in the server
@@ -156,6 +157,14 @@ Syntax example:
 > Please note that the subchannel must indeed exist in the Netplex server context (meaning that it has 
 > been declared in the server configuration file). If this is not the case, the filter logs will fallback to 
 > the standard Netplex server output.
+
+## Wrapping format key
+
+  * **wrapping\_format\_key** (*32 char long string*) can be used to configure the AES-128 bit key use as wrapping format key.
+
+No default value is provided, you **MUST** uncomment and use a
+cryptographically sound random values. It must be converted to **hexadecimal**
+format.
 
 ## PKCS#11 modules options
 
@@ -496,7 +505,139 @@ why PKCS#11 is not safe as is and how to properly fix it regarding their attacke
 [here](http://secgroup.dais.unive.it/wp-content/uploads/2010/10/Tookan-CCS10.pdf) for more details on this.
 
 We provide in [src/filter/filter/p11fix_patches](../src/filter/filter/p11fix_patches) patches that should enhance 
-the security of the existing middlewares by using, among other patches, those implemented in [CryptokiX](http://secgroup.dais.unive.it/projects/security-apis/cryptokix/). These patches are defined as `filter_actions_post` functions since we want them to live with the other filter actions. **We will provide a detailed description of their action very soon**.
+the security of the existing middlewares by using, among other patches, those implemented in [CryptokiX](http://secgroup.dais.unive.it/projects/security-apis/cryptokix/). These patches are defined as `filter_actions_post` functions since we want them to live with the other filter actions. See below for detailed description of their action.
 
 Please note that these patches are still in "beta test": they might evolve/be fixed in the future. They have only been 
 tested with OpenCryptoki, but we plan to extend this soon.
+
+#### Detail of included patchset
+
+The default **filter.conf** ships with secure by default configuration.
+However, depending on some use case, relaxing the default rules might be
+necessary. Remember, patchset 1 and 2 are incompatible. The following will
+explain what is the effect of function applied in the patchsets.
+
+
+* `do_segregate_usage`, default **OFF**, patchset 1/2, applies to:
+  * `C_Initialize`
+
+This patch ensures that key usage segregation is enforced (encrypt/decrypt
+versus sign/verify). This is valid for object creation but also for existing
+objects.
+
+* `non_local_objects_patch`, patchset 1, applies to:
+  * `C_CreateObject`
+  * `C_CopyObject`
+  * `C_SetAttributeValue`
+
+When using the CryptokiX patches, we want to avoid keys created through
+`C_CreateObject` to circumvent the protections.
+Hence, we filter `C_CreateObject` and do not allow WRAP/UNWRAP attributes
+set with `C_SetAttributeValue`/`C_CopyObject`  for non local
+objects - i.e. `CKA_LOCAL=FALSE`.
+
+
+* `prevent_sensitive_leak_patch`, patchset 1/2, applies to:
+  * `C_GetAttributeValue`
+  * `C_SetAttributeValue`
+
+This patch prevents directly reading or writhing to sensitive or
+extractable keys.
+This patch also prevents directly setting `CKA_ALWAYS_SENSITIVE` and
+`CKA_NEVER_EXTRACTABLE`.
+
+* `conflicting_attributes_patch`, patchset 1, applies to:
+  * `C_CreateObject`
+  * `C_CopyObject`
+  * `C_UnwrapKey`
+  * `C_GenerateKey`
+  * `C_GenerateKeyPair`
+  * `C_DeriveKey`
+  * `C_SetAttributeValue`
+
+This patch prevents creating objects with conflicting attributes such as `CKA_WRAP` and `CKA_DECRYPT`.
+
+* `conflicting_attributes_patch_on_existing_objects`, patchset 1/2, applies to:
+  * `C_EncryptInit`
+  * `C_DecryptInit`
+  * `C_SignInit`
+  * `C_SignRecoverInit`
+  * `C_VerifyInit`
+  * `C_VerifyRecoverInit`
+  * `C_DeriveKey`
+  * `C_DigestKey`
+  * `C_WrapKey`
+  * `C_UnwrapKey`
+  * `C_FindObjects`
+
+This patch prevents using objects with have conflicting attributes. This allows
+to use a device although insecure objects are stored on it.
+
+
+* `dangerous_sensitive_keys_paranoid`/`dangerous_sensitive_keys_escrow_encrypt`/`dangerous_sensitive_keys_escrow_all`, patchset 1/2, applies to:
+  * `C_EncryptInit`
+  * `C_DecryptInit`
+  * `C_SignInit`
+  * `C_SignRecoverInit`
+  * `C_VerifyInit`
+  * `C_VerifyRecoverInit`
+  * `C_DeriveKey`
+  * `C_DigestKey`
+  * `C_WrapKey`
+  * `C_UnwrapKey`
+  * `C_FindObjects`
+
+The previous three functions deal with possible issues regarding keys that
+have been generated without Caml Crush. These keys can be dangerous because
+their values are known and they might be used to leak other keys.
+This patch works as follows:
+
+1. Paranoid mode: if `CKA_SENSITIVE=TRUE` and `CKA_ALWAYS_SENSITIVE=FALSE`, we  
+  do not trust the key and do not allow it to be used
+2. Relaxed mode for encryption keys (escrow usage): when used, this mode allows the  
+  usage of keys with `CKA_SENSITIVE=TRUE` and `CKA_ALWAYS_SENSITIVE=FALSE` ONLY if  
+  these are encryption/decryption keys and NON LOCAL keys
+3. Relaxed mode for all keys (not recommended): when set, this mode is the inverse of paranoid.
+
+
+* `sticky_attributes_patch`, patchset 1, applies to:
+  * `C_CopyObject`
+  * `C_SetAttributeValue`
+
+The sticky attributes patch ensure that problematic attributes transition cannot achieved.
+
+
+* `wrapping_format_patch`, patchset 1, applies to:
+  * `C_WrapKey`
+  * `C_UnwrapKey`
+
+This function is used to replace the classic `C_WrapKey`/`C_UnwrapKey` operations to
+protect from injecting rogue keys.
+You must configure the AES key that will be used for CMAC to ensure integrity.
+
+* `secure_templates_patch`, patchset 2, applies to:
+  * `C_SetAttributeValue`
+  * `C_GenerateKey`
+  * `C_GenerateKeyPair`
+  * `C_CreateObject`
+  * `C_CopyObject`
+  * `C_UnwrapKey`
+  * `C_DeriveKey`
+
+This is the function that is applied for the second patchset, it is disabled by default.
+Only a controlled and safe set of critical attributes are allowed and are bound
+to a key when it is instantiated in a token (at key generation, key
+unwrapping,as well as key creation). Tying a key to its usage enforces key
+separation in the token, at the expense of imposing that the critical
+attributes become read-only. Though lacking flexibility, the main advantage of
+this patch lies in its full compatibility with the PKCS#11 standard.
+
+* `sanitize_creation_templates_patch`, patchset 1/2, applies to:
+  * `C_CreateObject`
+  * `C_CopyObject`
+  * `C_GenerateKey`
+  * `C_GenerateKeyPair`
+  * `C_DeriveKey`
+  * `C_UnwrapKey`
+
+This sets default attributes values to be applied when not defined by a creation template.
