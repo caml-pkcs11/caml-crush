@@ -197,7 +197,7 @@ let group = new group
 let modules_ = new list_cp (tuple2_wrappers string_wrappers string_wrappers) ~group ["modules"] [] "Modules aliases."
 let modules = ref []
 
-(* Fir debug and log subchannel, the references are in the filter_common file *)
+(* For debug and log subchannel, the references are in the filter_common file *)
 let debug_ = new int_cp ~group ["debug"] 0 "Debug verbosity"
 let log_subch_ = new string_cp ~group ["log_subchannel"] "" "Subchannel to log to"
 
@@ -239,6 +239,9 @@ let filter_actions_pre_ = new list_cp (tuple2_wrappers string_wrappers (list_wra
 let filter_actions_pre = ref []
 let filter_actions_post_ = new list_cp (tuple2_wrappers string_wrappers (list_wrappers (tuple2_wrappers functions_wrappers actions_wrappers))) ~group ["filter_actions_post"] [] "Define actions to be taken on some PKCS#11 function call trigger (post actions)"
 let filter_actions_post = ref []
+
+(* Wrapping key format *)
+let wrapping_format_key_ = new string_cp ~group ["wrapping_format_key"] "" "Wrapping key format"
 
  
 (********************************************)
@@ -520,6 +523,18 @@ let check_actions modules actions_list =
         print_error error_string; raise Actions_except;) actions_list;
    ()
 
+(* Get the wrapping format key from an hexadecimal string *)
+(* and set it in the global variable                      *)
+let set_wrapping_key wrapping_format_key_string =
+  if String.length wrapping_format_key_string <> 32 then
+    let error_string = Printf.sprintf "Provided wrapping format key is of size %d instead of 32" (String.length wrapping_format_key_string) in
+    print_error error_string;
+    raise Wrapping_key_except;
+  else
+    let wrapping_format_key_bin = try (Pkcs11.string_to_char_array (Pkcs11.pack wrapping_format_key_string))
+      with _ -> (let error_string = Printf.sprintf "Provided wrapping format key is not in proper hexadecimal" in
+      print_error error_string; raise Wrapping_key_except;) in
+    (wrapping_format_key_bin)
 
 (******** External interfaces ***************)
 (******** Modules aliases     ***************)
@@ -620,6 +635,11 @@ let print_some_help groupable_cp _ _ filename _ =
      let error_string = Printf.sprintf "Field '%s' should contain a list of couples (alias_regexp, [(PKCS11_FUNCTION1, ACTION1), (PKCS11_FUNCTION2, ACTION2) ...]) where alias_regexp is a module alias regular expression and PKCS11_FUNCTION are PKCS#11 function names, and ACTION are actions defined and implemented in the filter_actions plugin file" (String.concat "." groupable_cp#get_name) in print_error error_string;
      raise Config_file_wrong_type;
    end;
+   if compare (String.concat "." groupable_cp#get_name) "wrapping_format_key" = 0 then
+   begin
+     let error_string = Printf.sprintf "Field '%s' should contain an string representing wrapping key used for the PKCS#11 patchset 1" (String.concat "." groupable_cp#get_name) in print_error error_string;
+     raise Config_file_wrong_type;
+   end;
    () 
 
 let load_file f =
@@ -702,8 +722,13 @@ let get_config configuration_file =
     let _ = try check_actions !modules !filter_actions_pre with Actions_except -> raise Actions_except in
     filter_actions_post := filter_actions_post_#get;
     let _ = try check_actions !modules !filter_actions_pre with Actions_except -> raise Actions_except in
-    print_filter_actions !filter_actions_pre "Specific pre actions are:" 3; 
-    print_filter_actions !filter_actions_post "Specific post actions are:" 3; 
+    print_filter_actions !filter_actions_pre "Specific pre actions are:" 3;
+    print_filter_actions !filter_actions_post "Specific post actions are:" 3;
+    (* Get the wrapping format key *)
+    let wrapping_format_key_string = wrapping_format_key_#get in
+    (* Parse the hexadecimal key and set the global variable *)
+    let the_wrapping_format_key = try (set_wrapping_key wrapping_format_key_string) with _ -> raise Wrapping_key_except in
+    wrapping_format_key := the_wrapping_format_key;
     ()
   end
   else
