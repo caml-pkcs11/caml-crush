@@ -527,7 +527,7 @@ let check_actions modules actions_list =
 (* and set it in the global variable                      *)
 let set_wrapping_key wrapping_format_key_string =
   if String.length wrapping_format_key_string <> 32 then
-    let error_string = Printf.sprintf "Provided wrapping format key is of size %d instead of 32, or no wrapping key defined at all => please define a proper hexadecimal key for the wrapping format key (i.e. wrapping_format_key = \"010203...\")" (String.length wrapping_format_key_string) in
+    let error_string = Printf.sprintf "Provided wrapping format key is of size %d instead of 32, or no wrapping key defined at all => please define a proper hexadecimal key for the wrapping format key (i.e. wrapping_format_key = \"00010203...\")" (String.length wrapping_format_key_string) in
     print_error error_string;
     raise Wrapping_key_except;
   else
@@ -667,20 +667,12 @@ let load_file f =
   close_in ic;
   (s)
 
-(* Check occurence of fields in configuration file *)
-let check_occurence big_string to_match conf_file message =
-  let regexp = Str.regexp to_match in
-  let matching = Str.string_match regexp big_string 0 in
-  (matching)
-
-(* Check occurences of fields in configuration file and send warning *)
 let check_occurences big_string to_match conf_file message = 
   let regexp = Str.regexp to_match in
   let matchings = Str.string_match regexp big_string 0 in
   if matchings = true then
     let warning_string = Printf.sprintf "Warning: found multiple occurrences of entry '%s' in the configuration file '%s', only using the first one!" message conf_file in netplex_log_warning warning_string;
   () 
-
 
 let get_config configuration_file =
   (* Check if the config file exists *)
@@ -757,15 +749,13 @@ let get_config configuration_file =
       let the_wrapping_format_key = try (set_wrapping_key wrapping_format_key_string) with _ -> raise Wrapping_key_except in
       wrapping_format_key := the_wrapping_format_key;
     else
-      (* Check the presence of a wrapping key *)
-      let options_list = ["wrapping_format_key"] in
-      let regexp_list = List.map (fun a -> (Printf.sprintf ".*\b%s[ ]*=.*" a, a)) options_list in
-      let found_wrapping_key = ref false in
-      List.iter (
-        fun (a, b) -> let found = check_occurence file_content a configuration_file b in found_wrapping_key := !found_wrapping_key || found
-      ) regexp_list;
-      if !found_wrapping_key = true then
-        let warning_string = Printf.sprintf "Warning: found a wrapping_format_key in the configuration file '%s' without any post or pre action using it!" configuration_file in netplex_log_warning warning_string;
+      (* Try to get the wrapping format key *)
+      let wrapping_format_key_check_existing = try Some wrapping_format_key_#get with _ -> None in
+      if compare wrapping_format_key_check_existing None <> 0 then
+        if compare (get wrapping_format_key_check_existing) "" <> 0 then
+          let warning_string = Printf.sprintf "Warning: found a wrapping_format_key in the configuration file '%s' without any post or pre action using it!" configuration_file in netplex_log_warning warning_string;
+        else
+          ()
       else
         ();
     ()
