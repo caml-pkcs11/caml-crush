@@ -471,7 +471,7 @@ int start_gnutls(int sock)
   gnutls_global_session_allocated = 1;
 
   /* Use default priorities */
-  ret = gnutls_priority_set_direct(gnutls_global_session, "NORMAL", &err);
+  ret = gnutls_priority_set_direct(gnutls_global_session, "NORMAL:-VERS-TLS-ALL:+VERS-TLS1.2", &err);
   if (ret < 0) {
     if (ret == GNUTLS_E_INVALID_REQUEST) {
       fprintf(stderr, "Syntax error at: %s\n", err);
@@ -666,7 +666,7 @@ int start_openssl(int sock)
   ERR_load_BIO_strings();
   OpenSSL_add_all_algorithms();
 
-  ctx = SSL_CTX_new(TLSv1_method());
+  ctx = SSL_CTX_new(TLSv1_2_method());
   if (ctx == NULL) {
     fprintf(stderr, "OpenSSL error could not create SSL CTX\n");
     return -1;

@@ -282,6 +282,7 @@ let check_for_sticky_attribute fun_name old_attribute new_attribute the_sticky_a
   else
     (false)
 
+(*** Sticky attributes helper ***)
 let detect_sticky_attributes fun_name attributes new_attributes the_sticky_attributes =
   let check = Array.fold_left (
     fun curr_check curr_attr ->
@@ -292,6 +293,63 @@ let detect_sticky_attributes fun_name attributes new_attributes the_sticky_attri
       (curr_check || tmp_check)
   ) false attributes in
   (check)
+
+(*** Conflicting attributes helper ***)
+let check_for_attribute_value function_name atype avalue attributes_list =
+  let check = Array.fold_left (
+    fun curr_check curr_attr ->
+      let curr_type = curr_attr.Pkcs11.type_ in
+      let curr_value = curr_attr.Pkcs11.value in
+      if (compare curr_type atype = 0) && (compare curr_value avalue = 0) then
+        (curr_check || true)
+      else
+        (curr_check || false)
+  ) false attributes_list in
+  (check)
+
+let detect_conflicting_attributes function_name attributes new_attributes the_conflicting_attribute =
+  (* Merge the attributes to get a good overview *)
+  let full_list_attributes = merge_templates attributes new_attributes in
+  (* Now, check the given attributes list against conflicting attributes *)
+  (* For each conflicting couple, check if it satisfied in the attributes list *)
+  let check = Array.fold_left (
+    fun curr_check cr_attr -> 
+      (* Extract the current cnflicting attributes to check *)
+      let first_a = fst cr_attr in
+      let first_a_type = first_a.Pkcs11.type_ in
+      let first_a_value = first_a.Pkcs11.value in
+      let second_a = snd cr_attr in
+      let second_a_type = second_a.Pkcs11.type_ in
+      let second_a_value = second_a.Pkcs11.value in
+      (* Parse the full list and check for our values if a proper type is found *)
+      let block_it = (check_for_attribute_value function_name first_a_type first_a_value full_list_attributes) &&
+                     (check_for_attribute_value function_name second_a_type second_a_value full_list_attributes) in
+        if block_it = true then
+          let info_string = Printf.sprintf "[User defined extensions]: CONFLICTING_ATTRIBUTES asked during %s for %s=%s and %s=%s" function_name
+          (Pkcs11.match_cKA_value first_a_type) (Pkcs11.sprint_bool_attribute_value (Pkcs11.char_array_to_bool first_a_value)) (Pkcs11.match_cKA_value second_a_type) (Pkcs11.sprint_bool_attribute_value (Pkcs11.char_array_to_bool second_a_value)) in
+          let _ = print_debug info_string 1 in
+          (curr_check || block_it)
+        else
+          (curr_check || block_it)
+  ) false the_conflicting_attribute in
+  (check)
+
+(* Function to check for conflicting attributes on existing objects *)
+let detect_conflicting_attributes_on_existing_object function_name sessionh objecth the_conflicting_attribute =
+  let (ret, templates) = filter_getAttributeValue sessionh objecth (critical_attributes !segregate_usage) in
+  if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
+    if (compare ret Pkcs11.cKR_OK <> 0) then
+      (true)
+    else
+      let s = Printf.sprintf "[User defined extensions] %s CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...): in CONFLICTING_ATTRIBUTES\n" function_name in netplex_log_critical s; failwith s;
+  else
+    let (ret, templates_values) = filter_getAttributeValue sessionh objecth templates in
+    if compare ret Pkcs11.cKR_OK <> 0 then
+      (true)
+    else
+      let check = detect_conflicting_attributes function_name templates_values [||] the_conflicting_attribute in
+      (check)
+
 
 let execute_external_command command data argvs env =
   let buffer_size = 2048 in

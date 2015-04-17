@@ -2,7 +2,7 @@
 (* The non local objects patch:                                        *****)
 (* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *****)
 
-(* When using the CryptokiX patches, we want to avoid key created through  *)
+(* When using the CryptokiX patches, we want to avoid keys created through *)
 (* C_CreateObject to circumvent the protections                            *)
 (* Hence, we filter C_CreateObject and do not allow WRAP/UNWRAP attributes *)
 (* set with C_SetAttributeValue/C_CopyObject  for non local                *)

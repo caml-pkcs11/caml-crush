@@ -223,11 +223,13 @@ CK_RV ML_CK_C_Initialize(void)
 {
   CK_RV rv;
   CHECK_MODULE_FUNCTION_INITIALIZE(C_Initialize);
-
+ 
   DEBUG_CALL(ML_CK_C_Initialize, " calling\n");
+
   /* We launch C_Initialize with NULL arguments */
   rv = pkcs11->C_Initialize(NULL);
   DEBUG_RET(ML_CK_C_Initialize, rv, "\n");
+
   return rv;
 }
 
@@ -368,9 +370,22 @@ CK_RV ML_CK_C_GetSlotInfo( /*in */ CK_SLOT_ID slot_id,	/*out */
   CHECK_MODULE_FUNCTION(C_GetSlotInfo);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  slot_id = unalias(slot_id, SLOTID);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  slot_id = unalias(slot_id, SLOTID, &found);
+  if(found != TRUE){
+    /* Handle the SLOTID aliasing               */
+    /* list refresh in order to catch possible  */
+    /* new slots or deprecated ones             */
+    refresh_slot_id_list(pkcs11);
+    /* Second chance */
+    slot_id = unalias(slot_id, SLOTID, &found);
+    if(found != TRUE){
+      rv = CKR_SLOT_ID_INVALID;
+      return rv;
+    }
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GetSlotInfo, " called with slot_id = %ld\n", slot_id);
@@ -398,9 +413,22 @@ CK_RV ML_CK_C_GetTokenInfo( /*in */ CK_SLOT_ID slot_id,	/*out */
   CHECK_MODULE_FUNCTION(C_GetTokenInfo);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  slot_id = unalias(slot_id, SLOTID);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  slot_id = unalias(slot_id, SLOTID, &found);
+  if(found != TRUE){
+    /* Handle the SLOTID aliasing               */
+    /* list refresh in order to catch possible  */
+    /* new slots or deprecated ones             */
+    refresh_slot_id_list(pkcs11);
+    /* Second chance */
+    slot_id = unalias(slot_id, SLOTID, &found);
+    if(found != TRUE){
+      rv = CKR_SLOT_ID_INVALID;
+      return rv;
+    }
+  }
+  /*------------*/}
 #endif
 
   /* Fill the output with default invalid values in case */
@@ -435,9 +463,22 @@ CK_RV ML_CK_C_OpenSession( /*in */ CK_SLOT_ID slot_id, /*in */ CK_FLAGS flags,
   CHECK_MODULE_FUNCTION(C_OpenSession);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  slot_id = unalias(slot_id, SLOTID);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  slot_id = unalias(slot_id, SLOTID, &found);
+  if(found != TRUE){
+    /* Handle the SLOTID aliasing               */
+    /* list refresh in order to catch possible  */
+    /* new slots or deprecated ones             */
+    refresh_slot_id_list(pkcs11);
+    /* Second chance */
+    slot_id = unalias(slot_id, SLOTID, &found);
+    if(found != TRUE){
+      rv = CKR_SLOT_ID_INVALID;
+      return rv;
+    }
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_OpenSession, " called with slot_id = %ld\n", slot_id);
@@ -472,9 +513,14 @@ CK_RV ML_CK_C_CloseSession( /*in */ CK_SESSION_HANDLE session)
   CHECK_MODULE_FUNCTION(C_CloseSession);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_CloseSession, " called with session = %ld\n", session);
@@ -500,9 +546,22 @@ CK_RV ML_CK_C_CloseAllSessions( /*in */ CK_SLOT_ID slot_id)
   CHECK_MODULE_FUNCTION(C_CloseAllSessions);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  slot_id = unalias(slot_id, SLOTID);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  slot_id = unalias(slot_id, SLOTID, &found);
+  if(found != TRUE){
+    /* Handle the SLOTID aliasing               */
+    /* list refresh in order to catch possible  */
+    /* new slots or deprecated ones             */
+    refresh_slot_id_list(pkcs11);
+    /* Second chance */
+    slot_id = unalias(slot_id, SLOTID, &found);
+    if(found != TRUE){
+      rv = CKR_SLOT_ID_INVALID;
+      return rv;
+    }
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_CloseAllSessions, " called with slot_id = %ld\n", slot_id);
@@ -533,9 +592,14 @@ CK_RV ML_CK_C_GetSessionInfo( /*in */ CK_SESSION_HANDLE session,	/*out */
   CHECK_MODULE_FUNCTION(C_GetSessionInfo);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GetSessionInfo, " called with session = %ld\n", session);
@@ -573,9 +637,14 @@ CK_RV ML_CK_C_Login( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_Login);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_Login, " called with session = %ld, user type %ld\n",
@@ -594,9 +663,14 @@ CK_RV ML_CK_C_Logout( /*in */ CK_SESSION_HANDLE session)
   CHECK_MODULE_FUNCTION(C_Logout);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_Logout, " called with session = %ld\n", session);
@@ -628,9 +702,22 @@ CK_RV ML_CK_C_GetMechanismList( /*in */ CK_SLOT_ID slot_id,	/*out */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  slot_id = unalias(slot_id, SLOTID);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  slot_id = unalias(slot_id, SLOTID, &found);
+  if(found != TRUE){
+    /* Handle the SLOTID aliasing               */
+    /* list refresh in order to catch possible  */
+    /* new slots or deprecated ones             */
+    refresh_slot_id_list(pkcs11);
+    /* Second chance */
+    slot_id = unalias(slot_id, SLOTID, &found);
+    if(found != TRUE){
+      rv = CKR_SLOT_ID_INVALID;
+      return rv;
+    }
+  }
+  /*------------*/}
 #endif
 
   /* Initialize the returned number to zero */
@@ -662,9 +749,22 @@ CK_RV ML_CK_C_GetMechanismInfo( /*in */ CK_SLOT_ID slot_id,	/*in */
   CHECK_MODULE_FUNCTION(C_GetMechanismInfo);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  slot_id = unalias(slot_id, SLOTID);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  slot_id = unalias(slot_id, SLOTID, &found);
+  if(found != TRUE){
+    /* Handle the SLOTID aliasing               */
+    /* list refresh in order to catch possible  */
+    /* new slots or deprecated ones             */
+    refresh_slot_id_list(pkcs11);
+    /* Second chance */
+    slot_id = unalias(slot_id, SLOTID, &found);
+    if(found != TRUE){
+      rv = CKR_SLOT_ID_INVALID;
+      return rv;
+    }
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GetMechanismInfo,
@@ -695,9 +795,22 @@ CK_RV ML_CK_C_InitToken( /*in */ CK_SLOT_ID slot_id, /*in */ unsigned char *pin,
   CHECK_MODULE_FUNCTION(C_InitToken);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  slot_id = unalias(slot_id, SLOTID);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  slot_id = unalias(slot_id, SLOTID, &found);
+  if(found != TRUE){
+    /* Handle the SLOTID aliasing               */
+    /* list refresh in order to catch possible  */
+    /* new slots or deprecated ones             */
+    refresh_slot_id_list(pkcs11);
+    /* Second chance */
+    slot_id = unalias(slot_id, SLOTID, &found);
+    if(found != TRUE){
+      rv = CKR_SLOT_ID_INVALID;
+      return rv;
+    }
+  }
+  /*------------*/}
 #endif
 
   /* The label must be exactly 32 bytes long max as stated by the PKCS#11 standard */
@@ -751,9 +864,14 @@ CK_RV ML_CK_C_InitPIN( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_InitPIN);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_InitPIN, " called with session = %ld\n", session);
@@ -809,9 +927,14 @@ CK_RV ML_CK_C_SetPIN( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_SetPIN);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SetPIN, " called with session = %ld\n", session);
@@ -867,9 +990,14 @@ CK_RV ML_CK_C_SeedRandom( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_InitPIN);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SeedRandom, " called with session = %ld\n", session);
@@ -888,9 +1016,14 @@ CK_RV ML_CK_C_GenerateRandom( /*in */ CK_SESSION_HANDLE session,	/*out */
   CHECK_MODULE_FUNCTION(C_GenerateRandom);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GenerateRandom,
@@ -918,9 +1051,14 @@ CK_RV ML_CK_C_FindObjectsInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_FindObjectsInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_FindObjectsInit,
@@ -943,9 +1081,14 @@ CK_RV ML_CK_C_FindObjects( /*in */ CK_SESSION_HANDLE session,	/*out */
   CHECK_MODULE_FUNCTION(C_FindObjects);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   /* Initialize the object_count to zero */
@@ -988,9 +1131,14 @@ CK_RV ML_CK_C_FindObjectsFinal( /*in */ CK_SESSION_HANDLE session)
   CHECK_MODULE_FUNCTION(C_FindObjectsFinal);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_FindObjectsFinal, " called for session %ld\n", session);
@@ -1011,9 +1159,14 @@ CK_RV ML_CK_C_GenerateKey( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_GenerateKey);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GenerateKey,
@@ -1078,9 +1231,14 @@ CK_RV ML_CK_C_GenerateKeyPair( /*in */ CK_SESSION_HANDLE session,	/*in */
     *phprivkey = CK_INVALID_HANDLE;
   }
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   /* We check if there is no param_len is 0, then we force mechanism.pParameter to NULL_PTR */
@@ -1126,9 +1284,14 @@ CK_RV ML_CK_C_CreateObject( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_CreateObject);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_CreateObject,
@@ -1168,10 +1331,19 @@ CK_RV ML_CK_C_CopyObject( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_CopyObject);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hobject = unalias(hobject, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hobject = unalias(hobject, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_CopyObject,
@@ -1208,10 +1380,19 @@ CK_RV ML_CK_C_DestroyObject( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_DestroyObject);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hobject = unalias(hobject, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hobject = unalias(hobject, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DestroyObject, " called for session %ld\n", session);
@@ -1233,10 +1414,19 @@ CK_RV ML_CK_C_GetAttributeValue( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_GetAttributeValue);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hobject = unalias(hobject, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hobject = unalias(hobject, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GetAttributeValue,
@@ -1272,10 +1462,19 @@ CK_RV ML_CK_C_SetAttributeValue( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_SetAttributeValue);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hobject = unalias(hobject, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hobject = unalias(hobject, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SetAttributeValue,
@@ -1310,10 +1509,19 @@ CK_RV ML_CK_C_GetObjectSize( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_GetObjectSize);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hobject = unalias(hobject, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hobject = unalias(hobject, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GetObjectSize, " called for session %ld\n", session);
@@ -1351,11 +1559,24 @@ CK_RV ML_CK_C_WrapKey( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_WrapKey);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hwrappingkey = unalias(hwrappingkey, OBJECT);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hwrappingkey = unalias(hwrappingkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  } 
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  } 
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_WrapKey,
@@ -1385,10 +1606,19 @@ CK_RV ML_CK_C_UnwrapKey( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_UnwrapKey);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hunwrappingkey = unalias(hunwrappingkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hunwrappingkey = unalias(hunwrappingkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  } 
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_UnwrapKey,
@@ -1430,10 +1660,19 @@ CK_RV ML_CK_C_DeriveKey( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_DeriveKey);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hbasekey = unalias(hbasekey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hbasekey = unalias(hbasekey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DeriveKey, " called for session %ld, key handle %ld\n",
@@ -1468,9 +1707,14 @@ CK_RV ML_CK_C_DigestInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_DigestInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DigestInit, " called for session %ld\n", session);
@@ -1489,9 +1733,14 @@ CK_RV ML_CK_C_Digest( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_Digest);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_Digest, " called for session %ld\n", session);
@@ -1519,9 +1768,14 @@ CK_RV ML_CK_C_DigestUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_DigestUpdate);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DigestUpdate, " called for session %ld\n", session);
@@ -1539,10 +1793,19 @@ CK_RV ML_CK_C_DigestKey( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_DigestKey);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DigestKey, " called for session %ld\n", session);
@@ -1561,9 +1824,14 @@ CK_RV ML_CK_C_DigestFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
   CHECK_MODULE_FUNCTION(C_DigestFinal);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DigestFinal, " called for session %ld\n", session);
@@ -1591,10 +1859,19 @@ CK_RV ML_CK_C_SignInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_SignInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SignInit, " called for session %ld\n", session);
@@ -1613,10 +1890,19 @@ CK_RV ML_CK_C_SignRecoverInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_SignRecoverInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SignRecoverInit, " called for session %ld\n", session);
@@ -1637,9 +1923,14 @@ ML_CK_C_Sign( /*in */ CK_SESSION_HANDLE session, /*in */ unsigned char *data,
   CHECK_MODULE_FUNCTION(C_Sign);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_Sign, " called for session %ld\n", session);
@@ -1671,9 +1962,14 @@ CK_RV ML_CK_C_SignRecover( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_SignRecover);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SignRecover, " called for session %ld\n", session);
@@ -1702,9 +1998,14 @@ CK_RV ML_CK_C_SignUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_SignUpdate);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SignUpdate, " called for session %ld\n", session);
@@ -1723,9 +2024,14 @@ CK_RV ML_CK_C_SignFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
   CHECK_MODULE_FUNCTION(C_SignFinal);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SignFinal, " called for session %ld\n", session);
@@ -1753,10 +2059,19 @@ CK_RV ML_CK_C_VerifyInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_VerifyInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_VerifyInit, " called for session %ld\n", session);
@@ -1775,10 +2090,19 @@ CK_RV ML_CK_C_VerifyRecoverInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_VerifyRecoverInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_VerifyRecoverInit, " called for session %ld\n", session);
@@ -1797,9 +2121,14 @@ CK_RV ML_CK_C_Verify( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_Verify);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_Verify, " called for session %ld\n", session);
@@ -1830,9 +2159,14 @@ CK_RV ML_CK_C_VerifyRecover( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_VerifyRecover, " called for session %ld size %ld\n",
@@ -1879,9 +2213,14 @@ CK_RV ML_CK_C_VerifyUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_VerifyUpdate);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_VerifyUpdate, " called for session %ld\n", session);
@@ -1900,9 +2239,14 @@ CK_RV ML_CK_C_VerifyFinal( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_VerifyFinal);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_VerifyFinal, " called for session %ld\n", session);
@@ -1920,10 +2264,19 @@ CK_RV ML_CK_C_EncryptInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_EncryptInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_EncryptInit, " called for session %ld\n", session);
@@ -1953,9 +2306,14 @@ CK_RV ML_CK_C_Encrypt( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_Encrypt, " called for session %ld size %ld\n", session,
@@ -2014,9 +2372,14 @@ CK_RV ML_CK_C_EncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_EncryptUpdate, " called for session %ld size %ld\n",
@@ -2077,9 +2440,14 @@ CK_RV ML_CK_C_DigestEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DigestEncryptUpdate,
@@ -2140,9 +2508,14 @@ CK_RV ML_CK_C_SignEncryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SignEncryptUpdate, " called for session %ld size %ld\n",
@@ -2202,9 +2575,14 @@ CK_RV ML_CK_C_EncryptFinal( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_EncryptFinal, " called for session %ld\n", session);
@@ -2250,10 +2628,19 @@ CK_RV ML_CK_C_DecryptInit( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_DecryptInit);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hkey = unalias(hkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hkey = unalias(hkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DecryptInit, " called for session %ld\n", session);
@@ -2284,9 +2671,14 @@ CK_RV ML_CK_C_Decrypt( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_Decrypt, " called for session %ld size %ld\n", session,
@@ -2349,9 +2741,14 @@ CK_RV ML_CK_C_DecryptUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
 
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DecryptUpdate, " called for session %ld size %ld\n",
@@ -2411,9 +2808,14 @@ CK_RV ML_CK_C_DecryptFinal( /*in */ CK_SESSION_HANDLE session,	/*out */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DecryptFinal, " called for session %ld size %ld\n",
@@ -2473,9 +2875,14 @@ CK_RV ML_CK_C_DecryptDigestUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DecryptDigestUpdate,
@@ -2537,9 +2944,14 @@ CK_RV ML_CK_C_DecryptVerifyUpdate( /*in */ CK_SESSION_HANDLE session,	/*in */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_DecryptVerifyUpdate,
@@ -2587,9 +2999,14 @@ CK_RV ML_CK_C_GetFunctionStatus( /*in */ CK_SESSION_HANDLE session)
   CHECK_MODULE_FUNCTION(C_GetFunctionStatus);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GetFunctionStatus, " called for session %ld\n", session);
@@ -2606,9 +3023,14 @@ CK_RV ML_CK_C_CancelFunction( /*in */ CK_SESSION_HANDLE session)
   CHECK_MODULE_FUNCTION(C_CancelFunction);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_CancelFunction, " called for session %ld\n", session);
@@ -2637,9 +3059,14 @@ CK_RV ML_CK_C_GetOperationState( /*in */ CK_SESSION_HANDLE session,	/*out */
   /**********************************************/
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_GetOperationState, " called for session %ld\n", session);
@@ -2688,11 +3115,24 @@ CK_RV ML_CK_C_SetOperationState( /*in */ CK_SESSION_HANDLE session,	/*in */
   CHECK_MODULE_FUNCTION(C_SetOperationState);
 
 #ifdef USE_ALIASING
-  /* UNALIASING */
-  session = unalias(session, SESSION);
-  hencryptionkey = unalias(hencryptionkey, OBJECT);
-  hauthenticationkey = unalias(hauthenticationkey, OBJECT);
-  /*------------*/
+  {/* UNALIASING */
+  boolean found;
+  session = unalias(session, SESSION, &found);
+  if(found != TRUE){
+    rv = CKR_SESSION_HANDLE_INVALID;
+    return rv;
+  }
+  hencryptionkey = unalias(hencryptionkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  hauthenticationkey = unalias(hauthenticationkey, OBJECT, &found);
+  if(found != TRUE){
+    rv = CKR_OBJECT_HANDLE_INVALID;
+    return rv;
+  }
+  /*------------*/}
 #endif
 
   DEBUG_CALL(ML_CK_C_SetOperationState,

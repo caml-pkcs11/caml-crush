@@ -82,7 +82,7 @@
 -------------------------- CeCILL-B HEADER ----------------------------------*/
 /* ------- Flags ------------ */
 #ifdef USE_ALIASING
-#include "des.h"
+#include "PRESENT_tables.h"
 #warning "WARNING: using slots, sessions and objects aliasing!"
 #ifdef RANDOM_ALIASING
 #warning "WARNING: using RANDOM aliasing for sessions and objects handles"
@@ -92,43 +92,46 @@
 
 /* ------- Code to handle random permutation for the handles ---------- */
 /* We want to produce unique handles with high bit set to zero */
-/* We use DES feistel network as a random permutation          */
+/* We use PRESENT128 as a random permutation          */
 unsigned char startup = 0;
-des_context des_ctx;
 #define RANDSOURCE "/dev/urandom"
 unsigned long random_permute(unsigned long in);
+
+#define PRESENT128_KEY_SIZE (sizeof(u16) * KEY128)
 
 unsigned long random_permute(unsigned long in)
 {
   unsigned long out;
-  unsigned char input[DES_BLOCK_SIZE] = { 0 };
-  unsigned char output[DES_BLOCK_SIZE] = { 0 };
+  unsigned char input[sizeof(u64)] = { 0 };
+  unsigned char output[sizeof(u64)] = { 0 };
+  u8 subkeys[TABLE_P * PRESENT128_SUBKEYS_SIZE] = {0};
 
   /* Copy our input */
   memcpy(input, &in, sizeof(in));
 
-  /* Initialize the DES with a random key if it is not the */
+  /* Initialize the PRESENT algo with a random key if it is not the */
   /* first time we are here                                */
   if (startup == 0) {
-    unsigned char key[DES_BLOCK_SIZE] = { 0 };
+    unsigned char key[PRESENT128_KEY_SIZE] = { 0 };
     int ret;
     /* Get the key from /dev/urandom */
     FILE *f_rand = fopen(RANDSOURCE, "r");
     if (f_rand == NULL) {
       goto NULLKEY;
     }
-    ret = fread(key, DES_BLOCK_SIZE, 1, f_rand);
-    if (ret != DES_BLOCK_SIZE) {
+    ret = fread(key, PRESENT128_KEY_SIZE, 1, f_rand);
+    if (ret != PRESENT128_KEY_SIZE) {
       goto NULLKEY;
     }
  NULLKEY:
-    des_set_key(&des_ctx, key);
+    /* Compute the subkeys */
+    PRESENT128table_key_schedule((const u8*)key, subkeys);
     startup = 1;
   }
   /* Encrypt */
-  des_encrypt(&des_ctx, input, output);
+  PRESENT128table_core((const u8*)input, subkeys, (u8*)output);
 
-  /* Make the output as half of the DES final state        */
+  /* Make the output as half of the PRESENT final state        */
   memcpy(&out, output, sizeof(out));
 
   return out;
@@ -170,6 +173,21 @@ unsigned long list_size(alias_type type)
     node = node->next;
   }
   return size;
+}
+
+/* Purge a list */
+void purge_list(alias_type type);
+
+void purge_list(alias_type type)
+{
+  alias_struct *node, *next;
+  node = aliases_lists[type];
+  while (node != NULL) {
+    next = node->next;
+    custom_free((void**)&node);
+    node = next;
+  }
+  return;
 }
 
 /* Helpers for aliases */
@@ -242,20 +260,6 @@ unsigned long add_alias(unsigned long original, alias_type type,
   newnode = (alias_struct *) custom_malloc(sizeof(alias_struct));
   newnode->original = original;
   if (mode == INCREMENTAL) {
-    /* If we are adding a new slotid, we might have used transparent         */
-    /* creation ... Let's try to find if we can still use current last alias */
-    if (type == SLOTID) {
-#ifdef __GNUC__
-      __attribute__ ((unused)) unsigned long found_original;
-#else
-      unsigned long found_original;
-#endif
-      found_original = get_original(last_alias[type], type, &found);
-      while (found == TRUE) {
-	(last_alias[type])++;
-	found_original = get_original(last_alias[type], type, &found);
-      }
-    }
     newnode->alias = last_alias[type];
     (last_alias[type])++;
   } else if (mode == RANDOM) {
@@ -263,20 +267,12 @@ unsigned long add_alias(unsigned long original, alias_type type,
     /* Pick up a random number with 32th bit not positionned */
     /* We probably *don't* want to randomize the slot ids    */
     if (type == SLOTID) {
-#ifdef __GNUC__
-      __attribute__ ((unused)) unsigned long found_original;
-#else
-      unsigned long found_original;
-#endif
-      found_original = get_original(last_alias[type], type, &found);
-      while (found == TRUE) {
-	(last_alias[type])++;
-	found_original = get_original(last_alias[type], type, &found);
-      }
+      /* For the slot ids, we only use the incremental mode */
+      /* since we do not want to mess up with the absolute  */
+      /* slot id numbers                                    */
       newnode->alias = last_alias[type];
       (last_alias[type])++;
     } else {
-      /* For the slot ids, we only use the incremental mode */
       newnode->alias = random_permute(original);
     }
   } else {
@@ -415,63 +411,84 @@ void destroy_list(alias_type type)
 
 /* Aliasing main functions layer to deal with 32-bit handles */
 /* This is here to deal with OCaml 31-bit integer limitation */
+/* as well as 32/64-bit cross architectures where a 32-bit   */
+/* client interacts with a 64-bit server                     */
 unsigned long alias(unsigned long in, alias_type type);
 
 unsigned long alias(unsigned long in, alias_type type)
 {
   unsigned long out;
+  alias_mode mode;
+
 #ifdef RANDOM_ALIASING
-  out = add_alias(in, type, RANDOM);
-#ifdef DEBUG
-  if (type != SLOTID) {
-    printf("Aliasing %s: 0x%lx -> 0x%lx (RANDOM)\n", alias_type_str[type], in,
-	   out);
-  } else {
-    printf("Aliasing %s: 0x%lx -> 0x%lx (INCREMENTAL)\n", alias_type_str[type],
-	   in, out);
-  }
-#endif
+  mode = RANDOM;
 #else
-  out = add_alias(in, type, INCREMENTAL);
-#ifdef DEBUG
-  printf("Aliasing %s: 0x%lx -> 0x%lx (INCREMENTAL)\n", alias_type_str[type],
-	 in, out);
+  mode = INCREMENTAL;
 #endif
+  out = add_alias(in, type, mode);
+#ifdef DEBUG
+  printf("Aliasing %s: 0x%lx -> 0x%lx (%s)\n", alias_type_str[type], in, out, alias_mode_str[mode]);
 #endif
 
   return out;
 }
 
-unsigned long unalias(unsigned long in, alias_type type);
+unsigned long unalias(unsigned long in, alias_type type, boolean *found);
 
-unsigned long unalias(unsigned long in, alias_type type)
+unsigned long unalias(unsigned long in, alias_type type, boolean *found)
 {
   unsigned long out;
-  boolean found;
 
-  out = get_original(in, type, &found);
-  if (found == TRUE) {
+  out = get_original(in, type, found);
+  if (*found == TRUE) {
 #ifdef DEBUG
     printf("Unaliasing %s: 0x%lx -> 0x%lx\n", alias_type_str[type], out, in);
 #endif
   } else {
-    /* For the slot ids, since there is no creation "per se", we force the */
-    /* alias creation whenever we need it                                  */
-    if (type == SLOTID) {
+    out = in;
 #ifdef DEBUG
-      printf
-	  ("Unaliasing %s: 0x%lx error! New TRANSPATENT alias creation forced\n",
-	   alias_type_str[type], in);
-#endif
-      add_alias(in, SLOTID, TRANSPARENT);
-    } else {
-      out = in;
-#ifdef DEBUG
-      printf("Unaliasing %s: 0x%lx error! (falling back)\n",
+    printf("Unaliasing %s: 0x%lx error! (falling back)\n",
 	     alias_type_str[type], in);
 #endif
-    }
   }
   return out;
 }
+
+/* Function to handle slot id list refresh */
+/* in case of slot status           update */
+void refresh_slot_id_list(CK_FUNCTION_LIST *pkcs11);
+
+void refresh_slot_id_list(CK_FUNCTION_LIST *pkcs11){
+  /* Handle the SLOTID aliasing */
+  CK_SLOT_ID* slot_id_list;
+  CK_RV rv_slot_list;
+  unsigned long i;
+  unsigned long count = 0;
+
+#ifdef DEBUG
+    printf("Aliasing refresh SLOTID list (purge the list)\n");
+#endif
+ 
+  /* If we are not initialized, return */
+  if(pkcs11 == NULL){
+    return;
+  }
+  /* Purge the existing list */
+  purge_list(SLOTID); 
+  /* List all the slots and alias them in our */
+  /* local list                               */
+  rv_slot_list = pkcs11->C_GetSlotList(CK_FALSE, NULL, &count);
+  slot_id_list = (CK_SLOT_ID*)custom_malloc(count * sizeof(CK_SLOT_ID));
+  rv_slot_list = pkcs11->C_GetSlotList(CK_FALSE, slot_id_list, &count);
+  for(i=0; i < count; i++){
+#ifdef DEBUG
+    printf("Aliasing refresh SLOTID list, adding 0x%lx\n", slot_id_list[i]);
+#endif
+    alias(slot_id_list[i], SLOTID);
+  }
+  custom_free((void**)&slot_id_list);
+
+  return;
+}
+
 #endif

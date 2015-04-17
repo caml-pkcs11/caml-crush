@@ -827,10 +827,42 @@ let configure cf addr =
           Some (cf # string_param (cf # resolve_parameter addr "cipher_suite"))
         with
           | Not_found -> (None); in
+      (* PFS handling *)
+      let dh_params =
+        try
+          Some (cf # string_param (cf # resolve_parameter addr "dh_params"))
+        with
+          | Not_found -> (None); in
+      let ec_curve_name =
+        try
+          Some (cf # string_param (cf # resolve_parameter addr "ec_curve_name"))
+        with
+          | Not_found -> (None); in
       if cipher_suite = None
       then
       begin
           let s = Printf.sprintf "CONFIGURATION: you did not set any cipher_suite list, it will use the OpenSSL HIGH suites!" in
+          Netplex_cenv.log `Info s;
+      end;
+      (* Certificate verification depth *)
+      let verify_depth =
+        try
+          Some (cf # int_param (cf # resolve_parameter addr "verify_depth"))
+        with
+          | Not_found -> (None); in
+
+      (* DHE PFS handling *)
+      if dh_params = None
+      then
+      begin
+          let s = Printf.sprintf "CONFIGURATION: you did not set any dh_params list, PFS DHE suites disabled" in
+          Netplex_cenv.log `Info s;
+      end;
+      (* ECDHE PFS handling *)
+      if ec_curve_name = None
+      then
+      begin
+          let s = Printf.sprintf "CONFIGURATION: you did not set any ec_curve_name list, PFS ECDHE suites disabled" in
           Netplex_cenv.log `Info s;
       end;
       let allowed_clients_cert_path =
@@ -853,8 +885,8 @@ let configure cf addr =
            let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
            failwith s
       end;
-        (use_ssl, cafile, certfile, certkey, cipher_suite, allowed_clients_cert_path)
-  | false -> (use_ssl, "", "", "", None, None)
+        (use_ssl, cafile, certfile, certkey, cipher_suite, dh_params, ec_curve_name, verify_depth, allowed_clients_cert_path)
+  | false -> (use_ssl, "", "", "", None, None, None, None, None)
 ELSE
 let configure cf addr =
   (* Handle configuration file for the filter *)
@@ -911,6 +943,45 @@ let configure cf addr =
           let s = Printf.sprintf "CONFIGURATION: you did not set any cipher_suite list, it will use the OpenSSL HIGH suites!" in
           Netplex_cenv.log `Info s;
       end;
+      (* PFS handling *)
+      let dh_params =
+        try
+          Some (cf # string_param (cf # resolve_parameter addr "dh_params"))
+        with
+          | Not_found -> (None); in
+      let ec_curve_name =
+        try
+          Some (cf # string_param (cf # resolve_parameter addr "ec_curve_name"))
+        with
+          | Not_found -> (None); in
+      if cipher_suite = None
+      then
+      begin
+          let s = Printf.sprintf "CONFIGURATION: you did not set any cipher_suite list, it will use the OpenSSL HIGH suites!" in
+          Netplex_cenv.log `Info s;
+      end;
+
+      (* DHE PFS handling *)
+      if dh_params = None
+      then
+      begin
+          let s = Printf.sprintf "CONFIGURATION: you did not set any dh_params list, PFS DHE suites disabled" in
+          Netplex_cenv.log `Info s;
+      end;
+      (* ECDHE PFS handling *)
+      if ec_curve_name = None
+      then
+      begin
+          let s = Printf.sprintf "CONFIGURATION: you did not set any ec_curve_name list, PFS ECDHE suites disabled" in
+          Netplex_cenv.log `Info s;
+      end;
+      (* Certificate verification depth *)
+      let verify_depth =
+        try
+          Some (cf # int_param (cf # resolve_parameter addr "verify_depth"))
+        with
+          | Not_found -> (None); in
+
       let allowed_clients_cert_path =
         try
           Some (cf # string_param (cf # resolve_parameter addr "allowed_clients_cert_path"))
@@ -931,8 +1002,8 @@ let configure cf addr =
            let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
            failwith s
       end;
-        (use_ssl, cafile, certfile, certkey, cipher_suite, allowed_clients_cert_path)
-  | false -> (use_ssl, "", "", "", None, None)
+        (use_ssl, cafile, certfile, certkey, cipher_suite, dh_params, ec_curve_name, verify_depth, allowed_clients_cert_path)
+  | false -> (use_ssl, "", "", "", None, None, None, None, None)
 
 ENDIF
 (* FIXME: ocaml-ssl does not currently support setting up PFS and other DH ciphers, 
@@ -942,7 +1013,8 @@ ENDIF
          these might become mainstream soon. Until then, we keep using the unsupported suites 
          list.
 *)
-let unsupported_suites = ref ["ECDHE-RSA-AES128-GCM-SHA256"; "ECDHE-ECDSA-AES128-GCM-SHA256"; "ECDHE-RSA-AES256-GCM-SHA384"; "ECDHE-ECDSA-AES256-GCM-SHA384"; "DHE-DSS-AES256-GCM-SHA384"; "DHE-RSA-AES256-GCM-SHA384"; "DHE-DSS-AES128-GCM-SHA256"; "DHE-RSA-AES128-GCM-SHA256"; "ECDHE-RSA-AES128-SHA256"; "ECDHE-ECDSA-AES128-SHA256"; "ECDHE-RSA-AES128-SHA"; "ECDHE-ECDSA-AES128-SHA"; "ECDHE-RSA-AES256-SHA384"; "ECDHE-ECDSA-AES256-SHA384"; "ECDHE-RSA-AES256-SHA"; "ECDHE-ECDSA-AES256-SHA"; "DHE-RSA-AES128-SHA256"; "DHE-RSA-AES128-SHA"; "DHE-RSA-AES256-SHA256"; "DHE-DSS-AES256-SHA"; "ECDHE-RSA-RC4-SHA"; "ECDHE-ECDSA-RC4-SHA"; "DH-DSS-AES256-GCM-SHA384"; "DH-RSA-AES256-GCM-SHA384"; "DHE-DSS-AES256-SHA256"; "DH-RSA-AES256-SHA256"; "DH-DSS-AES256-SHA256"; "DHE-RSA-AES256-SHA"; "DH-RSA-AES256-SHA"; "DH-DSS-AES256-SHA"; "DHE-RSA-CAMELLIA256-SHA"; "DHE-DSS-CAMELLIA256-SHA"; "DH-RSA-CAMELLIA256-SHA"; "DH-DSS-CAMELLIA256-SHA"; "ECDH-RSA-AES256-GCM-SHA384"; "ECDH-ECDSA-AES256-GCM-SHA384"; "ECDH-RSA-AES256-SHA384"; "ECDH-ECDSA-AES256-SHA384"; "ECDH-RSA-AES256-SHA"; "ECDH-ECDSA-AES256-SHA"; "DH-DSS-AES128-GCM-SHA256"; "DH-RSA-AES128-GCM-SHA256"; "DHE-DSS-AES128-SHA256"; "DH-RSA-AES128-SHA256"; "DH-DSS-AES128-SHA256"; "DHE-DSS-AES128-SHA"; "DH-RSA-AES128-SHA"; "DH-DSS-AES128-SHA"; "DHE-RSA-CAMELLIA128-SHA"; "DHE-DSS-CAMELLIA128-SHA"; "DH-RSA-CAMELLIA128-SHA"; "DH-DSS-CAMELLIA128-SHA"; "ECDH-RSA-AES128-GCM-SHA256"; "ECDH-ECDSA-AES128-GCM-SHA256"; "ECDH-RSA-AES128-SHA256"; "ECDH-ECDSA-AES128-SHA256"; "ECDH-RSA-AES128-SHA"; "ECDH-ECDSA-AES128-SHA"]
+let unsupported_suites = ref ["ECDHE-RSA-RC4-SHA"; "ECDHE-ECDSA-RC4-SHA"; "ECDH-RSA-RC4-SHA"; "ECDH-ECDSA-RC4-SHA"; "DH-DSS-AES256-GCM-SHA384"; "DH-RSA-AES256-GCM-SHA384"; "DH-RSA-AES256-SHA256"; "DH-DSS-AES256-SHA256"; "DH-RSA-AES256-SHA"; "DH-DSS-AES256-SHA"; "DH-RSA-CAMELLIA256-SHA"; "DH-DSS-CAMELLIA256-SHA"; "ECDH-RSA-AES256-GCM-SHA384"; "ECDH-ECDSA-AES256-GCM-SHA384"; "ECDH-RSA-AES256-SHA384"; "ECDH-ECDSA-AES256-SHA384"; "ECDH-RSA-AES256-SHA"; "ECDH-ECDSA-AES256-SHA"; "DH-DSS-AES128-GCM-SHA256"; "DH-RSA-AES128-GCM-SHA256"; "DH-RSA-AES128-SHA256"; "DH-DSS-AES128-SHA256"; "DH-RSA-AES128-SHA"; "DH-DSS-AES128-SHA"; "DH-RSA-CAMELLIA128-SHA"; "DH-DSS-CAMELLIA128-SHA"; "ECDH-RSA-AES128-GCM-SHA256"; "ECDH-ECDSA-AES128-GCM-SHA256"; "ECDH-RSA-AES128-SHA256"; "ECDH-ECDSA-AES128-SHA256"; "ECDH-RSA-AES128-SHA"; "ECDH-ECDSA-AES128-SHA"]
+
 
 (* We do not let OpenSSL fallback to ugly ciphers *)
 let exclude_bad_ciphers = ref "!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK:!RC4"
@@ -1051,12 +1123,12 @@ let check_is_client_certificate_allowed allowed_clients_cert_path client_cert =
        let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
        failwith s
 
-let my_socket_config use_ssl cafile certfile certkey cipher_suite allowed_clients_cert_path =
+let my_socket_config use_ssl cafile certfile certkey cipher_suite dh_params ec_curve_name verify_depth allowed_clients_cert_path =
   match use_ssl with
   | true ->
     flush stdout;
     Ssl.init();
-    let ctx = Ssl.create_context Ssl.TLSv1 Ssl.Server_context in
+    let ctx = Ssl.create_context Ssl.TLSv1_2 Ssl.Server_context in
     Ssl.set_verify ctx [ Ssl.Verify_peer; Ssl.Verify_fail_if_no_peer_cert ] None;
 
     (* Setup given cipher_suite *)
@@ -1079,10 +1151,30 @@ let my_socket_config use_ssl cafile certfile certkey cipher_suite allowed_client
     end;
 
     Ssl.set_client_CA_list_from_file ctx cafile;
-    Ssl.set_verify_depth ctx 4;
+    begin
+    match verify_depth with
+     None -> Ssl.set_verify_depth ctx 4;
+    | Some params -> Ssl.set_verify_depth ctx params;
+    end;
 
     Ssl.load_verify_locations ctx cafile "" ;
     Ssl.use_certificate ctx certfile certkey;
+
+    begin
+    match dh_params with
+     None -> ()
+    | Some params -> try Ssl.init_dh_from_file ctx params
+                        with _ -> let s = Printf.sprintf "Could not set DH params from file %s" params in
+                        failwith s
+    end;
+
+    begin
+    match ec_curve_name with
+     None -> ()
+    | Some params -> try Ssl.init_ec_from_named_curve ctx params
+                        with _ -> let s = Printf.sprintf "Could not set EC curve name %s" params in
+                        failwith s
+    end;
 
     Rpc_ssl.ssl_server_socket_config
       ~get_peer_user_name:(fun _ sslsock ->
@@ -1102,8 +1194,8 @@ let my_socket_config use_ssl cafile certfile certkey cipher_suite allowed_client
         ctx
     | false -> Rpc_server.default_socket_config
 
-let socket_config (use_ssl, cafile, certfile, certkey, cipher_suite, allowed_clients_cert_path) =
-  my_socket_config use_ssl cafile certfile certkey cipher_suite allowed_clients_cert_path
+let socket_config (use_ssl, cafile, certfile, certkey, cipher_suite, dh_params, ec_curve_name, verify_depth, allowed_clients_cert_path) =
+  my_socket_config use_ssl cafile certfile certkey cipher_suite dh_params ec_curve_name verify_depth allowed_clients_cert_path
 
 ELSE
 (* WITHOUT SSL *)
