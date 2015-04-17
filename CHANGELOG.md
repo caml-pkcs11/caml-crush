@@ -2,6 +2,8 @@
 
 ## [Unreleased][unreleased]
 
+## [1.0.5] - 2015-04-17
+
 ### Security
 * Ability to configure your own wrapping format key.
 
@@ -46,6 +48,7 @@
 * correct conflicting attribute patch regarding.
 * GnuTLS ressource deallocation issue.
 
-[unreleased]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.4...HEAD
+[unreleased]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.2...v1.0.3
