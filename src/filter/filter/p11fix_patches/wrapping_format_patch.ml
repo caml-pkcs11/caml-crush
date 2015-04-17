@@ -72,93 +72,95 @@ let char_array_to_template_array buffer =
   (* Expurge the template from empty attributes *)
   (expurge_template_from_irrelevant_attributes out_template_array)
 
-(* We define a fixed key in the code *)
-(* WARNING: this is here for demo purpose, do NOT use this key    *)
-(* as is in production code!                                      *)
-(* You probably want to use a key secured in a token, or at least *)
-(* a random key protected in a file                               *)
-(************************************************************************************************************)
-(**)let wrapping_format_key = Pkcs11.string_to_char_array (Pkcs11.pack "00000000000000000000000000000000")(**)
+
+(**************    WARNING ************************************)
+(* We use the key configured in the filter configuration file *)
+(* You might preferably want to use a key secured in a token  *)
 (************************************************************************************************************)
 
+
 let wrapping_format_patch fun_name arg =
-  match fun_name with
-  (* WrapKey *)
-  ("C_WrapKey")  ->
-      let (sessionh, mechanism, wrappingh, wrappedh) = deserialize arg in
-      (* Call Wrap in the backend to get binary blob *)
-      let (ret, wrapped_key_buffer) = Backend.c_WrapKey sessionh mechanism wrappingh wrappedh in
-      (* If we have an error here, return it as is *)
-      if compare ret Pkcs11.cKR_OK <> 0 then
-        (serialize (true, (ret, [||])))
-      else
-        (* Get the attributes of the object we want to wrap *)
-        let (ret, templates) = filter_getAttributeValue sessionh wrappedh (critical_attributes !segregate_usage) in
-        if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
-          if (compare ret Pkcs11.cKR_OK <> 0) then
-            (serialize (true, (Pkcs11.cKR_KEY_NOT_WRAPPABLE, [||])))
-          else
-            let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...): occured during C_WrapKey for WRAPPING_FORMAT\n" in netplex_log_critical s; failwith s;
+  (* Raise an error if the key is empty *)
+  if Array.length !wrapping_format_key = 0 then
+    let s = Printf.sprintf "[User defined extensions] %s error for WRAPPING_FORMAT: no wrapping key format has been defined in the configuration file!\n" fun_name in netplex_log_critical s; failwith s;
+  else
+    match fun_name with
+    (* WrapKey *)
+    ("C_WrapKey")  ->
+        let (sessionh, mechanism, wrappingh, wrappedh) = deserialize arg in
+        (* Call Wrap in the backend to get binary blob *)
+        let (ret, wrapped_key_buffer) = Backend.c_WrapKey sessionh mechanism wrappingh wrappedh in
+        (* If we have an error here, return it as is *)
+        if compare ret Pkcs11.cKR_OK <> 0 then
+          (serialize (true, (ret, [||])))
         else
-          let (ret, templates_values) = filter_getAttributeValue sessionh wrappedh templates in
-          if compare ret Pkcs11.cKR_OK <> 0 then
-            (serialize (true, (Pkcs11.cKR_KEY_NOT_WRAPPABLE, [||])))
+          (* Get the attributes of the object we want to wrap *)
+          let (ret, templates) = filter_getAttributeValue sessionh wrappedh (critical_attributes !segregate_usage) in
+          if (compare ret Pkcs11.cKR_OK <> 0) || (compare templates [||] = 0) then
+            if (compare ret Pkcs11.cKR_OK <> 0) then
+              (serialize (true, (Pkcs11.cKR_KEY_NOT_WRAPPABLE, [||])))
+            else
+              let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting critical attributes (it is not possible to get these attributes from the backend ...): occured during C_WrapKey for WRAPPING_FORMAT\n" in netplex_log_critical s; failwith s;
           else
-            (* Compute the buffer *)
-            let buffer = Array.append wrapped_key_buffer (template_array_to_char_array templates_values) in
-            (* Compute the CMAC *)
-            let buffer_cmac = cmac_compute buffer wrapping_format_key in
-            (* Append the CMAC to the buffer *)
-            let wrapping_format_buffer = Array.append buffer buffer_cmac in
-            (serialize (true, (Pkcs11.cKR_OK, wrapping_format_buffer)))
-  (* UnwrapKey *)
-  | ("C_UnwrapKey")  ->
-      let (sessionh, mechanism, unwrappingh, buffer, asked_attributes) = deserialize arg in
-      let attributes_array_buffer_length = (Array.length (critical_attributes !segregate_usage))+3 in
-      (****)
-      let extraction_error_ = false in
-      let extraction_error = ref extraction_error_ in
-      let buffer_attributes = (try Array.sub buffer ((Array.length buffer) - attributes_array_buffer_length - 16) attributes_array_buffer_length
-        with _ -> extraction_error := true; ([||])
-      ) in
-      let real_wrapped_key_buffer =  (try Array.sub buffer 0 ((Array.length buffer) - attributes_array_buffer_length - 16)
-        with _ -> extraction_error := true; ([||])
-      ) in
-      if compare !extraction_error true = 0 then
-        (* In case of an extraction error ... *)
-        let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s detected bad CMAC" fun_name in
-        let _ = print_debug info_string 1 in
-        (serialize (true, (Pkcs11.cKR_FUNCTION_FAILED, Pkcs11.cK_INVALID_HANDLE)))
-      else
-        (* Compute the CMAC *)
-        let check_cmac = cmac_verify buffer wrapping_format_key in
-        if compare check_cmac false = 0 then
-          (* CMAC is not OK: return an error *)
+            let (ret, templates_values) = filter_getAttributeValue sessionh wrappedh templates in
+            if compare ret Pkcs11.cKR_OK <> 0 then
+              (serialize (true, (Pkcs11.cKR_KEY_NOT_WRAPPABLE, [||])))
+            else
+              (* Compute the buffer *)
+              let buffer = Array.append wrapped_key_buffer (template_array_to_char_array templates_values) in
+              (* Compute the CMAC *)
+              let buffer_cmac = cmac_compute buffer !wrapping_format_key in
+              (* Append the CMAC to the buffer *)
+              let wrapping_format_buffer = Array.append buffer buffer_cmac in
+              (serialize (true, (Pkcs11.cKR_OK, wrapping_format_buffer)))
+    (* UnwrapKey *)
+    | ("C_UnwrapKey")  ->
+        let (sessionh, mechanism, unwrappingh, buffer, asked_attributes) = deserialize arg in
+        let attributes_array_buffer_length = (Array.length (critical_attributes !segregate_usage))+3 in
+        (****)
+        let extraction_error_ = false in
+        let extraction_error = ref extraction_error_ in
+        let buffer_attributes = (try Array.sub buffer ((Array.length buffer) - attributes_array_buffer_length - 16) attributes_array_buffer_length
+          with _ -> extraction_error := true; ([||])
+        ) in
+        let real_wrapped_key_buffer =  (try Array.sub buffer 0 ((Array.length buffer) - attributes_array_buffer_length - 16)
+          with _ -> extraction_error := true; ([||])
+        ) in
+        if compare !extraction_error true = 0 then
+          (* In case of an extraction error ... *)
           let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s detected bad CMAC" fun_name in
           let _ = print_debug info_string 1 in
           (serialize (true, (Pkcs11.cKR_FUNCTION_FAILED, Pkcs11.cK_INVALID_HANDLE)))
         else
-          (* CMAC is OK, check the templates consistency *)
-          let saved_attributes = char_array_to_template_array buffer_attributes in
-          let check_templates_nok = check_are_templates_nonconforming fun_name saved_attributes asked_attributes in
-          if compare check_templates_nok true = 0 then
-            let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s detected templates inconsistency" fun_name in
+          (* Compute the CMAC *)
+          let check_cmac = cmac_verify buffer !wrapping_format_key in
+          if compare check_cmac false = 0 then
+            (* CMAC is not OK: return an error *)
+            let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s detected bad CMAC" fun_name in
             let _ = print_debug info_string 1 in
-            (serialize (true, (Pkcs11.cKR_TEMPLATE_INCONSISTENT, Pkcs11.cK_INVALID_HANDLE)))
+            (serialize (true, (Pkcs11.cKR_FUNCTION_FAILED, Pkcs11.cK_INVALID_HANDLE)))
           else
-            (* Sanitize the merged template *)
-            let object_class = get_object_class asked_attributes in
-            let sanitized_attributes_ = sanitize_creation_templates fun_name asked_attributes object_class in
-            (* NB: we cannot use the generic patch because of our user extension system limitation *)
-            (* since the wrapping_format must be an "end point"                                    *)
-            if compare sanitized_attributes_ None = 0 then
-              let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s error, NO CKA_CLASS in template" fun_name in
+            (* CMAC is OK, check the templates consistency *)
+            let saved_attributes = char_array_to_template_array buffer_attributes in
+            let check_templates_nok = check_are_templates_nonconforming fun_name saved_attributes asked_attributes in
+            if compare check_templates_nok true = 0 then
+              let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s detected templates inconsistency" fun_name in
               let _ = print_debug info_string 1 in
-              (serialize (true, (Pkcs11.cKR_FUNCTION_FAILED, Pkcs11.cK_INVALID_HANDLE)))
+              (serialize (true, (Pkcs11.cKR_TEMPLATE_INCONSISTENT, Pkcs11.cK_INVALID_HANDLE)))
             else
-              let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s has CMAC and templates OK" fun_name in
-              let _ = print_debug info_string 1 in
-              (* All is OK, call the real Unwrap function from the backend *)
-              (serialize (true, (Backend.c_UnwrapKey sessionh mechanism unwrappingh real_wrapped_key_buffer (get sanitized_attributes_))))
-  (* Default if we are in a non concerned function is to passthrough *)
-  | _ -> (serialize (false, ()))
+              (* Sanitize the merged template *)
+              let object_class = get_object_class asked_attributes in
+              let sanitized_attributes_ = sanitize_creation_templates fun_name asked_attributes object_class in
+              (* NB: we cannot use the generic patch because of our user extension system limitation *)
+              (* since the wrapping_format must be an "end point"                                    *)
+              if compare sanitized_attributes_ None = 0 then
+                let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s error, NO CKA_CLASS in template" fun_name in
+                let _ = print_debug info_string 1 in
+                (serialize (true, (Pkcs11.cKR_FUNCTION_FAILED, Pkcs11.cK_INVALID_HANDLE)))
+              else
+                let info_string = Printf.sprintf "[User defined extensions]: WRAPPING_FORMAT for %s has CMAC and templates OK" fun_name in
+                let _ = print_debug info_string 1 in
+                (* All is OK, call the real Unwrap function from the backend *)
+                (serialize (true, (Backend.c_UnwrapKey sessionh mechanism unwrappingh real_wrapped_key_buffer (get sanitized_attributes_))))
+    (* Default if we are in a non concerned function is to passthrough *)
+    | _ -> (serialize (false, ()))

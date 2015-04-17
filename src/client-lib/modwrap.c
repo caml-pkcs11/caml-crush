@@ -91,6 +91,8 @@
 #endif
 #include "modwrap.h"
 
+#define MODNAME "caml-crush: "
+
 /* Wrap around pthread for Windows as we do not want
  * the pthread dependency on this platform */
 #ifdef WIN32
@@ -352,7 +354,7 @@ void custom_sanitize_ck_mechanism(struct ck_mechanism *mech)
       if ((*mech).parameter_len > MAX_BUFF_LEN) {
 #ifdef DEBUG
 	fprintf(stderr,
-		"Detected garbage mech_params passing NULL,0 instead\n");
+		MODNAME"Detected garbage mech_params passing NULL,0 instead\n");
 #endif
 	(*mech).parameter_len = 0;
 	(*mech).parameter = NULL;
@@ -369,11 +371,11 @@ size_t mygetline(char *lineptr, FILE *stream) {
   int c;
 
   if (lineptr == NULL) {
-    fprintf(stderr, "mygetline: lineptr is NULL\n");
+    fprintf(stderr, MODNAME"mygetline: lineptr is NULL\n");
     return -1;
   }
   if (stream == NULL) {
-    fprintf(stderr, "mygetline: stream is NULL\n");
+    fprintf(stderr, MODNAME"mygetline: stream is NULL\n");
     return -1;
   }
   c = fgetc(stream);
@@ -382,7 +384,7 @@ size_t mygetline(char *lineptr, FILE *stream) {
   }
   while(c != EOF) {
     if ((p - lineptr) > (MAX_LIBNAME_LEN - 1)) {
-      fprintf(stderr, "mygetline: line is > to %d\n", MAX_LIBNAME_LEN);
+      fprintf(stderr, MODNAME"mygetline: line is > to %d\n", MAX_LIBNAME_LEN);
       return -2;
     }
     *p++ = c;
@@ -409,7 +411,7 @@ int get_libname_from_file(char *libname){
 
     home = getenv("HOME");
     if(!home){
-        fprintf(stderr, "get_libname_from_file: HOME variable not found\n");
+        fprintf(stderr, MODNAME"get_libname_from_file: HOME variable not found\n");
         return -1;
     }
     home_len = strnlen(home, MAX_ENV_LEN);
@@ -417,7 +419,7 @@ int get_libname_from_file(char *libname){
 	file_path_len = home_len + strlen(LIBNAME_FILE_NAME) + 2;
     file_path = custom_malloc(file_path_len);
     if(!file_path){
-        fprintf(stderr, "get_libname_from_file: malloc failed\n");
+        fprintf(stderr, MODNAME"get_libname_from_file: malloc failed\n");
         return -1;
     }
 	memset(file_path, 0, file_path_len);
@@ -429,13 +431,13 @@ int get_libname_from_file(char *libname){
     file = fopen(file_path, "r");
     if(!file){
         fprintf(stderr,
-				"get_libname_from_file: open failed for file %s\n",file_path);
+				MODNAME"get_libname_from_file: open failed for file %s\n",file_path);
         return -1;
     }
 
     count = mygetline(libname, file);
     if(count < 0){
-        fprintf(stderr, "get_libname_from_file: LIBNAME could not be read\n");
+        fprintf(stderr, MODNAME"get_libname_from_file: LIBNAME could not be read\n");
         return -1;
     }
     fclose(file);
@@ -446,8 +448,10 @@ int get_libname_from_file(char *libname){
 
 /* Keep the pid of current process */
 #ifndef WIN32
-pid_t local_pid = 0;
+static pid_t local_pid = 0;
 #endif
+
+static ck_rv_t init_rv;
 
 /* Init function is called when loading library */
 #ifndef WIN32
@@ -462,6 +466,7 @@ void init()
   char libname_file[32] = {0};
 #endif
 
+  init_rv = CKR_OK;
   /* Store the PID to match it in case of a fork */
 #ifndef WIN32
   local_pid = getpid();
@@ -494,8 +499,9 @@ void init()
 #ifdef LIBNAME_FILE
     /* Find the LIBNAME in a file */
 	if(get_libname_from_file(libname_file) != 0){
-		fprintf(stderr, "Init failed, could not find a LIBNAME EXITING\n");
-		exit(-1);
+		fprintf(stderr, MODNAME"Init failed, could not find a LIBNAME\n");
+		init_rv = CKR_DEVICE_ERROR;
+		goto fail;
 	}
 #ifdef CAMLRPC
     ret = init_ml(libname_file);
@@ -514,30 +520,38 @@ void init()
 
   /* Did we manage to detect arch ? */
   if ((peer_arch == 0 || peer_arch == 5) || (my_arch == 0 || my_arch == 5)) {
-    fprintf(stderr, "C_SetupArch: failed detecting architecture\n");
-    exit(-1);
+    fprintf(stderr, MODNAME"C_SetupArch: failed detecting architecture\n");
+    init_rv = CKR_DEVICE_ERROR;
+    goto fail;
   }
 
   if (ret != CKR_OK) {
 	if(libname != NULL){
       fprintf(stderr,
-		"C_LoadModule: failed loading PKCS#11 module %s (read from env)\n",
+		MODNAME"C_LoadModule: failed loading PKCS#11 module %s (read from env)\n",
 		libname);
 	}
 	else{
 #ifdef LIBNAME_FILE
     fprintf(stderr,
-	    "C_LoadModule: failed loading PKCS#11 module %s (read from file)\n",
+	    MODNAME"C_LoadModule: failed loading PKCS#11 module %s (read from file)\n",
 	    libname_file);
 #else
-    fprintf(stderr, "C_LoadModule: failed loading PKCS#11 module %s (builtin)\n",
+    fprintf(stderr, MODNAME"C_LoadModule: failed loading PKCS#11 module %s (builtin)\n",
 	    xstr(LIBNAME));
 #endif
 	}
-    fprintf(stderr, "Init failed, EXITING\n");
-    exit(-1);
+    fprintf(stderr, MODNAME"Init failed\n");
+    init_rv = CKR_DEVICE_ERROR;
+    goto fail;
   }
   return;
+
+fail:
+  pthread_mutex_destroy(&mutex);
+#ifndef CAMLRPC
+  pthread_mutex_destroy(&linkedlist_mutex);
+#endif
 }
 
 /* Disconnect all stuff */
@@ -651,8 +665,12 @@ struct ck_function_list function_list = {
 ck_rv_t C_Initialize(void *init_args)
 {
   ck_rv_t ret;
-  pthread_mutex_lock(&mutex);
   check_pid;
+  if (init_rv != CKR_OK)
+    return init_rv;
+
+  pthread_mutex_lock(&mutex);
+
 #ifdef CAMLRPC
   ret = myC_Initialize(init_args);
 #else
@@ -719,7 +737,7 @@ C_WaitForSlotEvent(ck_flags_t input0, ck_slot_id_t * output1, void *reserved)
   check_pid;
   if (input0 == CKF_DONT_BLOCK) {
 #ifdef DEBUG
-    fprintf(stderr, "\nC_WaitForSlotEvent called with non block\n");
+    fprintf(stderr, MODNAME"\nC_WaitForSlotEvent called with non block\n");
 #endif
     pthread_mutex_lock(&mutex);
 #ifdef CAMLRPC
@@ -731,7 +749,7 @@ C_WaitForSlotEvent(ck_flags_t input0, ck_slot_id_t * output1, void *reserved)
     return ret;
   } else {
 #ifdef DEBUG
-    fprintf(stderr, "\nC_WaitForSlotEvent called with block, return\n");
+    fprintf(stderr, MODNAME"\nC_WaitForSlotEvent called with block, return\n");
 #endif
     while (1) {
       /* FIXME: usleep migth be deprecated in favor of nanosleep */
@@ -759,14 +777,14 @@ C_WaitForSlotEvent(ck_flags_t input0, ck_slot_id_t * output1, void *reserved)
       if (ret == CKR_NO_EVENT) {
 	is_Blocking = 1;
 #ifdef DEBUG
-	fprintf(stderr, "\nC_WaitForSlotEvent NO EVENT, keep BLOCKING\n");
+	fprintf(stderr, MODNAME"\nC_WaitForSlotEvent NO EVENT, keep BLOCKING\n");
 #endif
       }
       /* Got an event, we'll return */
       else {
 	is_Blocking = 0;
 #ifdef DEBUG
-	fprintf(stderr, "\nC_WaitForSlotEvent GOT EVENT\n");
+	fprintf(stderr, MODNAME"\nC_WaitForSlotEvent GOT EVENT\n");
 #endif
       }
       pthread_mutex_unlock(&mutex);
@@ -1793,12 +1811,12 @@ ck_rv_t C_GetFunctionList(struct ck_function_list ** ppFunctionList)
   if (ppFunctionList == NULL) {
 #ifdef DEBUG
     fprintf(stderr,
-	    "C_GetFunctionList: ppFunctionList must not be a NULL_PTR\n");
+	    MODNAME"C_GetFunctionList: ppFunctionList must not be a NULL_PTR\n");
 #endif
     return CKR_ARGUMENTS_BAD;
   }
 #ifdef DEBUG
-  fprintf(stderr, "Got ppFunctionList = 0x%p\n", (void *)(&function_list));
+  fprintf(stderr, MODNAME"Got ppFunctionList = 0x%p\n", (void *)(&function_list));
 #endif
   *ppFunctionList = &function_list;
 

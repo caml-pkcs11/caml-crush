@@ -390,6 +390,7 @@ SSL *ssl;
 #define CKR_BUFFER_TOO_SMALL            (0x150UL)
 #define CKR_OPERATION_ACTIVE            (0x90L)
 #define CKR_FUNCTION_NOT_SUPPORTED      (0x54UL)
+#define CKR_DEVICE_ERROR                (0x00000030UL)
 
 /* Defines imported to match mechanism in sanitize function */
 #define CKM_RSA_PKCS                    (1UL)

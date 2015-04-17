@@ -67,17 +67,6 @@ all:	$(TARGETS)
 clean:
 	del  $(TARGETS) $(CLIENT_OBJ) $(TRASH)
 
-#prepare and restore target simply patch (bad structure packing due to camlidl) and restore
-# when the compilation is done.
-# An encoded command to perform a "sed" is used due to nmake limitations
-# it is simply $command = "cat ..\bindings-pkcs11\pkcs11.h.old| %{ `$_ -replace ""push,8"", ""push,1""} | Out-file ..\bindings-pkcs11\pkcs11.h)"
-# see powershell.exe /? to see how the command was encoded
-prepare:
-	move ..\bindings-pkcs11\pkcs11.h ..\bindings-pkcs11\pkcs11.h.old
-	Powershell -EncodedCommand YwBhAHQAIAAuAC4AXABiAGkAbgBkAGkAbgBnAHMALQBwAGsAYwBzADEAMQBcAHAAawBjAHMAMQAxAC4AaAAuAG8AbABkAHwAIAAlAHsAIAAkAF8AIAAtAHIAZQBwAGwAYQBjAGUAIAAiAHAAdQBzAGgALAA4ACIALAAgACIAcAB1AHMAaAAsADEAIgB9ACAAfAAgAE8AdQB0AC0AZgBpAGwAZQAgAC4ALgBcAGIAaQBuAGQAaQBuAGcAcwAtAHAAawBjAHMAMQAxAFwAcABrAGMAcwAxADEALgBoAA==
-restore:
-	move ..\bindings-pkcs11\pkcs11.h.old ..\bindings-pkcs11\pkcs11.h
-
 #Compile and link
 $(CLIENTLIB).dll: $(CLIENT_OBJ) $(LINK_FLAGS)
 	link /OUT:$*.dll $(CLIENT_OBJ) $(ldebug) $(dlllflags) $(conlibsdll) $(LINK_FLAGS)

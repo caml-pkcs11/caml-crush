@@ -91,6 +91,7 @@ exception Enforce_RO_except
 exception Forbid_admin
 exception Remove_padding_oracles
 exception Actions_except
+exception Wrapping_key_except
 
 (** Generic function to get the value of an option **)
 let get = function
@@ -105,6 +106,11 @@ let current_find_objects_filtered_handles : Pkcs11.ck_object_handle_t array ref 
 (* Current module if it is loaded *)
 let current_module : string option ref = ref None
 
+(* FIXME: putting the wrapping format key as a global variable here  *)
+(* is not very clever, but this is the easiest way to share it among *)
+(* our configuration and user actions modules                        *)
+(* We should move it in the P11 patchset fix in a future release     *)
+let wrapping_format_key : char array ref = ref [||]
 
 (****************************)
 (* Basic logging primitives *)

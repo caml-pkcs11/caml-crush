@@ -168,7 +168,10 @@ INCLUDE "p11fix_patches/non_local_objects_patch.ml"
 (* see http://secgroup.dais.unive.it/projects/security-apis/cryptokix/ *)
 INCLUDE "p11fix_patches/secure_templates_patch.ml"
 
- 
+(***********************************************************************)
+(* The existing sensitive keys patch:                                  *)
+INCLUDE "p11fix_patches/existing_sensitive_keys_patch.ml"
+
 
 (***********************************************************************)
 (********* CUSTOM actions wrappers for the configuration file ******)
@@ -185,6 +188,9 @@ let execute_action fun_name action argument = match action with
 | "non_local_objects_patch" -> non_local_objects_patch fun_name argument
 | "do_segregate_usage" -> do_segregate_usage fun_name argument
 | "secure_templates_patch" -> secure_templates_patch fun_name argument
+| "dangerous_sensitive_keys_paranoid" -> dangerous_sensitive_keys_paranoid fun_name argument
+| "dangerous_sensitive_keys_escrow_encrypt" -> dangerous_sensitive_keys_escrow_encrypt fun_name argument
+| "dangerous_sensitive_keys_escrow_all" -> dangerous_sensitive_keys_escrow_all fun_name argument
 | _ -> identity fun_name argument
 
 let string_check_action a = match a with
@@ -200,6 +206,9 @@ let string_check_action a = match a with
 | "non_local_objects_patch" -> a
 | "do_segregate_usage" -> a
 | "secure_templates_patch" -> a
+| "dangerous_sensitive_keys_paranoid" -> a
+| "dangerous_sensitive_keys_escrow_encrypt" -> a
+| "dangerous_sensitive_keys_escrow_all" -> a
 | _ -> let error_string = Printf.sprintf "Error: unknown action option '%s'!" a in netplex_log_critical error_string; raise Config_file_wrong_type
 
 
