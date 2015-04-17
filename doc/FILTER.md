@@ -98,7 +98,7 @@ lists of tuples and regular expressions.
 The accepted options keywords, with their OCaml style syntax, are:
 
   * **debug** = integer between 0 and 3
-  * **wrapping\_format\_key** = a 32 long string that must use hexadecimal values to setup the wrapping format key
+  * **wrapping\_format\_key** = a 32 char long string that must use hexadecimal values to setup the wrapping format key
   * **modules** = [(a1, b1), (a2, b2) ...] is a **list** of **couples** of strings (a, b) with 'a' being an alias, and 'b' 
 being a PATH to the aliased PKCS#11 module
   * **log_subchannel** = **string** representing the filter log subchannel in the server
@@ -163,8 +163,9 @@ Syntax example:
   * **wrapping\_format\_key** (*32 char long string*) can be used to configure the AES-128 bit key use as wrapping format key.
 
 No default value is provided, you **MUST** uncomment and use a
-cryptographically sound random values. It must be converted to **hexadecimal**
-format.
+cryptographically sound random values when using the `wrapping_format_patch`
+function of the patchset 1 which is the default configuration. It must be
+converted to **hexadecimal** format.
 
 ## PKCS#11 modules options
 
@@ -613,7 +614,8 @@ The sticky attributes patch ensure that problematic attributes transition cannot
 
 This function is used to replace the classic `C_WrapKey`/`C_UnwrapKey` operations to
 protect from injecting rogue keys.
-You must configure the AES key that will be used for CMAC to ensure integrity.
+You must configure the AES key (see wrapping\_format\_key) that will be used
+for CMAC to ensure integrity when using this function.
 
 * `secure_templates_patch`, patchset 2, applies to:
   * `C_SetAttributeValue`
