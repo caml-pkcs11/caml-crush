@@ -2,6 +2,9 @@
 
 ## [Unreleased][unreleased]
 
+## [1.0.6] - 2015-05-28
+* Switch to MIT license for the project.
+
 ## [1.0.5] - 2015-04-17
 
 ### Security
@@ -48,7 +51,8 @@
 * correct conflicting attribute patch regarding.
 * GnuTLS ressource deallocation issue.
 
-[unreleased]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.5...HEAD
+[unreleased]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.2...v1.0.3
