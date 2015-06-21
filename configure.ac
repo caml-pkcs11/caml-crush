@@ -68,6 +68,9 @@ echo "###########################################" >> ./summary
 # CHECK Make
 
 case $host_type in
+   *-gnu*)
+	make_exe=make
+	;;
    *freebsd*)
 	make_exe=gmake
 	;;
