@@ -22,11 +22,11 @@ install:
 	install -m 640 -D @srcdir@/filter.conf ${sysconf}/$(server_name)/filter.conf
 
 uninstall:
-	echo "Removing $(server_name) to ${prefix}/bin/$(server_name)"
+	echo "Removing $(server_name) from ${prefix}/bin/$(server_name)"
 	rm ${prefix}/bin/$(server_name)
-	echo "Removing $(server_name).conf to ${sysconf}/$(server_name)/$(server_name).conf"
-	rm ${sysconf}/etc/$(server_name)/$(server_name).conf
-	rm ${sysconf}/etc/$(server_name)/filter.conf
+	echo "Removing $(server_name).conf from ${sysconf}/$(server_name)/$(server_name).conf"
+	rm ${sysconf}/$(server_name)/$(server_name).conf
+	rm ${sysconf}/$(server_name)/filter.conf
 
 clean:
 	@rm -f @srcdir@/*.cmi @srcdir@/*.cmo @srcdir@/*.cma @srcdir@/*.cmx @srcdir@/*.o @srcdir@/*.a @srcdir@/*.cmxa @srcdir@/dll* @srcdir@/packlist-* @srcdir@/ocamldoc.dump @srcdir@/META @srcdir@/depend @srcdir@/$(server_name) @srcdir@/*.astamp @srcdir@/*.cstamp @srcdir@/*.s2stamp
