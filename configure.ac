@@ -543,6 +543,11 @@ then
 	if test "$use_ocamlnet_tls" == "yes"
 	then
 		AC_MSG_NOTICE([Using newer Ocamlnet TLS])
+		# Since Ocamlnet TLS is based on gnutls, check
+		# that the library dev package is installed
+		AC_CHECK_LIB(gnutls, gnutls_record_recv, GNUTLS_LIB="-lgnutls",
+		AC_MSG_ERROR(Cannot find symbol in gnutls library.))
+		# Check that the Ocaml nettls-gnutls is installed
 		AC_CHECK_OCAML_PKG([nettls-gnutls], nettlsgnutls)
 		# Position the ssl define and linking for the server
         	AC_SUBST(caml_server_ssl_define, "-DWITH_SSL")
