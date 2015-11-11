@@ -226,15 +226,10 @@ ELSE
 ENDIF
 ENDIF
 
-(* FIXME: ocaml-ssl does not currently support setting up PFS and other DH ciphers, 
-          if DH, ECDH suites are asked, we have to inform the user about it's
-          non-availability and remove them from the list 
-   TODO: patches have been submitted to ocaml-ssl to support new cipher suites, so 
-         these might become mainstream soon. Until then, we keep using the unsupported suites 
-         list.
-*)
 IFDEF WITH_SSL_LEGACY THEN
-let unsupported_suites = ref ["ECDHE-RSA-RC4-SHA"; "ECDHE-ECDSA-RC4-SHA"; "ECDH-RSA-RC4-SHA"; "ECDH-ECDSA-RC4-SHA"; "DH-DSS-AES256-GCM-SHA384"; "DH-RSA-AES256-GCM-SHA384"; "DH-RSA-AES256-SHA256"; "DH-DSS-AES256-SHA256"; "DH-RSA-AES256-SHA"; "DH-DSS-AES256-SHA"; "DH-RSA-CAMELLIA256-SHA"; "DH-DSS-CAMELLIA256-SHA"; "ECDH-RSA-AES256-GCM-SHA384"; "ECDH-ECDSA-AES256-GCM-SHA384"; "ECDH-RSA-AES256-SHA384"; "ECDH-ECDSA-AES256-SHA384"; "ECDH-RSA-AES256-SHA"; "ECDH-ECDSA-AES256-SHA"; "DH-DSS-AES128-GCM-SHA256"; "DH-RSA-AES128-GCM-SHA256"; "DH-RSA-AES128-SHA256"; "DH-DSS-AES128-SHA256"; "DH-RSA-AES128-SHA"; "DH-DSS-AES128-SHA"; "DH-RSA-CAMELLIA128-SHA"; "DH-DSS-CAMELLIA128-SHA"; "ECDH-RSA-AES128-GCM-SHA256"; "ECDH-ECDSA-AES128-GCM-SHA256"; "ECDH-RSA-AES128-SHA256"; "ECDH-ECDSA-AES128-SHA256"; "ECDH-RSA-AES128-SHA"; "ECDH-ECDSA-AES128-SHA"]
+(* Note: since we check for Ocaml-ssl > 0.4.7, we should *)
+(* have issues with unsupported ciphers anymore          *)
+let unsupported_suites = ref [""]
 
 
 (* We do not let OpenSSL fallback to ugly ciphers *)
