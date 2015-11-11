@@ -5,7 +5,7 @@ define([PACKAGE_VERSION_FIX], [5])
 AC_INIT(cam-crush, [PACKAGE_VERSION_MAJOR.PACKAGE_VERSION_MINOR.PACKAGE_VERSION_FIX])
 
 #Include autoconf macros (ocaml and version comparisons)
-AC_CONFIG_MACRO_DIRS([m4])
+m4_include([m4/ax_compare_version.m4])
 
 AC_CONFIG_SRCDIR([src/client-lib/modwrap.c])
 
