@@ -73,23 +73,22 @@ echo "###########################################" >> ./summary
 # CHECK Make
 
 case $host_type in
+   *-gnu*)
+	make_exe=make
+	;;
    *freebsd*)
-	AC_CHECK_PROG(MAKEPROG,gmake,gmake,no)
-	if test "$MAKEPROG" == "no"
-	then
-	  AC_MSG_ERROR(Cannot find GNU gmake.)
-	fi
-	AC_SUBST(MAKEPROG,$MAKEPROG)
+	make_exe=gmake
 	;;
    *)
-	AC_CHECK_PROG(MAKEPROG,make,make,no)
-	if test "$MAKEPROG" == "no"
-	then
-	  AC_MSG_ERROR(Cannot find GNU make.)
-	fi
-	AC_SUBST(MAKEPROG,$MAKEPROG)
+	make_exe=make
 	;;
 esac
+AC_CHECK_PROG(MAKEPROG,$make_exe,$make_exe,no)
+if test "$MAKEPROG" == "no"
+then
+  AC_MSG_ERROR(Cannot find GNU make as $make_exe.)
+fi
+AC_SUBST(MAKEPROG,$MAKEPROG)
 
 ##########
 # CHECK OCaml an needed binaries
