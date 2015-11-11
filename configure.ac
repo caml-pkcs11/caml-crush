@@ -557,7 +557,7 @@ then
 		AC_CHECK_OCAML_PKG([ssl], ssl)
 		AC_CHECK_OCAML_PKG([rpc-ssl], rpcssl)
 		# Position the ssl define and linking for the server
-        	AC_SUBST(caml_server_ssl_define, "-DWITH_SSL")
+		AC_SUBST(caml_server_ssl_define, "-DWITH_SSL_LEGACY")
 	        AC_SUBST(caml_server_ssl_package, "-package \"ssl\" -package \"rpc-ssl\"")
 	fi
 	# We need the ssl and rpc-ssl package for RPC over ssl support
