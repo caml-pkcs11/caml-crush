@@ -557,7 +557,7 @@ then
 		AC_CHECK_OCAML_PKG([ssl], ssl)
                 # Check for the ocaml-ssl version: we only support
                 # version >= 0.4.7
-                AX_COMPARE_VERSION([$pkg_vers_ssl], [lt], [0.4.7], [ocaml_ssl_bad_version=no], [ocaml_ssl_bad_version=yes])
+                AX_COMPARE_VERSION([$pkg_vers_ssl], [lt], [0.4.7], [ocaml_ssl_bad_version=yes], [ocaml_ssl_bad_version=no])
                 if test "$ocaml_ssl_bad_version" == "yes"
                 then
                         AC_MSG_ERROR(Version of ocaml-ssl must be >= 0.4.7.)
