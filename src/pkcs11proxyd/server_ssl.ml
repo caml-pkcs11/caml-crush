@@ -228,7 +228,7 @@ ENDIF
 
 IFDEF WITH_SSL_LEGACY THEN
 (* Note: since we check for Ocaml-ssl > 0.4.7, we should *)
-(* have issues with unsupported ciphers anymore          *)
+(* not have issues with unsupported ciphers anymore      *)
 let unsupported_suites = ref [""]
 
 
