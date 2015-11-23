@@ -8,8 +8,15 @@ setup_pkcs11proxyd_user() {
         fi
 }
 
-if [ "$action" = configure ]; then
+fix_permissions() {
+        chown -R root:Debian-pkcs11proxyd /etc/pkcs11proxyd
+        chmod 640 /etc/pkcs11proxyd/filter.conf
+        chmod 640 /etc/pkcs11proxyd/pkcs11proxyd.conf
+}
+
+if [ "$1" = configure ]; then
 	setup_pkcs11proxyd_user
+	fix_permissions
 fi
 
 #DEBHELPER#
