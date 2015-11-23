@@ -50,10 +50,10 @@ full_libdir="$full_libdir/caml-crush"
 libdir=$full_libdir
 
 # Summary helpers
-AC_DEFUN(WRITE_TO_FILE,[
+AC_DEFUN([WRITE_TO_FILE],[
 printf "%-40s:   %s\n" $2 $3 >> $1
 ])
-AC_DEFUN(SHOW_SUMMARY,[
+AC_DEFUN([SHOW_SUMMARY],[
 cat $1 && rm -f $1
 ])
 
@@ -92,7 +92,7 @@ AC_SUBST(MAKEPROG,$MAKEPROG)
 
 ##########
 # CHECK OCaml an needed binaries
-AC_DEFUN(AC_PROG_OCAML,
+AC_DEFUN([AC_PROG_OCAML],
 [dnl
 # checking for ocamlc
 AC_CHECK_PROG(OCAMLC,ocamlc,yes,no)
@@ -156,7 +156,7 @@ AC_SUBST(OCAMLMKLIB)
 ])
 # CHECK for ocamlp4 needed for 
 # some conditional compilation
-AC_DEFUN(AC_PROG_CAMLP4,
+AC_DEFUN([AC_PROG_CAMLP4],
 [dnl
 AC_REQUIRE([AC_PROG_OCAML])
 # checking for camlp4
@@ -174,14 +174,14 @@ AC_SUBST(CAMLP4O)
 ])
 # CHECK for OCaml findlib needed 
 # for dependency solving
-AC_DEFUN(AC_PROG_FINDLIB,
+AC_DEFUN([AC_PROG_FINDLIB],
 [dnl
 # checking for ocamlfind
    AC_CHECK_PROG(OCAMLFIND,ocamlfind,ocamlfind,
    AC_MSG_ERROR(ocamlfind not found))
    AC_SUBST(OCAMLFIND)
 ])
-AC_DEFUN(AC_CHECK_OCAML_PKG,
+AC_DEFUN([AC_CHECK_OCAML_PKG],
 [dnl
 AC_REQUIRE([AC_PROG_FINDLIB])
     AC_MSG_CHECKING(OCaml package $1)
@@ -193,7 +193,7 @@ AC_REQUIRE([AC_PROG_FINDLIB])
       unset pkg_$2
     fi
 ])
-AC_DEFUN(AC_CHECK_OCAML_PKG_VERS,
+AC_DEFUN([AC_CHECK_OCAML_PKG_VERS],
 [dnl
 AC_REQUIRE([AC_PROG_FINDLIB])
     AC_MSG_CHECKING(OCaml package $1)
@@ -209,7 +209,7 @@ dnl
 dnl
 dnl
 dnl AC_ARG_OCAML_INSTALLDIR adds a --with-installdir option
-AC_DEFUN(AC_ARG_OCAML_INSTALLDIR,
+AC_DEFUN([AC_ARG_OCAML_INSTALLDIR],
 [dnl
 AC_ARG_WITH(installdir,[  --with-installdir=DIR	  specify installation directory],INSTALLDIR="$withval")
 if ! test "$INSTALLDIR" -o "$use_findlib" ; then
@@ -225,7 +225,7 @@ dnl 1 -> name (for printing)
 dnl 2 -> env var name
 dnl 3 -> module to check
 dnl 4 -> default dirs
-AC_DEFUN(AC_CHECK_OCAML_MODULE,
+AC_DEFUN([AC_CHECK_OCAML_MODULE],
 [dnl
 AC_MSG_CHECKING($1 directory)
 cat > conftest.ml <<EOF
@@ -722,7 +722,7 @@ fi
 # Macro to create the ssl headers, for C and ML clients, from the 
 # given files $1 is the file path, $2 is the file type ("ca", "cert",
 # "priv" for private key, "server" for the allowed servers certificates)
-AC_DEFUN(CREATE_SSL_HEADERS,[
+AC_DEFUN([CREATE_SSL_HEADERS],[
 C_FILE="./create_ssl_files.c"
 FILE="./create_ssl_files"
 rm -f $C_FILE $FILE
