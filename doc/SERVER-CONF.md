@@ -80,8 +80,6 @@ the private key has to be un-encrypted.
 The algorithm parameter accepts GnuTLS cipher list, the default only allows TLS 1.2 and modern PFS-enabled suites.
 The dh\_params can be configured to enable DHE suites. Also, parameters can be generated at startup but note that it will slow down startup.
 
-Please note that Caml Crush does not yet support TLS client authentication when using OCamlnet 4.
-
 ### Server SSL/TLS configuration for older releases
 The SSL/TLS support can be turned on with the following configuration directives:
 
