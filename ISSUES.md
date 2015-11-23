@@ -109,6 +109,8 @@ This potentially reduces performance and could be improved in future releases.
 Since Caml Crush 1.0.5, we support PFS and force TLS1.2.
 This requires ocaml-ssl 0.4.7.
 
+Please note that Caml Crush does not yet support TLS client authentication when using OCamlnet 4.
+
 See [Server SSL/TLS configuration](doc/SERVER-CONF.md) section of the server documentation.
 
 #### Client library redirection based on connection source <a name="Redir"></a>
