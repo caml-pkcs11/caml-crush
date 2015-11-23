@@ -1,8 +1,12 @@
 define([PACKAGE_VERSION_MAJOR], [1])
 define([PACKAGE_VERSION_MINOR], [0])
-define([PACKAGE_VERSION_FIX], [5])
+define([PACKAGE_VERSION_FIX], [7])
 
 AC_INIT(cam-crush, [PACKAGE_VERSION_MAJOR.PACKAGE_VERSION_MINOR.PACKAGE_VERSION_FIX])
+
+#Include autoconf macros (ocaml and version comparisons)
+m4_include([m4/ax_compare_version.m4])
+
 AC_CONFIG_SRCDIR([src/client-lib/modwrap.c])
 
 bindings_dir="src/bindings-pkcs11"
@@ -17,6 +21,7 @@ tests_dir="src/tests"
 ocaml_tests_dir="src/tests/ocaml"
 c_tests_dir="src/tests/c-based"
 scripts_dir="scripts"
+
 
 AC_CONFIG_FILES([$bindings_dir/Makefile $bindings_dir/Makefile.standalone $rpc_dir/Makefile $server_dir/Makefile $client_dir/Makefile $filter_filter_dir/Makefile $filter_backend_dir/Makefile $filter_frontend_dir/Makefile $filter_dir/Makefile $tests_dir/Makefile $ocaml_tests_dir/Makefile $c_tests_dir/Makefile $scripts_dir/pkcs11proxyd])
 
@@ -186,6 +191,18 @@ AC_REQUIRE([AC_PROG_FINDLIB])
     else
       AC_MSG_ERROR(not found)
       unset pkg_$2
+    fi
+])
+AC_DEFUN(AC_CHECK_OCAML_PKG_VERS,
+[dnl
+AC_REQUIRE([AC_PROG_FINDLIB])
+    AC_MSG_CHECKING(OCaml package $1)
+    if $OCAMLFIND query $1 >/dev/null 2>/dev/null; then
+      AC_MSG_RESULT(found)
+      pkg_vers_$2=$($OCAMLFIND query -format "%v" $1)
+    else
+      AC_MSG_ERROR(not found)
+      unset pkg_vers_$2
     fi
 ])
 dnl
@@ -518,12 +535,39 @@ then
         	AC_MSG_ERROR([--with-ssl needs --with-ssl-clientfiles!])
 	fi
         AC_MSG_NOTICE([Using OCaml RPC over ssl for server side ...])
+
+	#Compare version of OCamlnet for TLS support
+	#get the version in pkg_vers_rpc var
+	AC_CHECK_OCAML_PKG_VERS([rpc], rpc)
+	AX_COMPARE_VERSION([$pkg_vers_rpc], [lt], [4.0.0], [use_ocamlnet_tls=no], [use_ocamlnet_tls=yes])
+	if test "$use_ocamlnet_tls" == "yes"
+	then
+		AC_MSG_NOTICE([Using newer Ocamlnet TLS])
+		# Since Ocamlnet TLS is based on gnutls, check
+		# that the library dev package is installed
+		AC_CHECK_LIB(gnutls, gnutls_record_recv, GNUTLS_LIB="-lgnutls",
+		AC_MSG_ERROR(Cannot find symbol in gnutls library.))
+		# Check that the Ocaml nettls-gnutls is installed
+		AC_CHECK_OCAML_PKG([nettls-gnutls], nettlsgnutls)
+		# Position the ssl define and linking for the server
+        	AC_SUBST(caml_server_ssl_define, "-DWITH_SSL")
+	        AC_SUBST(caml_server_ssl_package, "-package \"nettls-gnutls\"")
+	else
+		AC_MSG_NOTICE([Using standard OCaml-SSL TLS])
+		AC_CHECK_OCAML_PKG([ssl], ssl)
+                # Check for the ocaml-ssl version: we only support
+                # version >= 0.4.7
+                AX_COMPARE_VERSION([$pkg_vers_ssl], [lt], [0.4.7], [ocaml_ssl_bad_version=yes], [ocaml_ssl_bad_version=no])
+                if test "$ocaml_ssl_bad_version" == "yes"
+                then
+                        AC_MSG_ERROR(Version of ocaml-ssl must be >= 0.4.7.)
+                fi
+		AC_CHECK_OCAML_PKG([rpc-ssl], rpcssl)
+		# Position the ssl define and linking for the server
+		AC_SUBST(caml_server_ssl_define, "-DWITH_SSL -DWITH_SSL_LEGACY")
+	        AC_SUBST(caml_server_ssl_package, "-package \"ssl\" -package \"rpc-ssl\"")
+	fi
 	# We need the ssl and rpc-ssl package for RPC over ssl support
-	AC_CHECK_OCAML_PKG([ssl], ssl)
-	AC_CHECK_OCAML_PKG([rpc-ssl], rpcssl)
-	# Position the ssl define and linking for the server
-        AC_SUBST(caml_server_ssl_define, "-DWITH_SSL")
-        AC_SUBST(caml_server_ssl_package, "-package \"ssl\" -package \"rpc-ssl\"")
         if test "$with_ocamlclient" == ""
 	then
 		if test "$with_gnutls" != ""
