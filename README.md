@@ -74,7 +74,7 @@ Here is a big picture of how the PKCS#11 proxy works:
 
 ### Configure the middleware to use
 
-Edit **/usr/local/etc/pkcs11proxy/filter.conf**, uncomment the **modules** parameter to
+Edit **/usr/local/etc/pkcs11proxyd/filter.conf**, uncomment the **modules** parameter to
 have it point to the PKCS#11 middleware you want to use.
 
 Example using the OpenSC middleware:
