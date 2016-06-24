@@ -204,7 +204,7 @@ IFDEF WITHOUT_FILTER THEN
   begin
       failwith "Required parameter libnames is missing! (server compiled with filter passthrough mode)!";
   end;
-  libnames_config_ref := libnames_config;
+  libnames_config_ref := (match libnames_config with None -> "" | Some x -> x);
   (fetch_ssl_params use_ssl cf addr)
 ELSE
   if libnames_config <> None
