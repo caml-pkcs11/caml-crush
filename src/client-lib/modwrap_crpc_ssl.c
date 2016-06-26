@@ -658,11 +658,21 @@ int start_openssl(int sock)
   int i;
   X509_STORE *openssl_store;
 #endif
+#if OPENSSL_API_COMPAT < 0x10100000L
+  /* Deprecated in openssl >= 1.1.0 */
   SSL_load_error_strings();
   SSL_library_init();
+#else
+  OPENSSL_init_ssl(0, NULL);
+#endif
   ERR_load_BIO_strings();
   OpenSSL_add_all_algorithms();
 
+  /* FIXME: openssl >= 1.1.0 does not accept
+   * specific versions anymore ... TLSv1_2_method still
+   * works but is deprecated (and triggers a warning).
+   * We should take care of this more properly.
+   */
   ctx = SSL_CTX_new(TLSv1_2_method());
   if (ctx == NULL) {
     fprintf(stderr, "OpenSSL error could not create SSL CTX\n");

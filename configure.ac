@@ -627,14 +627,25 @@ then
 			# Check the headers
 			AC_CHECK_HEADERS([openssl/ssl.h],,AC_MSG_ERROR(Could not find openssl headers.))
 			# Check the library
+			# First get the version to properly check stuff (some APIs have been deprecated in
+			# openssl >= 1.1.0)
 			AC_CHECK_LIB(ssl, SSL_read, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			AX_COMPARE_VERSION([$pkg_vers_ssl], [lt], [1.1.0], [new_openssl=no], [new_openssl=yes])
+			# Check for used symbols
 			AC_CHECK_LIB(ssl, SSL_write, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			AC_CHECK_LIB(ssl, SSL_load_error_strings, OPENSSL_LIB="-lssl",
-               			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			AC_CHECK_LIB(ssl, SSL_library_init, OPENSSL_LIB="-lssl",
-               			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			if test "$new_openssl" == "no"; then
+				# SSL_load_error_strings is deprecated in openssl >= 1.1.0
+				AC_CHECK_LIB(ssl, SSL_load_error_strings, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+				# SSL_library_init is deprecated in openssl >= 1.1.0
+				AC_CHECK_LIB(ssl, SSL_library_init, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			else
+				AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			fi
 			AC_CHECK_LIB(ssl, SSL_CTX_new, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
 			#AC_CHECK_LIB(ssl, SSL_CTX_set_options, OPENSSL_LIB="-lssl",
