@@ -668,16 +668,27 @@ int start_openssl(int sock)
   ERR_load_BIO_strings();
   OpenSSL_add_all_algorithms();
 
-  /* FIXME: openssl >= 1.1.0 does not accept
-   * specific versions anymore ... TLSv1_2_method still
-   * works but is deprecated (and triggers a warning).
-   * We should take care of this more properly.
-   */
+#if OPENSSL_API_COMPAT < 0x10100000L
   ctx = SSL_CTX_new(TLSv1_2_method());
+#else
+  ctx = SSL_CTX_new(TLS_method());
+#endif
   if (ctx == NULL) {
     fprintf(stderr, "OpenSSL error could not create SSL CTX\n");
     return -1;
   }
+
+#if OPENSSL_API_COMPAT >= 0x10100000L
+  /* For openssl >= 1.1.0 set the minimum TLS version
+   * with SSL_CTX_set_min_proto_version
+   */
+  ret = SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+  if(ret == 0){
+    fprintf(stderr, "OpenSSL error when setting TLS1_2 with SSL_CTX_set_min_proto_version\n");
+    return -1;
+  }
+#endif
+
 #ifdef SSL_OP_NO_COMPRESSION
   /* No compression and no SSL_v2 */
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_COMPRESSION);
