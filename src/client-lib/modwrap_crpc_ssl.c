@@ -658,7 +658,7 @@ int start_openssl(int sock)
   int i;
   X509_STORE *openssl_store;
 #endif
-#if OPENSSL_API_COMPAT < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   /* Deprecated in openssl >= 1.1.0 */
   SSL_load_error_strings();
   SSL_library_init();
@@ -668,7 +668,7 @@ int start_openssl(int sock)
   ERR_load_BIO_strings();
   OpenSSL_add_all_algorithms();
 
-#if OPENSSL_API_COMPAT < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   ctx = SSL_CTX_new(TLSv1_2_method());
 #else
   ctx = SSL_CTX_new(TLS_method());
@@ -678,7 +678,7 @@ int start_openssl(int sock)
     return -1;
   }
 
-#if OPENSSL_API_COMPAT >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
   /* For openssl >= 1.1.0 set the minimum TLS version
    * with SSL_CTX_set_min_proto_version
    */
