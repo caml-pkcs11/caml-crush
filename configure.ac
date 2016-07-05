@@ -1,6 +1,6 @@
 define([PACKAGE_VERSION_MAJOR], [1])
 define([PACKAGE_VERSION_MINOR], [0])
-define([PACKAGE_VERSION_FIX], [7])
+define([PACKAGE_VERSION_FIX], [8])
 
 AC_INIT(cam-crush, [PACKAGE_VERSION_MAJOR.PACKAGE_VERSION_MINOR.PACKAGE_VERSION_FIX])
 
@@ -629,12 +629,24 @@ then
 			# Check the library
 			AC_CHECK_LIB(ssl, SSL_read, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			# Check if we are in presence of openssl >= 1.1.0 or not
+			AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl", new_openssl=no)
+			# Check for used symbols
 			AC_CHECK_LIB(ssl, SSL_write, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			AC_CHECK_LIB(ssl, SSL_load_error_strings, OPENSSL_LIB="-lssl",
-               			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			AC_CHECK_LIB(ssl, SSL_library_init, OPENSSL_LIB="-lssl",
-               			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			if test "$new_openssl" == "no"; then
+				AC_MSG_NOTICE([Openssl < 1.1.0 detected])
+				# SSL_load_error_strings is deprecated in openssl >= 1.1.0
+				AC_CHECK_LIB(ssl, SSL_load_error_strings, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+				# SSL_library_init is deprecated in openssl >= 1.1.0
+				AC_CHECK_LIB(ssl, SSL_library_init, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			else
+				AC_MSG_NOTICE([Openssl >= 1.1.0 detected])
+				AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			fi
 			AC_CHECK_LIB(ssl, SSL_CTX_new, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
 			#AC_CHECK_LIB(ssl, SSL_CTX_set_options, OPENSSL_LIB="-lssl",
