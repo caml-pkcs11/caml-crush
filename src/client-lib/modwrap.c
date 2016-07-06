@@ -105,6 +105,10 @@ void pthread_mutex_unlock(LPCRITICAL_SECTION mymutex){
   LeaveCriticalSection(mymutex);
   return;
 }
+void pthread_mutex_destroy(LPCRITICAL_SECTION mymutex){
+  DeleteCriticalSection(mymutex);
+  return;
+}
 #endif
 
 /* -------------------------------- */
