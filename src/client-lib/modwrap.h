@@ -318,7 +318,11 @@ int get_libname_from_file(char *);
 #endif
 
 #ifdef WITH_SSL
+#ifdef WIN32
+#include <winsock2.h>
+#else
 #include <sys/poll.h>
+#endif
 #include <errno.h>
 void override_net_functions(CLIENT *);
 int readnet(char *, char *, int);
