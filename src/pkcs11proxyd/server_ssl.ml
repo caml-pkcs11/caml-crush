@@ -2,6 +2,7 @@
     Copyright ANSSI (2013)
     Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com] and
     Thomas CALDERON [calderon.thomas@gmail.com]
+    Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement
     a PKCS#11 proxy as well as a PKCS#11 filter with security features
