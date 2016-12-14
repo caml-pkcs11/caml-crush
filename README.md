@@ -50,8 +50,8 @@ Here is a big picture of how the PKCS#11 proxy works:
 
 ## Authors
 
-  * Ryad Benadjila (<mailto:ryad.benadjila@ssi.gouv.fr>)
-  * Thomas Calderon (<mailto:thomas.calderon@ssi.gouv.fr>)
+  * Ryad Benadjila (<mailto:ryadbenadjila@gmail.com>)
+  * Thomas Calderon (<mailto:calderon.thomas@gmail.com>)
   * Marion Daubignard (<mailto:marion.daubignard@ssi.gouv.fr>)
 
 ## Quickstart

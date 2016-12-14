@@ -1,7 +1,7 @@
 (************************* MIT License HEADER **********************************
     Copyright ANSSI (2013)
-    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr] and
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com] and
+    Thomas CALDERON [calderon.thomas@gmail.com]
 
     This software is a computer program whose purpose is to implement
     a PKCS#11 proxy as well as a PKCS#11 filter with security features

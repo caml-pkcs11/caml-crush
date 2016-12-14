@@ -1,8 +1,8 @@
 The MIT License (MIT)
 
-Copyright ANSSI (2013-2015)
-Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr],
-               Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+Copyright ANSSI (2013-2016)
+Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com],
+               Thomas CALDERON [calderon.thomas@gmail.com]
                Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
