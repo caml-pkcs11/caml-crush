@@ -350,6 +350,7 @@ void custom_sanitize_ck_mechanism(struct ck_mechanism *mech)
       (*mech).parameter = NULL;
       (*mech).parameter_len = 0;
     }
+    /* Fallthrough */
   default:
     {
       if ((*mech).parameter_len > MAX_BUFF_LEN) {
