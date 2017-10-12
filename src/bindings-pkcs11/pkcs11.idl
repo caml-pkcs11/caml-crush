@@ -3176,8 +3176,8 @@ quote(mli, "val sprint_bool_attribute_value : nativeint -> string\n");
 quote(mli, "val sprint_template_array : ck_attribute array -> string\n");
 
 quote(ml,
-      "let char_array_to_string = fun a -> let s = String.create (Array.length a) in\n");
-quote(ml, "  Array.iteri (fun i x -> String.set s i x) a; s;;\n");
+      "let char_array_to_string = fun a -> let s = Bytes.create (Array.length a) in\n");
+quote(ml, "  Array.iteri (fun i x -> Bytes.set s i x) a; s;;\n");
 
 quote(ml,
       "let string_to_char_array = fun s -> Array.init (String.length s) (fun i -> s.[i]);;\n");
@@ -3248,13 +3248,13 @@ quote(ml, "    (res);;");
 quote(ml, "let pack hexstr =");
 quote(ml, "     let len = String.length hexstr in");
 quote(ml, "     let half_len = len / 2 in");
-quote(ml, "     let res = String.create half_len in");
+quote(ml, "     let res = Bytes.create half_len in");
 quote(ml, "     let j = ref 0 in");
 quote(ml, "     for i = 0 to len - 2 do");
 quote(ml, "        if (i mod 2 == 0) then");
 quote(ml, "          (");
 quote(ml, "          let tmp = merge_nibbles hexstr.[i] hexstr.[i+1] in");
-quote(ml, "          res.[!j] <- tmp;");
+quote(ml, "          Bytes.set res !j tmp;");
 quote(ml, "          j := !j +1;");
 quote(ml, "          )");
 quote(ml, "     done;");
