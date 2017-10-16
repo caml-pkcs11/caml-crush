@@ -73,6 +73,12 @@
     File:    src/filter/filter/filter_actions_helpers/helpers_patch.ml
 
 ************************** MIT License HEADER ***********************************)
+
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFNDEF OCAML_WITH_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
+
 (* Global value to tell if we want to segregate usage *)
 let segregate_usage = ref false
 

@@ -3175,6 +3175,10 @@ quote(mli, "val char_array_to_bool : char array -> nativeint\n");
 quote(mli, "val sprint_bool_attribute_value : nativeint -> string\n");
 quote(mli, "val sprint_template_array : ck_attribute array -> string\n");
 
+/* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module */
+#ifndef OCAML_WITH_BYTES_MODULE 
+quote(ml, "module Bytes = String");
+#endif
 quote(ml,
       "let char_array_to_string = fun a -> let s = Bytes.create (Array.length a) in\n");
 quote(ml, "  Array.iteri (fun i x -> Bytes.set s i x) a; s;;\n");

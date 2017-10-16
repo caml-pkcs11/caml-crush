@@ -70,6 +70,11 @@
 
 ************************** MIT License HEADER *********************************)
 
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFNDEF OCAML_WITH_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
+
 IFDEF WITH_SSL THEN
 (* Reference those two variables here to avoid circulare dependencies *)
 let libnames_config_ref = ref ""

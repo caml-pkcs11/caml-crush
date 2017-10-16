@@ -78,6 +78,11 @@ open Config_file
 open Filter_common
 open Filter_actions
 
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFNDEF OCAML_WITH_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
+
 let string_check_function a = match a with
   "C_LoadModule" -> a
 | "C_Initialize" -> a
