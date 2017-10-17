@@ -169,7 +169,7 @@ let my_cert_check cert =
       Netplex_cenv.log `Err s;
       (false)
     else
-      let s = Printf.sprintf "user=%s" user in
+      let s = Printf.sprintf "user=%s is authenticated and connected" user in
       Netplex_cenv.log `Info s;
       (true)
   | _ -> (false)
@@ -479,7 +479,8 @@ let my_socket_config use_ssl cafile certfile certkey cipher_suite dh_params ec_c
                      let _ = Ssl.shutdown sslsock in
                      failwith s
                    else
-                     prerr_endline ("user=" ^ user);
+                     let s = Printf.sprintf "user=%s is authenticated and connected" user in
+                     Netplex_cenv.log `Info s;
                      Some user)
         ctx
     | false -> Rpc_server.default_socket_config
