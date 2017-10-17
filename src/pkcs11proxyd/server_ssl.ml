@@ -469,7 +469,6 @@ let my_socket_config use_ssl cafile certfile certkey cipher_suite dh_params ec_c
 
     Rpc_ssl.ssl_server_socket_config
       ~get_peer_user_name:(fun _ sslsock ->
-                   prerr_endline "get_peer_user_name";
                    let cert = Ssl.get_certificate sslsock in
                    let user = Ssl.get_subject cert in
                    (* Check peer client certificate *)
