@@ -1,8 +1,12 @@
 define([PACKAGE_VERSION_MAJOR], [1])
 define([PACKAGE_VERSION_MINOR], [0])
-define([PACKAGE_VERSION_FIX], [5])
+define([PACKAGE_VERSION_FIX], [8])
 
 AC_INIT(cam-crush, [PACKAGE_VERSION_MAJOR.PACKAGE_VERSION_MINOR.PACKAGE_VERSION_FIX])
+
+#Include autoconf macros (ocaml and version comparisons)
+m4_include([m4/ax_compare_version.m4])
+
 AC_CONFIG_SRCDIR([src/client-lib/modwrap.c])
 
 bindings_dir="src/bindings-pkcs11"
@@ -17,6 +21,7 @@ tests_dir="src/tests"
 ocaml_tests_dir="src/tests/ocaml"
 c_tests_dir="src/tests/c-based"
 scripts_dir="scripts"
+
 
 AC_CONFIG_FILES([$bindings_dir/Makefile $bindings_dir/Makefile.standalone $rpc_dir/Makefile $server_dir/Makefile $client_dir/Makefile $filter_filter_dir/Makefile $filter_backend_dir/Makefile $filter_frontend_dir/Makefile $filter_dir/Makefile $tests_dir/Makefile $ocaml_tests_dir/Makefile $c_tests_dir/Makefile $scripts_dir/pkcs11proxyd])
 
@@ -45,10 +50,10 @@ full_libdir="$full_libdir/caml-crush"
 libdir=$full_libdir
 
 # Summary helpers
-AC_DEFUN(WRITE_TO_FILE,[
+AC_DEFUN([WRITE_TO_FILE],[
 printf "%-40s:   %s\n" $2 $3 >> $1
 ])
-AC_DEFUN(SHOW_SUMMARY,[
+AC_DEFUN([SHOW_SUMMARY],[
 cat $1 && rm -f $1
 ])
 
@@ -68,27 +73,26 @@ echo "###########################################" >> ./summary
 # CHECK Make
 
 case $host_type in
+   *-gnu*)
+	make_exe=make
+	;;
    *freebsd*)
-	AC_CHECK_PROG(MAKEPROG,gmake,gmake,no)
-	if test "$MAKEPROG" == "no"
-	then
-	  AC_MSG_ERROR(Cannot find GNU gmake.)
-	fi
-	AC_SUBST(MAKEPROG,$MAKEPROG)
+	make_exe=gmake
 	;;
    *)
-	AC_CHECK_PROG(MAKEPROG,make,make,no)
-	if test "$MAKEPROG" == "no"
-	then
-	  AC_MSG_ERROR(Cannot find GNU make.)
-	fi
-	AC_SUBST(MAKEPROG,$MAKEPROG)
+	make_exe=make
 	;;
 esac
+AC_CHECK_PROG(MAKEPROG,$make_exe,$make_exe,no)
+if test "$MAKEPROG" == "no"
+then
+  AC_MSG_ERROR(Cannot find GNU make as $make_exe.)
+fi
+AC_SUBST(MAKEPROG,$MAKEPROG)
 
 ##########
 # CHECK OCaml an needed binaries
-AC_DEFUN(AC_PROG_OCAML,
+AC_DEFUN([AC_PROG_OCAML],
 [dnl
 # checking for ocamlc
 AC_CHECK_PROG(OCAMLC,ocamlc,yes,no)
@@ -152,7 +156,7 @@ AC_SUBST(OCAMLMKLIB)
 ])
 # CHECK for ocamlp4 needed for 
 # some conditional compilation
-AC_DEFUN(AC_PROG_CAMLP4,
+AC_DEFUN([AC_PROG_CAMLP4],
 [dnl
 AC_REQUIRE([AC_PROG_OCAML])
 # checking for camlp4
@@ -170,14 +174,14 @@ AC_SUBST(CAMLP4O)
 ])
 # CHECK for OCaml findlib needed 
 # for dependency solving
-AC_DEFUN(AC_PROG_FINDLIB,
+AC_DEFUN([AC_PROG_FINDLIB],
 [dnl
 # checking for ocamlfind
    AC_CHECK_PROG(OCAMLFIND,ocamlfind,ocamlfind,
    AC_MSG_ERROR(ocamlfind not found))
    AC_SUBST(OCAMLFIND)
 ])
-AC_DEFUN(AC_CHECK_OCAML_PKG,
+AC_DEFUN([AC_CHECK_OCAML_PKG],
 [dnl
 AC_REQUIRE([AC_PROG_FINDLIB])
     AC_MSG_CHECKING(OCaml package $1)
@@ -189,11 +193,23 @@ AC_REQUIRE([AC_PROG_FINDLIB])
       unset pkg_$2
     fi
 ])
+AC_DEFUN([AC_CHECK_OCAML_PKG_VERS],
+[dnl
+AC_REQUIRE([AC_PROG_FINDLIB])
+    AC_MSG_CHECKING(OCaml package $1)
+    if $OCAMLFIND query $1 >/dev/null 2>/dev/null; then
+      AC_MSG_RESULT(found)
+      pkg_vers_$2=$($OCAMLFIND query -format "%v" $1)
+    else
+      AC_MSG_ERROR(not found)
+      unset pkg_vers_$2
+    fi
+])
 dnl
 dnl
 dnl
 dnl AC_ARG_OCAML_INSTALLDIR adds a --with-installdir option
-AC_DEFUN(AC_ARG_OCAML_INSTALLDIR,
+AC_DEFUN([AC_ARG_OCAML_INSTALLDIR],
 [dnl
 AC_ARG_WITH(installdir,[  --with-installdir=DIR	  specify installation directory],INSTALLDIR="$withval")
 if ! test "$INSTALLDIR" -o "$use_findlib" ; then
@@ -209,7 +225,7 @@ dnl 1 -> name (for printing)
 dnl 2 -> env var name
 dnl 3 -> module to check
 dnl 4 -> default dirs
-AC_DEFUN(AC_CHECK_OCAML_MODULE,
+AC_DEFUN([AC_CHECK_OCAML_MODULE],
 [dnl
 AC_MSG_CHECKING($1 directory)
 cat > conftest.ml <<EOF
@@ -519,12 +535,39 @@ then
         	AC_MSG_ERROR([--with-ssl needs --with-ssl-clientfiles!])
 	fi
         AC_MSG_NOTICE([Using OCaml RPC over ssl for server side ...])
+
+	#Compare version of OCamlnet for TLS support
+	#get the version in pkg_vers_rpc var
+	AC_CHECK_OCAML_PKG_VERS([rpc], rpc)
+	AX_COMPARE_VERSION([$pkg_vers_rpc], [lt], [4.0.0], [use_ocamlnet_tls=no], [use_ocamlnet_tls=yes])
+	if test "$use_ocamlnet_tls" == "yes"
+	then
+		AC_MSG_NOTICE([Using newer Ocamlnet TLS])
+		# Since Ocamlnet TLS is based on gnutls, check
+		# that the library dev package is installed
+		AC_CHECK_LIB(gnutls, gnutls_record_recv, GNUTLS_LIB="-lgnutls",
+		AC_MSG_ERROR(Cannot find symbol in gnutls library.))
+		# Check that the Ocaml nettls-gnutls is installed
+		AC_CHECK_OCAML_PKG([nettls-gnutls], nettlsgnutls)
+		# Position the ssl define and linking for the server
+        	AC_SUBST(caml_server_ssl_define, "-DWITH_SSL")
+	        AC_SUBST(caml_server_ssl_package, "-package \"nettls-gnutls\"")
+	else
+		AC_MSG_NOTICE([Using standard OCaml-SSL TLS])
+		AC_CHECK_OCAML_PKG([ssl], ssl)
+                # Check for the ocaml-ssl version: we only support
+                # version >= 0.4.7
+                AX_COMPARE_VERSION([$pkg_vers_ssl], [lt], [0.4.7], [ocaml_ssl_bad_version=yes], [ocaml_ssl_bad_version=no])
+                if test "$ocaml_ssl_bad_version" == "yes"
+                then
+                        AC_MSG_ERROR(Version of ocaml-ssl must be >= 0.4.7.)
+                fi
+		AC_CHECK_OCAML_PKG([rpc-ssl], rpcssl)
+		# Position the ssl define and linking for the server
+		AC_SUBST(caml_server_ssl_define, "-DWITH_SSL -DWITH_SSL_LEGACY")
+	        AC_SUBST(caml_server_ssl_package, "-package \"ssl\" -package \"rpc-ssl\"")
+	fi
 	# We need the ssl and rpc-ssl package for RPC over ssl support
-	AC_CHECK_OCAML_PKG([ssl], ssl)
-	AC_CHECK_OCAML_PKG([rpc-ssl], rpcssl)
-	# Position the ssl define and linking for the server
-        AC_SUBST(caml_server_ssl_define, "-DWITH_SSL")
-        AC_SUBST(caml_server_ssl_package, "-package \"ssl\" -package \"rpc-ssl\"")
         if test "$with_ocamlclient" == ""
 	then
 		if test "$with_gnutls" != ""
@@ -586,12 +629,24 @@ then
 			# Check the library
 			AC_CHECK_LIB(ssl, SSL_read, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			# Check if we are in presence of openssl >= 1.1.0 or not
+			AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl", new_openssl=no)
+			# Check for used symbols
 			AC_CHECK_LIB(ssl, SSL_write, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			AC_CHECK_LIB(ssl, SSL_load_error_strings, OPENSSL_LIB="-lssl",
-               			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			AC_CHECK_LIB(ssl, SSL_library_init, OPENSSL_LIB="-lssl",
-               			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			if test "$new_openssl" == "no"; then
+				AC_MSG_NOTICE([Openssl < 1.1.0 detected])
+				# SSL_load_error_strings is deprecated in openssl >= 1.1.0
+				AC_CHECK_LIB(ssl, SSL_load_error_strings, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+				# SSL_library_init is deprecated in openssl >= 1.1.0
+				AC_CHECK_LIB(ssl, SSL_library_init, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			else
+				AC_MSG_NOTICE([Openssl >= 1.1.0 detected])
+				AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl",
+					AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			fi
 			AC_CHECK_LIB(ssl, SSL_CTX_new, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
 			#AC_CHECK_LIB(ssl, SSL_CTX_set_options, OPENSSL_LIB="-lssl",
@@ -679,7 +734,7 @@ fi
 # Macro to create the ssl headers, for C and ML clients, from the 
 # given files $1 is the file path, $2 is the file type ("ca", "cert",
 # "priv" for private key, "server" for the allowed servers certificates)
-AC_DEFUN(CREATE_SSL_HEADERS,[
+AC_DEFUN([CREATE_SSL_HEADERS],[
 C_FILE="./create_ssl_files.c"
 FILE="./create_ssl_files"
 rm -f $C_FILE $FILE

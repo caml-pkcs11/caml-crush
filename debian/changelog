@@ -1,3 +1,15 @@
+caml-crush (1.0.8-1) unstable; urgency=medium
+
+  * OpenSSL 1.1.0 support (Closes: #828256)
+
+ -- Thomas Calderon <calderon.thomas@gmail.com>  Wed, 06 Jul 2016 10:33:51 +0100
+
+caml-crush (1.0.7-1) unstable; urgency=low
+
+  * Support OCamlnet 4.x (Closes: #804327)
+
+ -- Thomas Calderon <calderon.thomas@gmail.com>  Tue, 24 Nov 2015 11:41:17 +0000
+
 caml-crush (1.0.6-1) unstable; urgency=low
 
   * Initial release (Closes: #770296)

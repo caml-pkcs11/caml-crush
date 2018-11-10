@@ -2,6 +2,15 @@
 
 ## [Unreleased][unreleased]
 
+## [1.0.8] - 2016-07-05
+* OpenSSL 1.1.0 support (#23)
+* Fix some Win32 compilation issues
+* Improved support for TLS mutual auth when using Ocamlnet 4.x
+
+## [1.0.7] - 2015-11-23
+* Merge support for OCamlnet 4.x (#13)
+* Fix uninstall target (#18), credits to louis@louisroche.net
+
 ## [1.0.6] - 2015-05-28
 * Switch to MIT license for the project.
 
@@ -51,7 +60,9 @@
 * correct conflicting attribute patch regarding.
 * GnuTLS ressource deallocation issue.
 
-[unreleased]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.6...HEAD
+[unreleased]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.8...HEAD
+[1.0.8]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.7...v1.0.8
+[1.0.7]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.6...v1.0.7
 [1.0.6]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.3...v1.0.4
