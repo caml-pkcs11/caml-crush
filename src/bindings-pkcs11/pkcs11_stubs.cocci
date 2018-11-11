@@ -334,6 +334,7 @@ identifier _ctx, _c2, _v4, _c5, _c6, _v7;
 +      }
 +#endif
 +    }
++    /* Fallthrough */
 +    default:  {
 +      if ((long)_c5 >= 0) {
 +        (*_c2).value = camlidl_malloc(_c5 * sizeof(char), _ctx);

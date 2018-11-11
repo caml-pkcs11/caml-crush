@@ -73,6 +73,12 @@
     File:    src/filter/filter/filter_actions_helpers/helpers_patch.ml
 
 ************************** MIT License HEADER ***********************************)
+
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFNDEF OCAML_WITH_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
+
 (* Global value to tell if we want to segregate usage *)
 let segregate_usage = ref false
 
@@ -463,7 +469,7 @@ let execute_external_command command data argvs env =
   let buffer_stderr = Buffer.create buffer_size in
   (* Append the argvs to the command *)
   let command = String.concat " " (List.concat [ [command]; Array.to_list argvs ]) in
-  let string = String.create buffer_size in
+  let string = Bytes.create buffer_size in
   let (in_channel_stdout, out_channel, in_channel_stderr) = Unix.open_process_full command [||] in
   (* Write data to out_channel *)
   output out_channel data 0 (String.length data);
