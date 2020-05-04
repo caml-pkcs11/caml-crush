@@ -9,15 +9,15 @@ LDFLAGS = -cclib -L$(caml_link_dirs) -cclib -lcamlidl
 all:	@idl_gen@
 	$(CC) @srcdir@/pkcs11_stubs.c -DSERVER_ROLE -c $(CFLAGS)
 	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -DSERVER_ROLE -c $(CFLAGS)
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.mli
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.ml
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.mli
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.ml
 	ocamlmklib -o pkcs11 pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 debug:	@idl_gen@
 	$(CC) @srcdir@/pkcs11_stubs.c -DSERVER_ROLE -DDEBUG -c $(CFLAGS_DBG)
 	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -DSERVER_ROLE -DDEBUG -c $(CFLAGS_DBG)
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.mli
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.ml
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.mli
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.ml
 	ocamlmklib -o pkcs11 pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 idl:	
