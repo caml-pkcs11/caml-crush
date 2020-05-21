@@ -1,4 +1,5 @@
 # Caml Crush: an OCaml PKCS#11 filtering proxy
+[![Build Status](https://travis-ci.com/calderonth/caml-crush.svg?branch=master)](https://travis-ci.com/calderonth/caml-crush)
 
 This software is a computer program whose purpose is to implement
 a PKCS#11 proxy as well as a PKCS#11 filter with security features
@@ -71,6 +72,7 @@ Here is a big picture of how the PKCS#11 proxy works:
     make
     
     sudo make install
+
 
 ### Configure the middleware to use
 
