@@ -52,7 +52,7 @@ jobs:
                 - cd /tmp && tar xzf findlib-1.5.6.tar.gz && cd findlib-1.5.6 && ./configure && make all && sudo make install
                 - wget https://github.com/savonet/ocaml-ssl/releases/download/0.5.5/ocaml-ssl-0.5.5.tar.gz -O /tmp/ocaml-ssl-0.5.5.tar.gz
                 - cd /tmp && tar xzf /tmp/ocaml-ssl-0.5.5.tar.gz && cd ocaml-ssl-0.5.5 && ./configure && make && sudo make install
-                - cd && cd calderonth/caml-crush
+                - cd
         - os: linux
           dist: xenial
         - os: linux
