@@ -22,7 +22,8 @@ addons:
 
 script:
     - ./autogen.sh
-    - ./configure --with-idlgen --with-rpcgen --with-libnames=foo && make
+    - ./configure --with-idlgen --with-rpcgen --with-libnames=foo --with-ssl
+    - make
 
 jobs:
     include:
