@@ -146,6 +146,7 @@ let check_is_client_certificate_allowed allowed_clients_cert_path client_cert =
        Netplex_cenv.log `Err s;
        (false)
 
+IFDEF WITH_SSL THEN
 IFNDEF WITH_SSL_LEGACY THEN
 (* Stolen from OCamlnet Nettls *)
 let create_pem header_tag data =
@@ -183,6 +184,7 @@ let verify endpoint p_trust p_hostmatch =
   (* OCamlnet TLS module deals with name verification in the client case ...                           *)
   (* FIXME: add the '&& p_hostmatch' boolean in the return value when fixed in OCamlnet                *)
   (p_trust && (my_cert_check cert))
+ENDIF
 ENDIF
 
 IFDEF WITH_SSL THEN
