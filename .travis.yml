@@ -22,7 +22,7 @@ addons:
 
 script:
     - ./autogen.sh
-    - ./configure --with-idlgen --with-rpcgen --with-libnames=foo --with-ssl --with-ssl-clientfiles
+    - ./configure --with-idlgen --with-rpcgen --with-libnames=foo --with-ssl --with-ssl-clientfiles='env'
     - make
 
 jobs:
