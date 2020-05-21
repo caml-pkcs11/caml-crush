@@ -44,9 +44,17 @@ jobs:
                   - camlp4
                   - libssl-dev
                   - libgnutls-dev
-                  - opam
+                  - ca-certificates
+                  - pkg-config
+                  - rsync
+                  - unzip
           before_script:
-                - opam install ssl
+                - wget https://github.com/ocaml/opam/releases/download/2.0.7/opam-2.0.7-x86_64-linux -O /tmp/opam-2.0.7-x86_64-linux
+                - install /tmp/opam-2.0.7-x86_64-linux /usr/local/bin/opam
+                - opam init -a --disable-sandboxing && opam update
+                - opam install ocamlfind -y
+                - wget https://github.com/savonet/ocaml-ssl/releases/download/0.5.5/ocaml-ssl-0.5.5.tar.gz -O /tmp/ocaml-ssl-0.5.5.tar.gz
+                - cd /tmp && tar xvzf /tmp/ocaml-ssl-0.5.5.tar.gz && cd ocaml-ssl-0.5.5 && ./configure && make && make install
         - os: linux
           dist: xenial
         - os: linux
