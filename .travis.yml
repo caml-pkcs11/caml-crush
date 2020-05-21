@@ -1,8 +1,6 @@
 language: c
-os: linux
 
 compiler: gcc
-
 
 addons:
     apt:
@@ -30,23 +28,24 @@ jobs:
     include:
         - os: linux
           dist: trusty
-          apt:
-            update: true
-            packages:
-                - autoconf
-                - ocaml-nox
-                - camlidl
-                - coccinelle
-                - libocamlnet-ocaml-dev
-                - libocamlnet-ssl-ocaml
-                - libocamlnet-ssl-ocaml-dev
-                - libocamlnet-ocaml-bin
-                - libconfig-file-ocaml-dev
-                - camlp4
-                - libssl-dev
-                - libgnutls-dev
-                - opam
-            before_script:
+          addons:   
+            apt:
+              update: true
+              packages:
+                  - autoconf
+                  - ocaml-nox
+                  - camlidl
+                  - coccinelle
+                  - libocamlnet-ocaml-dev
+                  - libocamlnet-ssl-ocaml
+                  - libocamlnet-ssl-ocaml-dev
+                  - libocamlnet-ocaml-bin
+                  - libconfig-file-ocaml-dev
+                  - camlp4
+                  - libssl-dev
+                  - libgnutls-dev
+                  - opam
+          before_script:
                 - opam install ssl
         - os: linux
           dist: xenial
