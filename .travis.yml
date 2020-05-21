@@ -55,6 +55,10 @@ jobs:
                 - wget https://github.com/savonet/ocaml-ssl/releases/download/0.5.5/ocaml-ssl-0.5.5.tar.gz -O /tmp/ocaml-ssl-0.5.5.tar.gz
                 - cd /tmp && tar xzf /tmp/ocaml-ssl-0.5.5.tar.gz && cd ocaml-ssl-0.5.5 && ./configure && make && sudo make install
                 - cd $TRAVIS_BUILD_DIR
+          script:
+            - ./autogen.sh
+            - ./configure --with-idlgen --with-rpcgen --with-libnames=foo #--with-ssl --with-ssl-clientfiles='env'
+            - make
         - os: linux
           dist: xenial
         - os: linux
