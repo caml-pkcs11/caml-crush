@@ -10,3 +10,12 @@ before_install:
 
 script:
     - ./autogen.sh && ./configure --with-idlgen --with-rpcgen --with-libnames=foo && make
+
+jobs:
+    include:
+        - os: linux
+        dist: trusty
+        - os: linux
+        dist: xenial
+        - os: linux
+        dist: bionic
