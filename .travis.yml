@@ -19,6 +19,7 @@ addons:
             - libconfig-file-ocaml-dev
             - camlp4
             - libssl-dev
+            - gnutls-dev
 
 script:
     - ./autogen.sh
