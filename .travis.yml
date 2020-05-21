@@ -3,19 +3,29 @@ os: linux
 
 compiler: gcc
 
-before_install:
-    - sudo apt-get update
-    - sudo apt-get -y install autoconf make gcc ocaml-nox camlidl coccinelle libocamlnet-ocaml-dev libocamlnet-ocaml-bin libconfig-file-ocaml-dev camlp4
 
+addons:
+    apt:
+        update: true
+        packages:
+            - autoconf
+            - ocaml-nox
+            - camlidl
+            - coccinelle
+            - libocamlnet-ocaml-dev
+            - libocamlnet-ocaml-bin
+            - libconfig-file-ocaml-dev
+            - camlp4
 
 script:
-    - ./autogen.sh && ./configure --with-idlgen --with-rpcgen --with-libnames=foo && make
+    - ./autogen.sh
+    - ./configure --with-idlgen --with-rpcgen --with-libnames=foo && make
 
 jobs:
     include:
         - os: linux
-        dist: trusty
+          dist: trusty
         - os: linux
-        dist: xenial
+          dist: xenial
         - os: linux
-        dist: bionic
+          dist: bionic
