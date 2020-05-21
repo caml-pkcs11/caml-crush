@@ -72,6 +72,8 @@ Here is a big picture of how the PKCS#11 proxy works:
     
     sudo make install
 
+[![Build Status](https://travis-ci.com/calderonth/caml-crush.svg?branch=master)](https://travis-ci.com/calderonth/caml-crush)
+
 ### Configure the middleware to use
 
 Edit **/usr/local/etc/pkcs11proxyd/filter.conf**, uncomment the **modules** parameter to
