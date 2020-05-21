@@ -293,9 +293,9 @@ let remove_elements_from_array array_ref to_remove =
 
 let pickup_elements_in_array array_ref count = 
   (* Exract count elements from the array *)
-  let extracted = try Array.sub !array_ref 0 (Nativeint.to_int count)
+  let extracted = (try Array.sub !array_ref 0 (Nativeint.to_int count)
     (* If count is larger than the size, we return the whole *)
-    with Invalid_argument "Array.sub" -> (Array.copy !array_ref)  in
+    with Invalid_argument _ -> (Array.copy !array_ref))  in
   let _ = remove_elements_from_array array_ref extracted in
   (extracted)
 
