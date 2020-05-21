@@ -13,9 +13,12 @@ addons:
             - camlidl
             - coccinelle
             - libocamlnet-ocaml-dev
+            - libocamlnet-ssl-ocaml
+            - libocamlnet-ssl-ocaml-dev
             - libocamlnet-ocaml-bin
             - libconfig-file-ocaml-dev
             - camlp4
+            - libssl-dev
 
 script:
     - ./autogen.sh
