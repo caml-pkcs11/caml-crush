@@ -46,13 +46,8 @@ jobs:
                   - libgnutls-dev
                   - ca-certificates
                   - pkg-config
-                  - rsync
-                  - unzip
+                  - ocaml-findlib
           before_script:
-                - wget https://github.com/ocaml/opam/releases/download/2.0.7/opam-2.0.7-x86_64-linux -O /tmp/opam-2.0.7-x86_64-linux
-                - sudo install /tmp/opam-2.0.7-x86_64-linux /usr/local/bin/opam
-                - sudo opam init -a --disable-sandboxing && sudo opam update
-                - sudo opam install ocamlfind -y
                 - wget https://github.com/savonet/ocaml-ssl/releases/download/0.5.5/ocaml-ssl-0.5.5.tar.gz -O /tmp/ocaml-ssl-0.5.5.tar.gz
                 - cd /tmp && tar xvzf /tmp/ocaml-ssl-0.5.5.tar.gz && cd ocaml-ssl-0.5.5 && ./configure && make && sudo make install
         - os: linux
