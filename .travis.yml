@@ -1,65 +1,24 @@
 language: c
 
 compiler: gcc
+services: docker
+sudo: required
 
-addons:
-    apt:
-        update: true
-        packages:
-            - autoconf
-            - ocaml-nox
-            - camlidl
-            - coccinelle
-            - libocamlnet-ocaml-dev
-            - libocamlnet-ssl-ocaml
-            - libocamlnet-ssl-ocaml-dev
-            - libocamlnet-ocaml-bin
-            - libconfig-file-ocaml-dev
-            - camlp4
-            - libssl-dev
-            - gnutls-dev
-
-script:
-    - ./autogen.sh
-    - ./configure --with-idlgen --with-rpcgen --with-libnames=foo --with-ssl --with-ssl-clientfiles='env'
-    - make
+dist: bionic
 
 jobs:
     include:
-        - os: linux
-          dist: trusty
-          addons:   
-            apt:
-              update: true
-              packages:
-                  - autoconf
-                  - ocaml-nox
-                  - camlidl
-                  - coccinelle
-                  - libocamlnet-ocaml-dev
-                  - libocamlnet-ssl-ocaml
-                  - libocamlnet-ssl-ocaml-dev
-                  - libocamlnet-ocaml-bin
-                  - libconfig-file-ocaml-dev
-                  - camlp4
-                  - libssl-dev
-                  - libgnutls-dev
-                  - ca-certificates
-                  - pkg-config
-                  - ocaml-findlib
-          before_script:
-                - wget http://download.camlcity.org/download/findlib-1.5.6.tar.gz -O /tmp/findlib-1.5.6.tar.gz
-                - cd /tmp && tar xzf findlib-1.5.6.tar.gz && cd findlib-1.5.6
-                - ./configure -config /etc/ocamlfind.conf -bindir /usr/bin/ -sitelib /usr/lib/ocaml -with-toolbox
-                - make all && make opt && sudo make install
-                - wget https://github.com/savonet/ocaml-ssl/releases/download/0.5.5/ocaml-ssl-0.5.5.tar.gz -O /tmp/ocaml-ssl-0.5.5.tar.gz
-                - cd /tmp && tar xzf /tmp/ocaml-ssl-0.5.5.tar.gz && cd ocaml-ssl-0.5.5 && ./configure && make && sudo make install
-                - cd $TRAVIS_BUILD_DIR
-          script:
-            - ./autogen.sh
-            - ./configure --with-idlgen --with-rpcgen --with-libnames=foo #--with-ssl --with-ssl-clientfiles='env'
-            - make
-        - os: linux
-          dist: xenial
-        - os: linux
-          dist: bionic
+      - stage: Debian builds
+        script: docker build -t caml-crush-stretch --build-arg flavor=stretch -f Dockerfile.debian .
+      -  
+        script: docker build -t caml-crush-jessie --build-arg flavor=jessie -f Dockerfile.debian .
+      -  
+        script: docker build -t caml-crush-buster --build-arg flavor=buster -f Dockerfile.debian .
+      -  
+        script: docker build -t caml-crush-sid --build-arg flavor=sid -f Dockerfile.debian .
+      - stage: Ubuntu builds
+        script: docker build -t caml-crush-trusty -f Dockerfile.ubuntu-trusty .
+      -  
+        script: docker build -t caml-crush-xenial --build-arg dist=ubuntu --build-arg flavor=xenial -f Dockerfile.debian .
+      -  
+        script: docker build -t caml-crush-bionic --build-arg dist=ubuntu --build-arg flavor=bionic -f Dockerfile.debian .
