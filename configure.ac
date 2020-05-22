@@ -321,7 +321,7 @@ then
         fi
 	# Adapt the compilation depending in the coccinelle version
 	COCCIVERSION=$(spatch --version | grep -Po "(\d+\.)+\d+" | head -1)
-	echo "===> LALAL $COCCIVERSION"
+	echo "Detected coccinelle version $COCCIVERSION"
 	AX_COMPARE_VERSION([$COCCIVERSION], [lt], [1.0.7], [use_new_cocci=no], [use_new_cocci=yes])
 	if test "$use_new_cocci" == "yes"
 	then
