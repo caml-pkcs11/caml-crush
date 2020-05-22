@@ -1,7 +1,7 @@
 (************************* MIT License HEADER ************************************
     Copyright ANSSI (2013-2015)
-    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr],
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com],
+    Thomas CALDERON [calderon.thomas@gmail.com]
     Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement
@@ -75,7 +75,6 @@ exception C_FinalizeError
 exception C_GetInfoError
 exception C_WaitForSlotEventError
 exception C_GetSlotListError
-exception C_GetSlotListError
 exception C_GetSlotInfoError
 exception C_GetTokenInfoError
 exception C_OpenSessionError
@@ -85,13 +84,9 @@ exception C_GetSessionInfoError
 exception C_LoginError
 exception C_LogoutError
 exception C_GetMechanismListError
-exception C_GetMechanismListError
 exception C_GetMechanismInfoError
 exception C_InitTokenError
-exception C_InitTokenError
 exception C_InitPINError
-exception C_InitPINError
-exception C_SetPINError
 exception C_SetPINError
 exception C_SeedRandomError
 exception C_GenerateRandomError
@@ -129,29 +124,17 @@ exception C_VerifyUpdateError
 exception C_VerifyFinalError
 exception C_EncryptInitError
 exception C_EncryptError
-exception C_EncryptError
-exception C_EncryptUpdateError
 exception C_EncryptUpdateError
 exception C_DigestEncryptUpdateError
-exception C_DigestEncryptUpdateError
 exception C_SignEncryptUpdateError
-exception C_SignEncryptUpdateError
-exception C_EncryptFinalError
 exception C_EncryptFinalError
 exception C_DecryptInitError
-exception C_DecryptError
-exception C_DecryptError
-exception C_DecryptUpdateError
 exception C_DecryptUpdateError
 exception C_DecryptFinalError
-exception C_DecryptFinalError
 exception C_DecryptDigestUpdateError
-exception C_DecryptDigestUpdateError
-exception C_DecryptVerifyUpdateError
 exception C_DecryptVerifyUpdateError
 exception C_GetFunctionStatusError
 exception C_CancelFunctionError
-exception C_GetOperationStateError
 exception C_GetOperationStateError
 exception C_SetOperationStateError
 

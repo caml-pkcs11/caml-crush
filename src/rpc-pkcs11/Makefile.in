@@ -7,16 +7,16 @@ mem_prot_opt_caml=-ccopt -fPIC -ccopt -fPIE -ccopt -Wl,-z,relro,-z,now -ccopt -f
 
 all:	@caml_rpc_gen@
 	#Compile RPC files
-	ocamlfind ocamlopt -package "rpc" -o pkcs11_rpc_aux -c @srcdir@/pkcs11_rpc_aux.mli
-	ocamlfind ocamlopt -package "rpc" -o pkcs11_rpc_aux -c @srcdir@/pkcs11_rpc_aux.ml
-	ocamlfind ocamlopt -package "rpc" -o pkcs11_rpc_clnt -c @srcdir@/pkcs11_rpc_clnt.mli
-	ocamlfind ocamlopt -package "rpc" -o pkcs11_rpc_clnt -c @srcdir@/pkcs11_rpc_clnt.ml
-	ocamlfind ocamlopt -package "rpc" -o pkcs11_rpc_srv -c @srcdir@/pkcs11_rpc_srv.mli
-	ocamlfind ocamlopt -package "rpc" -o pkcs11_rpc_srv -c @srcdir@/pkcs11_rpc_srv.ml
+	ocamlfind ocamlopt @ocaml_options@ -package "rpc" -o pkcs11_rpc_aux -c @srcdir@/pkcs11_rpc_aux.mli
+	ocamlfind ocamlopt @ocaml_options@ -package "rpc" -o pkcs11_rpc_aux -c @srcdir@/pkcs11_rpc_aux.ml
+	ocamlfind ocamlopt @ocaml_options@ -package "rpc" -o pkcs11_rpc_clnt -c @srcdir@/pkcs11_rpc_clnt.mli
+	ocamlfind ocamlopt @ocaml_options@ -package "rpc" -o pkcs11_rpc_clnt -c @srcdir@/pkcs11_rpc_clnt.ml
+	ocamlfind ocamlopt @ocaml_options@ -package "rpc" -o pkcs11_rpc_srv -c @srcdir@/pkcs11_rpc_srv.mli
+	ocamlfind ocamlopt @ocaml_options@ -package "rpc" -o pkcs11_rpc_srv -c @srcdir@/pkcs11_rpc_srv.ml
 	#Build RPC helpers
-	ocamlopt -I $(bindings_dir) -o rpc_helpers -c @srcdir@/rpc_helpers.ml
+	ocamlopt @ocaml_options@ -I $(bindings_dir) -o rpc_helpers -c @srcdir@/rpc_helpers.ml
 	#Build a library from RPC files
-	ocamlopt -o pkcs11_rpclib.cmxa -a pkcs11_rpc_aux.cmx pkcs11_rpc_clnt.cmx pkcs11_rpc_srv.cmx rpc_helpers.cmx
+	ocamlopt @ocaml_options@ -o pkcs11_rpclib.cmxa -a pkcs11_rpc_aux.cmx pkcs11_rpc_clnt.cmx pkcs11_rpc_srv.cmx rpc_helpers.cmx
 
 rpc:
 	#Ocaml RPC Generation
