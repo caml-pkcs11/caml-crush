@@ -1,6 +1,8 @@
 language: c
 
 compiler: gcc
+services: docker
+sudo: required
 
 addons:
     apt:
@@ -61,5 +63,9 @@ jobs:
             - make
         - os: linux
           dist: xenial
+        - os: linux
+          dist: xenial
+          script:
+            - docker build -t caml-crush-stretch --build-arg flavor=stretch -f Dockerfile.debian .
         - os: linux
           dist: bionic

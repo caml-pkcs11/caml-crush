@@ -1,0 +1,19 @@
+ARG flavor=nosuchtag
+FROM debian:${flavor} as builder
+
+
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends autoconf make gcc \
+                     automake autotools-dev \
+                     ocaml-nox camlidl coccinelle \
+                     libocamlnet-ocaml-dev libocamlnet-ocaml-bin \
+                     libconfig-file-ocaml-dev camlp4
+
+FROM builder
+COPY . /build
+
+WORKDIR /build
+
+RUN ./autogen.sh
+RUN ./configure --with-idlgen --with-rpcgen --with-libnames=foo
+RUN make
