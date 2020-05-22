@@ -10,6 +10,8 @@ RUN apt-get install -y --no-install-recommends autoconf make gcc \
                      automake autotools-dev \
                      ocaml-nox camlidl coccinelle \
                      libocamlnet-ocaml-dev libocamlnet-ocaml-bin \
+                     libocamlnet-ssl-ocaml libocamlnet-ssl-ocaml-dev \
+                     libssl-dev gnutls-dev \
                      libconfig-file-ocaml-dev camlp4
 
 FROM builder
