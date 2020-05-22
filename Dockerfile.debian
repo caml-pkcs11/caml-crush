@@ -1,5 +1,8 @@
-ARG flavor=nosuchtag
-FROM debian:${flavor} as builder
+# Override with --build-arg dist=ubuntu --build-arg flavor=bionic
+ARG dist=debian
+ARG flavor=sid
+
+FROM ${dist}:${flavor} as builder
 
 
 RUN apt-get update
@@ -15,5 +18,5 @@ COPY . /build
 WORKDIR /build
 
 RUN ./autogen.sh
-RUN ./configure --with-idlgen --with-rpcgen --with-libnames=foo
+RUN ./configure --with-idlgen --with-rpcgen --with-libnames=foo --with-ssl --with-ssl-clientfiles='env'
 RUN make
