@@ -1,7 +1,7 @@
 /*------------------------ MIT License HEADER ------------------------------------
     Copyright ANSSI and NTU (2015)
     Contributors:
-    Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr] and
+    Ryad BENADJILA [ryadbenadjila@gmail.com] and
     Jian GUO [ntu.guo@gmail.com] and
     Victor LOMNE [victor.lomne@ssi.gouv.fr] and
     Thomas PEYRIN [thomas.peyrin@gmail.com]

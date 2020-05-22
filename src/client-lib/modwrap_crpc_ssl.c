@@ -1,7 +1,7 @@
 /*------------------------ MIT License HEADER ------------------------------------
     Copyright ANSSI (2013-2015)
-    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr],
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com],
+    Thomas CALDERON [calderon.thomas@gmail.com]
     Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement
@@ -316,6 +316,63 @@ void override_net_functions(CLIENT * client)
   xdrrec_create(&(ct->ct_xdrs), 0, 0, (caddr_t) ct, readnet, writenet);
 }
 
+#ifdef WIN32 /* In the Windows case, use native WIN32 API */
+int readnet(char *ctptr, char *buf, int len)
+{
+  fd_set mask;
+  fd_set readfds;
+  struct ct_data *ct = (struct ct_data *)ctptr;
+
+#ifdef DEBUG
+  fprintf(stderr, "client: overriding readtcp, len = %d\n", len);
+#endif
+
+  if (len == 0)
+          return 0;
+  FD_ZERO(&mask);
+  FD_SET(ct->ct_sock, &mask);
+
+  while (TRUE) {
+    readfds = mask;
+    switch (select(0 /* unused in winsock */, &readfds, NULL, NULL,
+                   &(ct->ct_wait))) {
+    case 0:
+            ct->ct_error.re_status = RPC_TIMEDOUT;
+            return -1;
+
+    case -1:
+            if (WSAerrno == EINTR)
+                    continue;
+            ct->ct_error.re_status = RPC_CANTRECV;
+            ct->ct_error.re_errno = WSAerrno;
+            return -1;
+    }
+    break;
+  }
+#ifdef GNU_TLS
+  /* Perform the actual read using GnuTLS, which will read
+   * one TLS "record", which is hopefully a complete message.
+   */
+  len = gnutls_record_recv(gnutls_global_session, buf, len);
+#else
+  len = SSL_read(ssl, buf, len);
+#endif
+  switch (len) {
+  case 0:
+          /* premature eof */
+          ct->ct_error.re_errno = WSAECONNRESET;
+          ct->ct_error.re_status = RPC_CANTRECV;
+          len = -1;  /* it's really an error */
+          break;
+
+  case -1:
+          ct->ct_error.re_errno = WSAerrno;
+          ct->ct_error.re_status = RPC_CANTRECV;
+          break;
+  }
+  return len;
+}
+#else /* *NIX case */
 int readnet(char *ctptr, char *buf, int len)
 {
   struct ct_data *ct = (struct ct_data *)ctptr;
@@ -374,7 +431,11 @@ int readnet(char *ctptr, char *buf, int len)
 
   return len;
 }
+#endif /* end switch between WIN32 and non WIN32 */
 
+/* The writing SSL override is the same for WIN32 and 
+ * *NIX cases
+ */
 int writenet(char *ctptr, char *buf, int len)
 {
   struct ct_data *ct = (struct ct_data *)ctptr;
@@ -395,7 +456,7 @@ int writenet(char *ctptr, char *buf, int len)
 
   return len;
 }
-#endif
+#endif /* end of SSL case where we override read and write functions */
 
 /* A very basic TLS client, with X.509 authentication. */
 #ifdef GNU_TLS
@@ -658,16 +719,37 @@ int start_openssl(int sock)
   int i;
   X509_STORE *openssl_store;
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  /* Deprecated in openssl >= 1.1.0 */
   SSL_load_error_strings();
   SSL_library_init();
+#else
+  OPENSSL_init_ssl(0, NULL);
+#endif
   ERR_load_BIO_strings();
   OpenSSL_add_all_algorithms();
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   ctx = SSL_CTX_new(TLSv1_2_method());
+#else
+  ctx = SSL_CTX_new(TLS_method());
+#endif
   if (ctx == NULL) {
     fprintf(stderr, "OpenSSL error could not create SSL CTX\n");
     return -1;
   }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  /* For openssl >= 1.1.0 set the minimum TLS version
+   * with SSL_CTX_set_min_proto_version
+   */
+  ret = SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+  if(ret == 0){
+    fprintf(stderr, "OpenSSL error when setting TLS1_2 with SSL_CTX_set_min_proto_version\n");
+    return -1;
+  }
+#endif
+
 #ifdef SSL_OP_NO_COMPRESSION
   /* No compression and no SSL_v2 */
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_COMPRESSION);

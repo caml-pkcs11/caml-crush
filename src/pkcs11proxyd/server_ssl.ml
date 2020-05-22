@@ -1,7 +1,8 @@
 (************************* MIT License HEADER **********************************
     Copyright ANSSI (2013)
-    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr] and
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com] and
+    Thomas CALDERON [calderon.thomas@gmail.com]
+    Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement
     a PKCS#11 proxy as well as a PKCS#11 filter with security features
@@ -70,6 +71,11 @@
 
 ************************** MIT License HEADER *********************************)
 
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFNDEF OCAML_WITH_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
+
 IFDEF WITH_SSL THEN
 (* Reference those two variables here to avoid circulare dependencies *)
 let libnames_config_ref = ref ""
@@ -79,10 +85,126 @@ Nettls_gnutls.init();
 ENDIF
 ENDIF
 
+(* Basic helpers *)
+let read_file f =
+  let ic = open_in f in
+  let n = in_channel_length ic in
+  let s = Bytes.create n in
+  really_input ic s 0 n;
+  close_in ic;
+  (s)
+
+let write_file f s =
+  let oc = open_out f in
+  Printf.fprintf oc "%s" s;
+  close_out oc;
+  ()
+
+(**** For OCamlnet >= 4, we do two things:                                   *)
+(*     - (Dirty) Workaround for an issue with default peer_auth verification *)
+(*     - Implement a proper certificate white list verification              *)
+(* Ocamlnet is 4.x *)
+
+IFDEF WITH_SSL_LEGACY THEN
+let write_certificate tmp_file client_cert = Ssl.write_certificate tmp_file client_cert
+ELSE
+let write_certificate tmp_file client_cert = write_file tmp_file client_cert
+ENDIF
+
+let check_is_client_certificate_allowed allowed_clients_cert_path client_cert =
+  match allowed_clients_cert_path with
+     None -> true
+   | Some path ->
+     (* Go through all the client certificates in the path *)
+     let check_dir = (try Sys.is_directory path with
+       _ -> false) in
+     if check_dir = true then
+       (* List all files in the directory *)
+       let cert_files = Sys.readdir path in
+       (* Get the client certificate string *)
+       let tmp_file = Filename.temp_file "pkcs11proxy_server" "client_cert" in
+       let _ = write_certificate tmp_file client_cert in
+       (* Read the cert file as a string *)
+       let client_cert_string = read_file tmp_file in
+       let check = ref false in
+       Array.iter (
+         fun file_name ->
+           let to_compare = (try read_file (path ^ Filename.dir_sep ^ file_name) with
+             _ ->  ""
+           )  in
+           if compare to_compare "" = 0 then
+             check := !check || false
+           else
+             if compare to_compare client_cert_string = 0 then
+               check := !check || true
+             else
+               check := !check || false
+       ) cert_files;
+       (!check)
+     else
+       let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
+       Netplex_cenv.log `Err s;
+       (false)
+
+IFDEF WITH_SSL THEN
+IFNDEF WITH_SSL_LEGACY THEN
+(* Stolen from OCamlnet Nettls *)
+let create_pem header_tag data =
+  let b64 = Netencoding.Base64.encode ~linelength:64 data in
+  "-----BEGIN " ^ header_tag ^ "-----\n" ^ 
+    b64 ^
+      "-----END " ^ header_tag ^ "-----\n"
+
+let allowed_clients_cert_path_ref = ref None
+let my_cert_check cert =
+  (* Extract the DER string *)
+  match cert with
+  | `X509(der_cert) -> 
+    (* We have two cases here: either we have a white list of client certificates, or not *)
+    let x509_cert = new Netx509.x509_certificate_from_DER der_cert in
+    let user = x509_cert # subject # string in
+    (* DER to PEM *)
+    let pem_cert = create_pem "CERTIFICATE" der_cert in
+    let is_client_allowed = check_is_client_certificate_allowed !allowed_clients_cert_path_ref pem_cert in
+    if is_client_allowed = false then
+      let s = Printf.sprintf "Unsupported client certificate for user=%s" user in
+      Netplex_cenv.log `Err s;
+      (false)
+    else
+      let s = Printf.sprintf "user=%s is authenticated and connected" user in
+      Netplex_cenv.log `Info s;
+      (true)
+  | _ -> (false)
+
+
+let verify endpoint p_trust p_hostmatch =
+  let module Endpoint = (val endpoint : Netsys_crypto_types.TLS_ENDPOINT) in
+  let cert = Endpoint.TLS.get_peer_creds Endpoint.endpoint in
+  (* We do not check for the host name since we deal with a client! (this is a dirty 'hack' of the way *)
+  (* OCamlnet TLS module deals with name verification in the client case ...                           *)
+  (* FIXME: add the '&& p_hostmatch' boolean in the return value when fixed in OCamlnet                *)
+  (p_trust && (my_cert_check cert))
+ENDIF
+ENDIF
+
 IFDEF WITH_SSL THEN
 let fetch_ssl_params use_ssl cf addr =
 IFNDEF WITH_SSL_LEGACY THEN
-  let tls_config = Netplex_config.read_tls_config cf addr (Netsys_crypto.current_tls_opt()) in
+  (* First, we extract our client certificate white list if there is one *)
+  let _ = (allowed_clients_cert_path_ref :=
+    try
+      Some (cf # string_param (cf # resolve_parameter addr "allowed_clients_cert_path"))
+    with
+      | Not_found -> (None);) in
+  let _ = (if !allowed_clients_cert_path_ref = None
+  then
+  begin
+      let s = Printf.sprintf "CONFIGURATION: you did not set any allowed_clients_cert_path, any client with a proper certificate will be accepted" in
+      Netplex_cenv.log `Info s;
+  end) in
+  (* Note: we override the ~verify parameter here to properly implement a peer_auth "required" and *)
+  (* also implement our certificate white list verification *)
+  let tls_config = Netplex_config.read_tls_config ~verify cf addr (Netsys_crypto.current_tls_opt()) in
     (use_ssl, tls_config)
 ELSE
   match use_ssl with
@@ -204,7 +326,7 @@ IFDEF WITHOUT_FILTER THEN
   begin
       failwith "Required parameter libnames is missing! (server compiled with filter passthrough mode)!";
   end;
-  libnames_config_ref := libnames_config;
+  libnames_config_ref := (match libnames_config with None -> "" | Some x -> x);
   (fetch_ssl_params use_ssl cf addr)
 ELSE
   if libnames_config <> None
@@ -295,90 +417,6 @@ let check_empty_negative_only_suites ciphers =
       (ciphers)
   end
 
-(* This function checks in the allowed_clients_cert_path folder if a given client *)
-(* is allowed                                                                     *)
-let read_file f =
-  let ic = open_in f in
-  let n = in_channel_length ic in
-  let s = String.create n in
-  really_input ic s 0 n;
-  close_in ic;
-  (s)
-
-let check_is_client_certificate_allowed allowed_clients_cert_path client_cert =
-  match allowed_clients_cert_path with
-     None -> true
-   | Some path ->
-     (* Go through all the client certificates in the path *)
-     let check_dir = (try Sys.is_directory path with
-       _ -> false) in
-     if check_dir = true then
-       (* List all files in the directory *)
-       let cert_files = Sys.readdir path in
-       (* Get the client certificate string *)
-       let tmp_file = Filename.temp_file "pkcs11proxy_server" "client_cert" in
-       let _ = Ssl.write_certificate tmp_file client_cert in
-       (* Read the cert file as a string *)
-       let client_cert_string = read_file tmp_file in
-       let check = ref false in
-       Array.iter (
-         fun file_name ->
-           let to_compare = (try read_file (path ^ Filename.dir_sep ^ file_name) with
-             _ ->  ""
-           )  in
-           if compare to_compare "" = 0 then
-             check := !check || false
-           else
-             if compare to_compare client_cert_string = 0 then
-               check := !check || true
-             else
-               check := !check || false
-       ) cert_files;
-       (!check)
-     else
-       let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
-       failwith s
-(* Ocamlnet is 4.x *)
-(*
-let check_is_client_certificate_allowed allowed_clients_cert_path client_cert =
-  match allowed_clients_cert_path with
-     None -> true
-   | Some path ->
-     (*
-     (* Go through all the client certificates in the path *)
-     let check_dir = (try Sys.is_directory path with
-       _ -> false) in
-     if check_dir = true then
-       (* List all files in the directory *)
-       let cert_files = Sys.readdir path in
-       (* Get the client certificate string *)
-       let tmp_file = Filename.temp_file "pkcs11proxy_server" "client_cert" in
-       let _ = Ssl.write_certificate tmp_file client_cert in
-       (* Read the cert file as a string *)
-       let client_cert_string = read_file tmp_file in
-       let check = ref false in
-       Array.iter (
-         fun file_name ->
-           let to_compare = (try read_file (path ^ Filename.dir_sep ^ file_name) with
-             _ ->  ""
-           )  in
-           if compare to_compare "" = 0 then
-             check := !check || false
-           else
-             if compare to_compare client_cert_string = 0 then
-               check := !check || true
-             else
-               check := !check || false
-       ) cert_files;
-       (!check)
-     else
-       let s = Printf.sprintf "Error: forbidden client certificates folder %s does not exist!" path in
-       failwith s
-    *)
-    true
-ENDIF
-*)
-
 let my_socket_config use_ssl cafile certfile certkey cipher_suite dh_params ec_curve_name verify_depth allowed_clients_cert_path =
   match use_ssl with
   | true ->
@@ -434,7 +472,6 @@ let my_socket_config use_ssl cafile certfile certkey cipher_suite dh_params ec_c
 
     Rpc_ssl.ssl_server_socket_config
       ~get_peer_user_name:(fun _ sslsock ->
-                   prerr_endline "get_peer_user_name";
                    let cert = Ssl.get_certificate sslsock in
                    let user = Ssl.get_subject cert in
                    (* Check peer client certificate *)
@@ -445,7 +482,8 @@ let my_socket_config use_ssl cafile certfile certkey cipher_suite dh_params ec_c
                      let _ = Ssl.shutdown sslsock in
                      failwith s
                    else
-                     prerr_endline ("user=" ^ user);
+                     let s = Printf.sprintf "user=%s is authenticated and connected" user in
+                     Netplex_cenv.log `Info s;
                      Some user)
         ctx
     | false -> Rpc_server.default_socket_config
@@ -465,4 +503,3 @@ let socket_config (use_ssl, tls_config) =
     |Some config -> Rpc_server.tls_socket_config config)
 ENDIF
 ENDIF
-

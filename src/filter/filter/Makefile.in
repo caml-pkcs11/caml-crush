@@ -1,7 +1,7 @@
 all:
-	ocamlfind ocamlopt -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter_common -c @srcdir@/filter_common.ml
-	ocamlfind ocamlopt -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter_actions -c @srcdir@/filter_actions.ml
-	ocamlfind ocamlopt -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter_configuration -c @srcdir@/filter_configuration.ml
-	ocamlfind ocamlopt -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter -c @srcdir@/filter.ml
+	ocamlfind ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter_common -c @srcdir@/filter_common.ml
+	ocamlfind ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter_actions -c @srcdir@/filter_actions.ml
+	ocamlfind ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter_configuration -c @srcdir@/filter_configuration.ml
+	ocamlfind ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo -I @srcdir@  " -package "str,config-file,netplex" -I ../../bindings-pkcs11 -I ../backend -o filter -c @srcdir@/filter.ml
 clean:
 	@rm -f *.cmi *.cmx *.o *.cmo *~ *.opt 

@@ -1,6 +1,6 @@
 bindings_dir = ../../bindings-pkcs11/
 
 all:
-	ocamlopt -I $(bindings_dir) -o backend -c @srcdir@/backend.ml
+	ocamlopt @ocaml_options@ -I $(bindings_dir) -o backend -c @srcdir@/backend.ml
 clean:
 	@rm -f @srcdir@/*.cmi @srcdir@/*.cmx @srcdir@/*.o @srcdir@/*.cmo @srcdir@/*~ @srcdir@/*.opt
