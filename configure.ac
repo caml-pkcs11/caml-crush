@@ -292,6 +292,17 @@ esac
 AC_CHECK_LIB(pthread, pthread_mutex_init, THREAD_LIB="-lpthread",
                AC_MSG_ERROR(Cannot find pthread library.))
 
+# Handle the deprecated immutable String and adapt ocaml
+# compilation flag
+AX_COMPARE_VERSION([$OCAMLVERSION], [lt], [4.02.0], [use_unsafe_strings=no], [use_unsafe_strings=yes])
+if test "$use_unsafe_strings" == "yes"
+then
+	AC_SUBST(ocaml_options, "-unsafe-string")
+else
+	AC_SUBST(ocaml_options, "")
+fi
+
+
 # IDL generation handling
 ####
 # CHECK for the camlidl program, 
@@ -308,6 +319,16 @@ then
         then
           AC_MSG_ERROR(Cannot find spatch binary: needed for PKCS11 bindings generation - install coccinelle.)
         fi
+	# Adapt the compilation depending in the coccinelle version
+	COCCIVERSION=$(spatch --version | grep -Po "(\d+\.)+\d+" | head -1)
+	echo "Detected coccinelle version $COCCIVERSION"
+	AX_COMPARE_VERSION([$COCCIVERSION], [lt], [1.0.7], [use_new_cocci=no], [use_new_cocci=yes])
+	if test "$use_new_cocci" == "yes"
+	then
+		AC_SUBST(pkcs11_cocci_patch, "pkcs11.cocci.new")
+	else
+		AC_SUBST(pkcs11_cocci_patch, "pkcs11.cocci.old")
+	fi
         AC_SUBST(idl_gen, "idl")
   	WRITE_TO_FILE(summary, "IDL gen", "YES")
 else
