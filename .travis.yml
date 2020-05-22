@@ -10,10 +10,15 @@ jobs:
     include:
       - stage: Debian builds
         script: docker build -t caml-crush-stretch --build-arg flavor=stretch -f Dockerfile.debian .
+      -  
         script: docker build -t caml-crush-jessie --build-arg flavor=jessie -f Dockerfile.debian .
+      -  
         script: docker build -t caml-crush-buster --build-arg flavor=buster -f Dockerfile.debian .
+      -  
         script: docker build -t caml-crush-sid --build-arg flavor=sid -f Dockerfile.debian .
       - stage: Ubuntu builds
         script: docker build -t caml-crush-trusty -f Dockerfile.ubuntu-trusty .
+      -  
         script: docker build -t caml-crush-xenial --build-arg dist=ubuntu --build-arg flavor=xenial -f Dockerfile.debian .
+      -  
         script: docker build -t caml-crush-bionic --build-arg dist=ubuntu --build-arg flavor=bionic -f Dockerfile.debian .
