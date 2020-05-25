@@ -31,7 +31,10 @@ idl:
 	spatch --no-show-diff --in-place --sp-file @srcdir@/pkcs11_stubs.cocci @srcdir@/pkcs11_stubs.c
 	#Sed because spatch is not able to preprocess
 	sed -i 's/^_CAMLIDL_EXTERN_C/extern/g' @srcdir@/pkcs11.h
-	spatch --no-show-diff --in-place --sp-file @srcdir@/pkcs11.cocci @srcdir@/pkcs11.h
+	#Sed to change the structure packing pragma in WIN32 mode: CamlIDL fixes it to 8 while
+	#PKCS11 header fixes it to 1 => this can create binary interoperability issues
+	sed -i 's/push,8/push,1\/* Replaced for PKCS11 compatibiliy *\//g' @srcdir@/pkcs11.h
+	spatch --no-show-diff --in-place --sp-file @srcdir@/@pkcs11_cocci_patch@ @srcdir@/pkcs11.h
 	#Sed to force the produced idl variable context and some values to be tagged 'unused'
 	sed -i 's/\(.*\), camlidl_ctx _ctx)$$/#ifdef __GNUC__\n\1, __attribute__((unused)) camlidl_ctx _ctx)\n#else\n\1, camlidl_ctx _ctx)\n#endif/g' @srcdir@/pkcs11_stubs.c
 	sed -i 's/\(.*\)value _unit)$$/#ifdef __GNUC__\n\1__attribute__((unused))value _unit)\n#else\n\1value _unit)\n#endif/g' @srcdir@/pkcs11_stubs.c
