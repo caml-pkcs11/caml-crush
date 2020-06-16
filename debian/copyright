@@ -6,7 +6,7 @@ Upstream-Contact: Ryad Benadjila <ryad.benadjila@ssi.gouv.fr>
                   Thomas Calderon <calderon.thomas@gmail.com>
                   Marion Daubignard <marion.daubignard@ssi.gouv.fr>
                   Marion Daubignard <msdaubignard@gmail.com>
-Source: https://github.com/ANSSI-FR/caml-crush
+Source: https://github.com/caml-pkcs11/caml-crush
 
 Files: *
 Copyright: 2013-2015 ryad.benadjila@ssi.gouv.fr

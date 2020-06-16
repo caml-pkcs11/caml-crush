@@ -1,0 +1,113 @@
+#Path to ONC-RPC library and generated STATIC lib file.
+#WARNING: your oncrpc.lib have to match your build configuration (Debug/Release), otherwise it will fail
+#Please download and compile your own (<add project URL>)
+RPC_INC=../../../oncrpc-win32/win32/include
+RPC_LIB32=../../../oncrpc-win32/win32/bin32/oncrpc.lib
+RPC_LIB64=../../../oncrpc-win32/win32/bin64/oncrpc.lib
+SSL_INC=../../../openssl-1.1.0f/include
+SSL_LIB32=../../../openssl-1.1.0f/win32/libssl.a
+CRYPTO_LIB32=../../../openssl-1.1.0f/win32/libcrypto.a
+SSL_LIB64=../../../openssl-1.1.0f/win64/libssl.a
+CRYPTO_LIB64=../../../openssl-1.1.0f/win64/libcrypto.a
+
+#Local include directory
+BINDING_INC=../bindings-pkcs11
+
+# Libname to compile
+LIBNAME="softhsm"
+ 
+# Output LIB
+CLIENTLIB=libp11client
+
+#Modify SOCKET_PATH LIBNAME to your convenience
+LCFLAGS=-g -I$(RPC_INC) -I$(BINDING_INC) -I.\
+	-DONCRPC_STATIC\
+	-DCRPC \
+	-fno-builtin-bcopy -fno-builtin-bcmp -fno-builtin-bzero \
+	-DTCP_SOCKET  -DSOCKET_PATH=127.0.0.1:4444\
+	-DLIBNAME=$(LIBNAME)\
+
+LINK_FLAGS32=$(RPC_LIB32)
+LINK_FLAGS64=$(RPC_LIB64)
+
+#Modify SOCKET_PATH LIBNAME to your convenience
+LCFLAGS_SSL=-g -I$(RPC_INC) -I$(BINDING_INC) -I. -I$(SSL_INC)\
+	-DONCRPC_STATIC\
+	-DCRPC \
+	-fno-builtin-bcopy -fno-builtin-bcmp -fno-builtin-bzero \
+	-DTCP_SOCKET  -DSOCKET_PATH=127.0.0.1:4444\
+	-DLIBNAME=$(LIBNAME)\
+	-DWITH_SSL -DSSL_FILES_ENV
+
+LINK_FLAGS32_SSL=$(RPC_LIB32) $(SSL_LIB32) $(CRYPTO_LIB32) -static-libgcc
+LINK_FLAGS64_SSL=$(RPC_LIB64) $(SSL_LIB64) $(CRYPTO_LIB64) -static-libgcc
+
+
+# Change to 64-bit mingw if you want 64-bit binaries
+MINGW32=i686-w64-mingw32
+MINGW64=x86_64-w64-mingw32
+CC32=$(MINGW32)-gcc
+CC64=$(MINGW64)-gcc
+
+TARGETS32=$(CLIENTLIB)_32.dll
+TARGETS64=$(CLIENTLIB)_64.dll
+TARGETS32_SSL=$(CLIENTLIB)_32_ssl.dll
+TARGETS64_SSL=$(CLIENTLIB)_64_ssl.dll
+TRASH=*.pdb *.lib *.exp *.idb *.manifest
+
+CLIENT_SRC =  \
+    pkcs11_rpc_xdr.c \
+	pkcs11_rpc_clnt.c \
+	modwrap.c \
+	modwrap_crpc.c \
+	modwrap_crpc_ssl.c \
+
+CLIENT_OBJ = $(patsubst %.c, %.o, $(CLIENT_SRC))
+ 	
+all:	winrpc objs32 clientlib32 objs64 clientlib64 objs32ssl clientlib32ssl objs64ssl clientlib64ssl
+
+clean:
+	rm -f $(TARGETS32) $(TARGETS64) $(TARGETS32_SSL) $(TARGETS64_SSL) $(CLIENT_OBJ) $(TRASH)
+
+# Copy the xdr files and generate the headers properly for 
+# the Win32 target 
+winrpc:
+	#Copy file in order to get correct include path in file generated
+	cp ../rpc-pkcs11/pkcs11_rpc.x ./
+	#Generate header for Win32 compatibility (i.e. without MT support)
+	rpcgen -h -N pkcs11_rpc.x > pkcs11_rpc.h
+	#Generate xdr helpers
+	rpcgen -c -N pkcs11_rpc.x > pkcs11_rpc_xdr.c
+	#Generate client stubs
+	rpcgen -l -N pkcs11_rpc.x > pkcs11_rpc_clnt.c
+	#Remove local copy of XDR file
+	rm pkcs11_rpc.x
+	#Patch generated xdr implementation (optional: remove unused buffer)
+	spatch --no-show-diff --sp-file ./pkcs11_rpc_xdr.cocci ./pkcs11_rpc_xdr.c --in-place
+
+
+#Compile and link 32-bit
+objs32:
+	$(CC32) $(LCFLAGS) -c $(CLIENT_SRC)
+
+clientlib32: $(CLIENT_OBJ)
+	$(CC32) -shared -o $(TARGETS32) $(CLIENT_OBJ) $(LINK_FLAGS32) -lwsock32
+
+objs32ssl:
+	$(CC32) $(LCFLAGS_SSL) -c $(CLIENT_SRC)
+
+clientlib32ssl: $(CLIENT_OBJ)
+	$(CC32) -shared -o $(TARGETS32_SSL) $(CLIENT_OBJ) $(LINK_FLAGS32_SSL) -lwsock32 -lgdi32 -lws2_32
+
+#Compile and link 64-bit
+objs64:
+	$(CC64) $(LCFLAGS) -c $(CLIENT_SRC)
+
+clientlib64: $(CLIENT_OBJ)
+	$(CC64) -shared -o $(TARGETS64) $(CLIENT_OBJ) $(LINK_FLAGS64) -lwsock32
+
+objs64ssl:
+	$(CC64) $(LCFLAGS_SSL) -c $(CLIENT_SRC)
+
+clientlib64ssl: $(CLIENT_OBJ)
+	$(CC64) -shared -o $(TARGETS64_SSL) $(CLIENT_OBJ) $(LINK_FLAGS64_SSL) -lwsock32 -lgdi32 -lws2_32

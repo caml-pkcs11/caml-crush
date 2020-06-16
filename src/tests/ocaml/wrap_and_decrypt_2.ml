@@ -1,7 +1,7 @@
 (************************* MIT License HEADER ************************************
     Copyright ANSSI (2013-2015)
-    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr],
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com],
+    Thomas CALDERON [calderon.thomas@gmail.com]
     Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement

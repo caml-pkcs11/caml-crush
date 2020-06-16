@@ -2,6 +2,12 @@
 
 ## [Unreleased][unreleased]
 
+## [1.0.9] - 2020-05-22
+* Fix compilation for recent coccinelle versions
+* MinGW fixes
+* Travis-CI is now used
+* Docker can be used to compile recent/older targets
+
 ## [1.0.8] - 2016-07-05
 * OpenSSL 1.1.0 support (#23)
 * Fix some Win32 compilation issues
@@ -60,10 +66,11 @@
 * correct conflicting attribute patch regarding.
 * GnuTLS ressource deallocation issue.
 
-[unreleased]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.8...HEAD
-[1.0.8]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.7...v1.0.8
-[1.0.7]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.6...v1.0.7
-[1.0.6]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.5...v1.0.6
-[1.0.5]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.4...v1.0.5
-[1.0.4]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.3...v1.0.4
-[1.0.3]: https://github.com/ANSSI-FR/caml-crush/compare/v1.0.2...v1.0.3
+[unreleased]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.9...HEAD
+[1.0.9]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.8...v1.0.9
+[1.0.8]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.7...v1.0.8
+[1.0.7]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.6...v1.0.7
+[1.0.6]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.5...v1.0.6
+[1.0.5]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.4...v1.0.5
+[1.0.4]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.3...v1.0.4
+[1.0.3]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.2...v1.0.3
