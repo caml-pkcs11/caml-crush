@@ -1,5 +1,5 @@
 CC = @CC@
-CFLAGS_OPT = -O2 -Wall -fPIC -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wuninitialized -fstack-protector-all
+CFLAGS_OPT = -O2 -Wall -fPIC -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wuninitialized -fstack-protector-all -fcommon 
 CFLAGS_OPT += ${CPPFLAGS}
 LD_FLAGS = -lpthread @c_ssl_package@ @LDFLAGS@
 mem_prot_opt_caml=-ccopt -Wl,-z,relro,-z,now -ccopt -fstack-protector
