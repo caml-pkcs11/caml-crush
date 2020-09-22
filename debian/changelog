@@ -1,3 +1,9 @@
+caml-crush (1.0.10-1) unstable; urgency=medium
+
+  * GCC-10 fixes (Closes: #969577)
+
+ -- Thomas Calderon <calderon.thomas@gmail.com>  Tue, 22 Sep 2020 19:24:37 +0100
+
 caml-crush (1.0.9-1) unstable; urgency=medium
 
   * Fixes compilation on recent coccinelle (Closes: #959625)
