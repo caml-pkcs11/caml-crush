@@ -6,6 +6,7 @@ filter_dir = src/filter
 tests_dir = src/tests
 
 .PHONY: all bindings rpc server client filter install uninstall tests
+.NOTPARALLEL: all bindings rpc server client filter install uninstall tests
 
 all:	@with_bindings@ @with_rpc@ @with_filter@ @with_server@ @with_client@
 

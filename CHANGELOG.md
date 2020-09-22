@@ -2,6 +2,11 @@
 
 ## [Unreleased][unreleased]
 
+## [1.0.10] - 2020-09-22
+* Sequential compilation
+* GCC-10 fixes
+* Travis-CI fixes
+
 ## [1.0.9] - 2020-05-22
 * Fix compilation for recent coccinelle versions
 * MinGW fixes
@@ -66,7 +71,8 @@
 * correct conflicting attribute patch regarding.
 * GnuTLS ressource deallocation issue.
 
-[unreleased]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.9...HEAD
+[unreleased]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.10...HEAD
+[1.0.10]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.8...v1.0.9
 [1.0.8]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.7...v1.0.8
 [1.0.7]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.6...v1.0.7

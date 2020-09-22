@@ -1,5 +1,5 @@
 CC=@CC@
-CFLAGS_OPT = -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wuninitialized
+CFLAGS_OPT = -Wall -Wextra -pedantic -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -Wuninitialized -fcommon
 CFLAGS_OPT += ${CPPFLAGS}
 CFLAGS = -O2 -fPIC $(CFLAGS_OPT) -I@OCAMLLIB@
 CFLAGS_DBG = -g -fPIC -I@OCAMLLIB@ $(CFLAGS_OPT)
