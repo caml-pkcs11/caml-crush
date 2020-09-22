@@ -38,7 +38,49 @@ protocol{
 ...
 ```
 
-### Server SSL/TLS configuration
+### Server SSL/TLS configuration for versions > 1.0.6
+The SSL/TLS support can be turned on with the following configuration directives:
+
+```ocaml
+...
+processor {
+  ...
+      tls {
+        (* Ciphersuites, GnuTLS syntax *)
+        (* TLS 1.2, PFS-only suites, no DSS, no CAMELLIA *)
+        algorithms = "SECURE256:+SECURE128:-VERS-TLS-ALL:+VERS-TLS1.2:-RSA:-DHE-DSS:-CAMELLIA-128-CBC:-CAMELLIA-256-CBC";
+
+        (* Uncomment to enable DHE parameters, used for PFS *)
+        (*
+        dh_params {
+          (* Pre-computed DH parameters *)
+          pkcs3_file = "/etc/pkcs11proxyd/dhparams.pem";
+          (* Run-time DH parameters, warning: this takes a long time *)
+          (*bits = 2048;*)
+        };
+        *)
+        x509 {
+         key {
+           crt_file = "server.pem";
+           key_file = "server.key";
+         };
+         trust {
+           crt_file = "cacert.pem";
+         };
+        }
+      };
+  ...
+};
+...
+```
+
+Please note that the current implementation expects PEM files and that
+the private key has to be un-encrypted.
+
+The algorithm parameter accepts GnuTLS cipher list, the default only allows TLS 1.2 and modern PFS-enabled suites.
+The dh\_params can be configured to enable DHE suites. Also, parameters can be generated at startup but note that it will slow down startup.
+
+### Server SSL/TLS configuration for older releases
 The SSL/TLS support can be turned on with the following configuration directives:
 
 ```ocaml

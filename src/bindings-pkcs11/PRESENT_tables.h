@@ -1,43 +1,37 @@
 /*------------------------ MIT License HEADER ------------------------------------
-    Copyright ANSSI (2013-2015)
-    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr],
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
-    Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
+    Copyright ANSSI and NTU (2015)
+    Contributors:
+    Ryad BENADJILA [ryadbenadjila@gmail.com] and
+    Jian GUO [ntu.guo@gmail.com] and
+    Victor LOMNE [victor.lomne@ssi.gouv.fr] and
+    Thomas PEYRIN [thomas.peyrin@gmail.com]
 
     This software is a computer program whose purpose is to implement
-    a PKCS#11 proxy as well as a PKCS#11 filter with security features
-    in mind. The project source tree is subdivided in six parts.
-    There are five main parts:
-      1] OCaml/C PKCS#11 bindings (using OCaml IDL).
-      2] XDR RPC generators (to be used with ocamlrpcgen and/or rpcgen).
-      3] A PKCS#11 RPC server (daemon) in OCaml using a Netplex RPC basis.
-      4] A PKCS#11 filtering module used as a backend to the RPC server.
-      5] A PKCS#11 client module that comes as a dynamic library offering
-         the PKCS#11 API to the software.
-    There is one "optional" part:
-      6] Tests in C and OCaml to be used with client module 5] or with the
-         bindings 1]
-
-    Here is a big picture of how the PKCS#11 proxy works:
-
- ----------------------   --------  socket (TCP or Unix)  --------------------
-| 3] PKCS#11 RPC server|-|2] RPC  |<+++++++++++++++++++> | 5] Client library  |
- ----------------------  |  Layer | [SSL/TLS optional]   |  --------          |
-           |              --------                       | |2] RPC  | PKCS#11 |
- ----------------------                                  | |  Layer |functions|
-| 4] PKCS#11 filter    |                                 |  --------          |
- ----------------------                                   --------------------
-           |                                                        |
- ----------------------                                             |
-| 1] PKCS#11 OCaml     |                                  { PKCS#11 INTERFACE }
-|       bindings       |                                            |
- ----------------------                                       APPLICATION
-           |
-           |
- { PKCS#11 INTERFACE }
-           |
- REAL PKCS#11 MIDDLEWARE
-    (shared library)
+    lightweight block ciphers with different optimizations for the x86
+    platform. Three algorithms have been implemented: PRESENT, LED and 
+    Piccolo. Three techniques have been explored: table based 
+    implementations, vperm (for vector permutation) and bitslice 
+    implementations. For more details, please refer to the SAC 2013
+    paper:
+    http://eprint.iacr.org/2013/445
+    as well as the documentation of the project.
+    Here is a big picture of how the code is divided:
+      - src/common contains common headers, structures and functions.
+      - src/table contains table based implementations, with the code 
+        that generates the tables in src/table/gen_tables. The code here 
+        is written in pure C so it should compile on any platform (x86  
+        and other architectures), as well as any OS flavour (*nix, 
+        Windows ...).
+      - src/vperm contains vperm based implementations. They are written 
+        in inline assembly for x86_64 and will only compile and work on 
+        this platform. The code only compiles with gcc, but porting it to
+        other assembly flavours should not be too complicated.
+      - src/bitslice contains bitslice based implementations. They are 
+        written in asm intrinsics. It should compile and run on i386 as 
+        well as x86_64 platforms, and it should be portable to other OS 
+        flavours since intrinsics are standard among many compilers.
+    Note: vperm and bitslice implementations require a x86 CPU with at least 
+    SSSE3 extensions.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -61,20 +55,6 @@
     shall not be used in advertising or otherwise to promote the sale, use or other
     dealings in this Software without prior written authorization.
 
-    The current source code is part of the bindings 1] source tree:
- ----------------------
-| 1] PKCS#11 OCaml     |
-|       bindings       |
- ----------------------
-           |
-           |
- { PKCS#11 INTERFACE }
-           |
-  REAL PKCS#11 MIDDLEWARE
-     (shared library)
-
-    Project: PKCS#11 Filtering Proxy
-    File:    src/bindings-pkcs11/PRESENT_tables.h
 
 -------------------------- MIT License HEADER ----------------------------------*/
 unsigned long long T0_PRESENT[256] = {0x0003000300000000, 0x0002000300000001, 0x0002000300010000, 0x0003000200010001, 0x0003000200000001, 0x0002000200000000, 0x0003000200010000, 0x0003000300000001, 0x0002000200010001, 0x0003000300010000, 0x0003000300010001, 0x0003000200000000, 0x0002000300000000, 0x0002000300010001, 0x0002000200000001, 0x0002000200010000, 0x0001000300000002, 0x0000000300000003, 0x0000000300010002, 0x0001000200010003, 0x0001000200000003, 0x0000000200000002, 0x0001000200010002, 0x0001000300000003, 0x0000000200010003, 0x0001000300010002, 0x0001000300010003, 0x0001000200000002, 0x0000000300000002, 0x0000000300010003, 0x0000000200000003, 0x0000000200010002, 0x0001000300020000, 0x0000000300020001, 0x0000000300030000, 0x0001000200030001, 0x0001000200020001, 0x0000000200020000, 0x0001000200030000, 0x0001000300020001, 0x0000000200030001, 0x0001000300030000, 0x0001000300030001, 0x0001000200020000, 0x0000000300020000, 0x0000000300030001, 0x0000000200020001, 0x0000000200030000, 0x0003000100020002, 0x0002000100020003, 0x0002000100030002, 0x0003000000030003, 0x0003000000020003, 0x0002000000020002, 0x0003000000030002, 0x0003000100020003, 0x0002000000030003, 0x0003000100030002, 0x0003000100030003, 0x0003000000020002, 0x0002000100020002, 0x0002000100030003, 0x0002000000020003, 0x0002000000030002, 0x0003000100000002, 0x0002000100000003, 0x0002000100010002, 0x0003000000010003, 0x0003000000000003, 0x0002000000000002, 0x0003000000010002, 0x0003000100000003, 0x0002000000010003, 0x0003000100010002, 0x0003000100010003, 0x0003000000000002, 0x0002000100000002, 0x0002000100010003, 0x0002000000000003, 0x0002000000010002, 0x0001000100000000, 0x0000000100000001, 0x0000000100010000, 0x0001000000010001, 0x0001000000000001, 0x0000000000000000, 0x0001000000010000, 0x0001000100000001, 0x0000000000010001, 0x0001000100010000, 0x0001000100010001, 0x0001000000000000, 0x0000000100000000, 0x0000000100010001, 0x0000000000000001, 0x0000000000010000, 0x0003000100020000, 0x0002000100020001, 0x0002000100030000, 0x0003000000030001, 0x0003000000020001, 0x0002000000020000, 0x0003000000030000, 0x0003000100020001, 0x0002000000030001, 0x0003000100030000, 0x0003000100030001, 0x0003000000020000, 0x0002000100020000, 0x0002000100030001, 0x0002000000020001, 0x0002000000030000, 0x0003000300000002, 0x0002000300000003, 0x0002000300010002, 0x0003000200010003, 0x0003000200000003, 0x0002000200000002, 0x0003000200010002, 0x0003000300000003, 0x0002000200010003, 0x0003000300010002, 0x0003000300010003, 0x0003000200000002, 0x0002000300000002, 0x0002000300010003, 0x0002000200000003, 0x0002000200010002, 0x0001000100020002, 0x0000000100020003, 0x0000000100030002, 0x0001000000030003, 0x0001000000020003, 0x0000000000020002, 0x0001000000030002, 0x0001000100020003, 0x0000000000030003, 0x0001000100030002, 0x0001000100030003, 0x0001000000020002, 0x0000000100020002, 0x0000000100030003, 0x0000000000020003, 0x0000000000030002, 0x0003000300020000, 0x0002000300020001, 0x0002000300030000, 0x0003000200030001, 0x0003000200020001, 0x0002000200020000, 0x0003000200030000, 0x0003000300020001, 0x0002000200030001, 0x0003000300030000, 0x0003000300030001, 0x0003000200020000, 0x0002000300020000, 0x0002000300030001, 0x0002000200020001, 0x0002000200030000, 0x0003000300020002, 0x0002000300020003, 0x0002000300030002, 0x0003000200030003, 0x0003000200020003, 0x0002000200020002, 0x0003000200030002, 0x0003000300020003, 0x0002000200030003, 0x0003000300030002, 0x0003000300030003, 0x0003000200020002, 0x0002000300020002, 0x0002000300030003, 0x0002000200020003, 0x0002000200030002, 0x0003000100000000, 0x0002000100000001, 0x0002000100010000, 0x0003000000010001, 0x0003000000000001, 0x0002000000000000, 0x0003000000010000, 0x0003000100000001, 0x0002000000010001, 0x0003000100010000, 0x0003000100010001, 0x0003000000000000, 0x0002000100000000, 0x0002000100010001, 0x0002000000000001, 0x0002000000010000, 0x0001000300000000, 0x0000000300000001, 0x0000000300010000, 0x0001000200010001, 0x0001000200000001, 0x0000000200000000, 0x0001000200010000, 0x0001000300000001, 0x0000000200010001, 0x0001000300010000, 0x0001000300010001, 0x0001000200000000, 0x0000000300000000, 0x0000000300010001, 0x0000000200000001, 0x0000000200010000, 0x0001000300020002, 0x0000000300020003, 0x0000000300030002, 0x0001000200030003, 0x0001000200020003, 0x0000000200020002, 0x0001000200030002, 0x0001000300020003, 0x0000000200030003, 0x0001000300030002, 0x0001000300030003, 0x0001000200020002, 0x0000000300020002, 0x0000000300030003, 0x0000000200020003, 0x0000000200030002, 0x0001000100000002, 0x0000000100000003, 0x0000000100010002, 0x0001000000010003, 0x0001000000000003, 0x0000000000000002, 0x0001000000010002, 0x0001000100000003, 0x0000000000010003, 0x0001000100010002, 0x0001000100010003, 0x0001000000000002, 0x0000000100000002, 0x0000000100010003, 0x0000000000000003, 0x0000000000010002, 0x0001000100020000, 0x0000000100020001, 0x0000000100030000, 0x0001000000030001, 0x0001000000020001, 0x0000000000020000, 0x0001000000030000, 0x0001000100020001, 0x0000000000030001, 0x0001000100030000, 0x0001000100030001, 0x0001000000020000, 0x0000000100020000, 0x0000000100030001, 0x0000000000020001, 0x0000000000030000};

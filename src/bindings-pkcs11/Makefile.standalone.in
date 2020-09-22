@@ -9,15 +9,15 @@ LDFLAGS = -cclib -L$(caml_link_dirs) -cclib -lcamlidl
 all:	@idl_gen@
 	$(CC) @srcdir@/pkcs11_stubs.c -c $(CFLAGS)
 	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -c $(CFLAGS)
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.mli
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.ml
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.mli
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.ml
 	ocamlmklib -o pkcs11_standalone pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 debug:	@idl_gen@
 	$(CC) @srcdir@/pkcs11_stubs.c -DDEBUG -c $(CFLAGS_DBG)
 	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -DDEBUG -c $(CFLAGS_DBG)
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.mli
-	ocamlopt -o pkcs11 -c @srcdir@/pkcs11.ml
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.mli
+	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.ml
 	ocamlmklib -o pkcs11_standalone pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 idl:	
@@ -31,7 +31,10 @@ idl:
 	spatch --no-show-diff --in-place --sp-file @srcdir@/pkcs11_stubs.cocci @srcdir@/pkcs11_stubs.c
 	#Sed because spatch is not able to preprocess
 	sed -i 's/^_CAMLIDL_EXTERN_C/extern/g' @srcdir@/pkcs11.h
-	spatch --no-show-diff --in-place --sp-file @srcdir@/pkcs11.cocci @srcdir@/pkcs11.h
+	#Sed to change the structure packing pragma in WIN32 mode: CamlIDL fixes it to 8 while
+	#PKCS11 header fixes it to 1 => this can create binary interoperability issues
+	sed -i 's/push,8/push,1\/* Replaced for PKCS11 compatibiliy *\//g' @srcdir@/pkcs11.h
+	spatch --no-show-diff --in-place --sp-file @srcdir@/@pkcs11_cocci_patch@ @srcdir@/pkcs11.h
 	#Sed to force the produced idl variable context and some values to be tagged 'unused'
 	sed -i 's/\(.*\), camlidl_ctx _ctx)$$/#ifdef __GNUC__\n\1, __attribute__((unused)) camlidl_ctx _ctx)\n#else\n\1, camlidl_ctx _ctx)\n#endif/g' @srcdir@/pkcs11_stubs.c
 	sed -i 's/\(.*\)value _unit)$$/#ifdef __GNUC__\n\1__attribute__((unused))value _unit)\n#else\n\1value _unit)\n#endif/g' @srcdir@/pkcs11_stubs.c

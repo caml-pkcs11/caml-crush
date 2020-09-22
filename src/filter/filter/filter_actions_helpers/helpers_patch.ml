@@ -1,7 +1,7 @@
 (************************* MIT License HEADER ************************************
     Copyright ANSSI (2013-2015)
-    Contributors : Ryad BENADJILA [ryad.benadjila@ssi.gouv.fr],
-    Thomas CALDERON [thomas.calderon@ssi.gouv.fr]
+    Contributors : Ryad BENADJILA [ryadbenadjila@gmail.com],
+    Thomas CALDERON [calderon.thomas@gmail.com]
     Marion DAUBIGNARD [marion.daubignard@ssi.gouv.fr]
 
     This software is a computer program whose purpose is to implement
@@ -73,6 +73,12 @@
     File:    src/filter/filter/filter_actions_helpers/helpers_patch.ml
 
 ************************** MIT License HEADER ***********************************)
+
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFNDEF OCAML_WITH_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
+
 (* Global value to tell if we want to segregate usage *)
 let segregate_usage = ref false
 
@@ -120,15 +126,18 @@ let critical_attributes key_segregation = if compare key_segregation true = 0 th
 let expurge_template_from_values templates_array =
   (Array.map (fun templ -> {Pkcs11.type_ = templ.Pkcs11.type_; Pkcs11.value = Array.make (Array.length templ.Pkcs11.value) (Char.chr 0)}) templates_array)
 
-let remove_asked_value_type_from_template templates_array = 
+let remove_asked_specific_type_from_template templates_array the_attribute =
   let (new_templates_array, positions, current_position) = Array.fold_left (
     fun (curr_array, pos, curr_pos) templ ->
-      if compare templ.Pkcs11.type_ Pkcs11.cKA_VALUE = 0 then
+      if compare templ.Pkcs11.type_ the_attribute = 0 then
         (curr_array, Array.append pos [|curr_pos|], curr_pos+1)
       else
         (Array.append curr_array [|templ|], pos, curr_pos+1)
   ) ([||], [||], 0) templates_array in
   (new_templates_array, positions)
+
+let remove_asked_value_type_from_template templates_array =
+  (remove_asked_specific_type_from_template templates_array Pkcs11.cKA_VALUE)
 
 let insert_in_array the_array element position = 
   if compare position 0 = 0 then
@@ -276,6 +285,17 @@ let is_object_class_key attributes =
         | _ -> (false)
       end
 
+let is_object_class_private_key attributes = 
+  let object_class_ = get_object_class attributes in
+  match object_class_ with 
+    None -> (false)
+   |Some object_class -> 
+      begin
+      match Pkcs11.match_cKO_value object_class with
+        "cKO_PRIVATE_KEY" -> (true)
+        | _ -> (false)
+      end
+
 let is_existing_object_class_key sessionh objecth =
   (* Get the CKA_CLASS attributes *)
   let cka_class_template = [| {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} |] in
@@ -291,6 +311,23 @@ let is_existing_object_class_key sessionh objecth =
   else
     (* GetAttributeValue returned an error, fail with an exception *)
     let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting CKA_CLASS (this should not happen ...)\n" in netplex_log_critical s; failwith s
+
+let is_existing_object_class_private_key sessionh objecth =
+  (* Get the CKA_CLASS attributes *)
+  let cka_class_template = [| {Pkcs11.type_ = Pkcs11.cKA_CLASS; Pkcs11.value = [||]} |] in
+  let (ret, attributes) = Backend.c_GetAttributeValue sessionh objecth cka_class_template in
+  if compare ret Pkcs11.cKR_OK = 0 then
+    let (ret, attributes) = Backend.c_GetAttributeValue sessionh objecth attributes in    
+    if compare ret Pkcs11.cKR_OK = 0 then
+      (* We have got the class, now check it *)
+      (is_object_class_private_key attributes)
+    else
+      (* GetAttributeValue returned an error, fail with an exception *)
+      let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting CKA_CLASS (this should not happen ...)\n" in netplex_log_critical s; failwith s
+  else
+    (* GetAttributeValue returned an error, fail with an exception *)
+    let s = "[User defined extensions] C_GettAttributeValue CRITICAL ERROR when getting CKA_CLASS (this should not happen ...)\n" in netplex_log_critical s; failwith s
+
 
 (* Check if two templates are compatible regarding their defined attributes *)
 let check_are_templates_nonconforming fun_name attributes new_attributes =
@@ -432,7 +469,7 @@ let execute_external_command command data argvs env =
   let buffer_stderr = Buffer.create buffer_size in
   (* Append the argvs to the command *)
   let command = String.concat " " (List.concat [ [command]; Array.to_list argvs ]) in
-  let string = String.create buffer_size in
+  let string = Bytes.create buffer_size in
   let (in_channel_stdout, out_channel, in_channel_stderr) = Unix.open_process_full command [||] in
   (* Write data to out_channel *)
   output out_channel data 0 (String.length data);

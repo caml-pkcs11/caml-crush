@@ -1,6 +1,7 @@
 #!/bin/sh
 
 echo "[Generating configure file ...]"
+aclocal
 if [ "${OS}" = "Windows_NT" ]
 then
   echo "  |-> Using Cygwin environment"
