@@ -1,4 +1,4 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: caml-crush
 Upstream-Contact: Ryad Benadjila <ryad.benadjila@ssi.gouv.fr>
                   Ryad Benadjila <ryadbenadjila@gmail.com>
@@ -12,7 +12,7 @@ Files: *
 Copyright: 2013-2015 ryad.benadjila@ssi.gouv.fr
            2013-2015 thomas.calderon@ssi.gouv.fr
            2013-2015 marion.daubignard@ssi.gouv.fr
-License: MIT License
+License: Expat
  Caml Crush is licensed under the MIT License (MIT).
  .
  Permission is hereby granted, free of charge, to any person obtaining a copy
