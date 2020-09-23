@@ -1,4 +1,4 @@
 #!/usr/bin/dh-exec
-debian/tmp/build-UNIX_CLIENT/usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11client.so => /usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11clientunix.so
-debian/tmp/build-TCP_CLIENT/usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11client.so => /usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11clienttcp.so
-debian/tmp/build-SERVER/usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11client.so => /usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11clienttcpssl.so
+build-UNIX_CLIENT/usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11client.so => /usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11clientunix.so
+build-TCP_CLIENT/usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11client.so => /usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11clienttcp.so
+build-SERVER/usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11client.so => /usr/lib/${DEB_HOST_MULTIARCH}/caml-crush/libp11clienttcpssl.so
