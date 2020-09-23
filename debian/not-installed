@@ -1,0 +1,7 @@
+build-SERVER/etc/pkcs11proxyd/pkcs11proxyd.conf
+build-TCP_CLIENT/etc/pkcs11proxyd/filter.conf
+build-TCP_CLIENT/etc/pkcs11proxyd/pkcs11proxyd.conf
+build-TCP_CLIENT/usr/bin/pkcs11proxyd
+build-UNIX_CLIENT/etc/pkcs11proxyd/filter.conf
+build-UNIX_CLIENT/etc/pkcs11proxyd/pkcs11proxyd.conf
+build-UNIX_CLIENT/usr/bin/pkcs11proxyd
