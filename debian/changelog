@@ -1,3 +1,9 @@
+caml-crush (1.0.10-4) unstable; urgency=medium
+
+  * Fix other lintians
+
+ -- Thomas Calderon <calderon.thomas@gmail.com>  Tue, 29 Sep 2020 10:07:14 +0100
+
 caml-crush (1.0.10-3) unstable; urgency=medium
 
   * Fix dwz issues and other packaging bugs

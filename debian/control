@@ -11,7 +11,8 @@ Rules-Requires-Root: no
 
 Package: caml-crush-server
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser (>= 3.10)
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser (>= 3.10), lsb-base
 Description: Caml Crush: an OCaml PKCS#11 filtering proxy - server
  This software is a computer program whose purpose is to implement a PKCS#11
  proxy as well as a PKCS#11 filter with security features in mind.

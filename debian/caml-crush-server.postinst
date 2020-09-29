@@ -9,7 +9,8 @@ setup_pkcs11proxyd_user() {
 }
 
 fix_permissions() {
-        chown -R root:Debian-pkcs11proxyd /etc/pkcs11proxyd
+        chown root:Debian-pkcs11proxyd /etc/pkcs11proxyd/filter.conf
+        chown root:Debian-pkcs11proxyd /etc/pkcs11proxyd/pkcs11proxyd.conf
         chmod 640 /etc/pkcs11proxyd/filter.conf
         chmod 640 /etc/pkcs11proxyd/pkcs11proxyd.conf
 }
