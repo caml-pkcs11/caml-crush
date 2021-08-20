@@ -292,16 +292,8 @@ esac
 AC_CHECK_LIB(pthread, pthread_mutex_init, THREAD_LIB="-lpthread",
                AC_MSG_ERROR(Cannot find pthread library.))
 
-# Handle the deprecated immutable String and adapt ocaml
-# compilation flag
-AX_COMPARE_VERSION([$OCAMLVERSION], [lt], [4.02.0], [use_unsafe_strings=no], [use_unsafe_strings=yes])
-if test "$use_unsafe_strings" == "yes"
-then
-	AC_SUBST(ocaml_options, "-unsafe-string")
-else
-	AC_SUBST(ocaml_options, "")
-fi
-
+AX_COMPARE_VERSION([$OCAMLVERSION], [lt], [4.02.0], AC_MSG_ERROR("OCaml versions older than 4.02 are not supported"))
+AC_SUBST(ocaml_options, "")
 
 # IDL generation handling
 ####
