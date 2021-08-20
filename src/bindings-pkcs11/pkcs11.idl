@@ -3181,7 +3181,7 @@ quote(ml, "module Bytes = String");
 #endif
 quote(ml,
       "let char_array_to_string = fun a -> let s = Bytes.create (Array.length a) in\n");
-quote(ml, "  Array.iteri (fun i x -> Bytes.set s i x) a; s;;\n");
+quote(ml, "  Array.iteri (fun i x -> Bytes.set s i x) a; Bytes.to_string s;;\n");
 
 quote(ml,
       "let string_to_char_array = fun s -> Array.init (String.length s) (fun i -> s.[i]);;\n");
@@ -3262,7 +3262,7 @@ quote(ml, "          Bytes.set res !j tmp;");
 quote(ml, "          j := !j +1;");
 quote(ml, "          )");
 quote(ml, "     done;");
-quote(ml, "     (res);;");
+quote(ml, "     (Bytes.to_string res);;");
 
 quote(ml, "let sprint_hex_array myarray =");
 quote(ml, "  let s = Array.fold_left (");
