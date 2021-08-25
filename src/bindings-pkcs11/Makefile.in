@@ -20,7 +20,7 @@ debug:	@idl_gen@
 	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.ml
 	ocamlmklib -o pkcs11 pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
-idl:	
+idl:
 	@rm -f @idl_clean@
 	camlidl -header @srcdir@/pkcs11.idl
 	cat @srcdir@/pkcs11_stubs.c | sed -e 's/Begin_roots_block(\(.*\)).*/Begin_roots_block(\1);/g' | sed -e 's/Begin_root(\(.*\)).*/Begin_root(\1);/g' | sed -e 's/End_roots(\(.*\)).*/End_roots(\1);/g' > ./tmp
@@ -28,6 +28,11 @@ idl:
 	#Sed to patch (GetSlotList/GetMechList/FindObjects/GetObjectSize)
 	sed -i "s/* int/\* nativeint/g" @srcdir@/pkcs11.mli
 	sed -i "s/* int/\* nativeint/g" @srcdir@/pkcs11.ml
+	#Handle recent IDL (as they rename some functions and cocci patches will not be applied otherwise)
+	sed -i "s/caml_modify/modify/g" ./pkcs11_stubs.c
+	sed -i "s/caml_copy_nativeint/custom_copy_int/g" ./pkcs11_stubs.c
+	sed -i "s/caml_invalid_argument/invalid_argument/g" ./pkcs11_stubs.c
+	# Patch the stubs with cocci
 	spatch --no-show-diff --in-place --sp-file @srcdir@/pkcs11_stubs.cocci @srcdir@/pkcs11_stubs.c
 	#Sed because spatch is not able to preprocess
 	sed -i 's/^_CAMLIDL_EXTERN_C/extern/g' @srcdir@/pkcs11.h
