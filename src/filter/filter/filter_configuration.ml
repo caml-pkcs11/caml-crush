@@ -78,6 +78,11 @@ open Config_file
 open Filter_common
 open Filter_actions
 
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFDEF OCAML_NO_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
+
 let string_check_function a = match a with
   "C_LoadModule" -> a
 | "C_Initialize" -> a
@@ -656,12 +661,23 @@ let print_some_help groupable_cp _ _ filename _ =
    end;
    () 
 
+IFDEF OCAML_NO_BYTES_MODULE THEN
+let load_file f =
+  let ic = open_in f in
+  let n = in_channel_length ic in
+  let s = Bytes.create n in
+  really_input ic s 0 n;
+  close_in ic;
+  (s)
+ENDIF
+IFNDEF OCAML_NO_BYTES_MODULE THEN
 let load_file f =
   let ic = open_in f in
   let n = in_channel_length ic in
   let s = really_input_string ic n in
   close_in ic;
   (s)
+ENDIF
 
 let check_occurences big_string to_match conf_file message = 
   let regexp = Str.regexp to_match in

@@ -9,20 +9,20 @@ LDFLAGS = -cclib -L$(caml_link_dirs) -cclib -lcamlidl
 all:	@idl_gen@
 	$(CC) @srcdir@/pkcs11_stubs.c -DSERVER_ROLE -c $(CFLAGS)
 	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -DSERVER_ROLE -c $(CFLAGS)
-	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.mli
-	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.ml
+	ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo @ocaml_bytes_module_define@" -o pkcs11 -c @srcdir@/pkcs11.mli
+	ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo @ocaml_bytes_module_define@" -o pkcs11 -c @srcdir@/pkcs11.ml
 	ocamlmklib -o pkcs11 pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 debug:	@idl_gen@
-	$(CC) @srcdir@/pkcs11_stubs.c -DSERVER_ROLE -DDEBUG -c $(CFLAGS_DBG)
-	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -DSERVER_ROLE -DDEBUG -c $(CFLAGS_DBG)
-	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.mli
-	ocamlopt @ocaml_options@ -o pkcs11 -c @srcdir@/pkcs11.ml
+	$(CC) @srcdir@/pkcs11_stubs.c -DSERVER_ROLE -DDEBUG -g -c $(CFLAGS_DBG)
+	$(CC) @srcdir@/pkcs11_functions.c @aliasing_def@ -DSERVER_ROLE -g -DDEBUG -c $(CFLAGS_DBG)
+	ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo @ocaml_bytes_module_define@" -g -o pkcs11 -c @srcdir@/pkcs11.mli
+	ocamlopt @ocaml_options@ -pp "camlp4o pa_macro.cmo @ocaml_bytes_module_define@" -g -o pkcs11 -c @srcdir@/pkcs11.ml
 	ocamlmklib -o pkcs11 pkcs11.cmx pkcs11_functions.o pkcs11_stubs.o $(LDFLAGS)
 
 idl:
 	@rm -f @idl_clean@
-	camlidl -header @srcdir@/pkcs11.idl
+	camlidl @idl_ocaml_bytes_module_define@ -header @srcdir@/pkcs11.idl
 	cat @srcdir@/pkcs11_stubs.c | sed -e 's/Begin_roots_block(\(.*\)).*/Begin_roots_block(\1);/g' | sed -e 's/Begin_root(\(.*\)).*/Begin_root(\1);/g' | sed -e 's/End_roots(\(.*\)).*/End_roots(\1);/g' > ./tmp
 	mv ./tmp @srcdir@/pkcs11_stubs.c
 	#Sed to patch (GetSlotList/GetMechList/FindObjects/GetObjectSize)

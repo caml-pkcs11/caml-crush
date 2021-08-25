@@ -70,7 +70,10 @@
     File:    src/pkcs11proxyd/server_ssl.ml
 
 ************************** MIT License HEADER *********************************)
-
+(* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
+IFDEF OCAML_NO_BYTES_MODULE THEN
+module Bytes = String
+ENDIF
 
 IFDEF WITH_SSL THEN
 (* Reference those two variables here to avoid circulare dependencies *)
@@ -82,12 +85,23 @@ ENDIF
 ENDIF
 
 (* Basic helpers *)
+IFDEF OCAML_NO_BYTES_MODULE THEN
+let read_file f =
+  let ic = open_in f in
+  let n = in_channel_length ic in
+  let s = Bytes.create n in
+  really_input ic s 0 n;
+  close_in ic;
+  (s)
+ENDIF
+IFNDEF OCAML_NO_BYTES_MODULE THEN
 let read_file f =
   let ic = open_in f in
   let n = in_channel_length ic in
   let s = really_input_string ic n in
   close_in ic;
   (s)
+ENDIF
 
 let write_file f s =
   let oc = open_out f in

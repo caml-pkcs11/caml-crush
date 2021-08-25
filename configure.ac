@@ -292,8 +292,18 @@ esac
 AC_CHECK_LIB(pthread, pthread_mutex_init, THREAD_LIB="-lpthread",
                AC_MSG_ERROR(Cannot find pthread library.))
 
-AX_COMPARE_VERSION([$OCAMLVERSION], [lt], [4.02.0], AC_MSG_ERROR("OCaml versions older than 4.02 are not supported"))
-AC_SUBST(ocaml_options, "")
+# Handle the Byte package that is not present for OCaml < 4.02.0
+AX_COMPARE_VERSION([$OCAMLVERSION], [lt], [4.02.0], [bytes_module_present=no], [bytes_module_present=yes])
+if test "$bytes_module_present" == "no"
+then
+	AC_SUBST(ocaml_bytes_module_define, "-DOCAML_NO_BYTES_MODULE")
+	AC_SUBST(idl_ocaml_bytes_module_define, "-D OCAML_NO_BYTES_MODULE")
+	AC_SUBST(ocaml_options, "")
+else
+	AC_SUBST(ocaml_bytes_module_define, "")
+	AC_SUBST(idl_ocaml_bytes_module_define, "")
+	AC_SUBST(ocaml_options, "")
+fi
 
 # IDL generation handling
 ####
