@@ -391,12 +391,28 @@ then
 else
 	WRITE_TO_FILE(summary, "client type", "Native C client (RPC generated with native rpcgen)")
 	AC_MSG_NOTICE([Using default C based client and RPC])
+	AC_CHECK_LIB(tirpc, getnetname, RPC_LIB=tirpc, RPC_LIB=c)
+
+	if test "$RPC_LIB" == "tirpc"
+	then
+		AC_MSG_NOTICE([Using the tirpc library])
+		CPPFLAGS="$CPPFLAGS -I/usr/include/tirpc"
+		RPC_CPPFLAGS="-I/usr/include/tirpc"
+		RPC_LDFLAGS="-ltirpc"
+	else
+		AC_MSG_NOTICE([Using the glibc RPC implementation])
+		RPC_CPPFLAGS=""
+		RPC_LDFLAGS=""
+	fi
 
 	AC_CHECK_HEADERS([rpc/rpc.h],,AC_MSG_ERROR(Could not find C RPC headers.))
 	AC_CHECK_HEADERS([rpc/clnt.h],,AC_MSG_ERROR(Could not find C RPC client headers.))
 
 	AC_SUBST(client_to_compile, "crpc")
 	AC_SUBST(client_to_compile_debug, "crpc_debug")
+
+	AC_SUBST(RPC_CPPFLAGS)
+	AC_SUBST(RPC_LDFLAGS)
 fi
 
 
@@ -475,12 +491,12 @@ then
         case $socket_type in
                 UNIX_SOCKET)
 			# Check the library against RPC unix client creation
-			AC_CHECK_LIB(c, clntunix_create, ,
+			AC_CHECK_LIB("$RPC_LIB", clntunix_create, ,
 			AC_MSG_ERROR(Cannot find RPC clntunix_create symbol in C library.))
 			;;
                 TCP_SOCKET)
 			# Check the library against RPC tcp client creation
-			AC_CHECK_LIB(c, clnttcp_create, ,
+			AC_CHECK_LIB("$RPC_LIB", clnttcp_create, ,
 			AC_MSG_ERROR(Cannot find RPC clnttcp_create symbol in C library.))
 			;;
                 *)
