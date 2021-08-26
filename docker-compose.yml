@@ -30,7 +30,7 @@ services:
       - ./src/tests/integration/certs/server-key.pem:/build/src/tests/integration/server-key.pem:ro
     entrypoint: '/usr/local/bin/pkcs11proxyd -fg -conf /build/src/tests/integration/pkcs11proxyd.conf'
   client:
-    image: caml-crush_pkcs11proxyd
+    image: "pkcs11proxyd:${FLAVOR}"
     depends_on:
       - "pkcs11proxyd"
     environment: 
@@ -38,7 +38,7 @@ services:
       - PKCS11PROXY_SOCKET_PATH=pkcs11proxyd:4444
     entrypoint: /build/src/tests/integration/run-tests.sh
   client-tls:
-    image: caml-crush_pkcs11proxydtls
+    image: "pkcs11proxydtls:${FLAVOR}"
     depends_on:
       - "pkcs11proxydtls"
     environment: 
