@@ -282,11 +282,9 @@
  * by redefining the opaque ct_data structure and setting
  * the boolean ourselves.
  */
-#if defined(CRPC) && defined(UNIX_SOCKET)
-#if defined(_CS_GNU_LIBC_VERSION)
-#ifndef WITH_TIRPC
+#if defined(CRPC) && defined(UNIX_SOCKET) && defined(_CS_GNU_LIBC_VERSION)
 #define MCALL_MSG_SIZE 24
-
+#if !defined(WITH_TIRPC) && !defined(WITH_SSL)
 struct ct_data
   {
     int ct_sock;
@@ -299,7 +297,7 @@ struct ct_data
     u_int ct_mpos;
     XDR ct_xdrs;
   };
-#else
+#elif !defined(WITH_SSL)
 /* XXX FIXME: this ugly stuff is fragile as it does not take into consideration structure packing */
  struct ct_data {
 	int             ct_sock;          /* connection's fd */
@@ -307,7 +305,7 @@ struct ct_data
 	bool_t          ct_closeit;     /* close it on destroy */
 	struct timeval  ct_wait;        /* wait interval in milliseconds */
 	bool_t          ct_waitset;     /* wait set by clnt_control? */
-	struct sockaddr_un ct_addr;
+	struct netbuf   ct_addr;
 	struct rpc_err  ct_error;
 	union {
 		char    ct_mcallc[MCALL_MSG_SIZE];      /* marshalled callmsg */
@@ -316,7 +314,6 @@ struct ct_data
 	u_int           ct_mpos;        /* pos after marshal */
 	XDR             ct_xdrs;        /* XDR stream */
  };
-#endif
 #endif
 #endif
 
@@ -375,11 +372,7 @@ struct ct_data {
 	bool_t          ct_closeit;     /* close it on destroy */
 	struct timeval  ct_wait;        /* wait interval in milliseconds */
 	bool_t          ct_waitset;     /* wait set by clnt_control? */
-#ifdef UNIX_SOCKET
-	struct sockaddr_un ct_addr;
-#else
-	struct sockaddr_in ct_addr;
-#endif
+	struct netbuf   ct_addr;
 	struct rpc_err  ct_error;
 	union {
 		char    ct_mcallc[MCALL_MSG_SIZE];      /* marshalled callmsg */
