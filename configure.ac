@@ -406,8 +406,8 @@ else
 	if test "$RPC_LIB" == "tirpc"
 	then
 		AC_MSG_NOTICE([Using the tirpc library])
-		CPPFLAGS="$CPPFLAGS -I/usr/include/tirpc"
-		RPC_CPPFLAGS="-I/usr/include/tirpc"
+		CPPFLAGS="$CPPFLAGS -DWITH_TIRPC -I/usr/include/tirpc"
+		RPC_CPPFLAGS="-DWITH_TIRPC -I/usr/include/tirpc"
 		RPC_LDFLAGS="-ltirpc"
 	else
 		AC_MSG_NOTICE([Using the glibc RPC implementation])
