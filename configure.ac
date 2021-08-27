@@ -292,16 +292,18 @@ esac
 AC_CHECK_LIB(pthread, pthread_mutex_init, THREAD_LIB="-lpthread",
                AC_MSG_ERROR(Cannot find pthread library.))
 
-# Handle the deprecated immutable String and adapt ocaml
-# compilation flag
-AX_COMPARE_VERSION([$OCAMLVERSION], [lt], [4.02.0], [use_unsafe_strings=no], [use_unsafe_strings=yes])
-if test "$use_unsafe_strings" == "yes"
+# Handle the Byte package that is not present for OCaml < 4.02.0
+AX_COMPARE_VERSION([$OCAMLVERSION], [lt], [4.02.0], [bytes_module_present=no], [bytes_module_present=yes])
+if test "$bytes_module_present" == "no"
 then
-	AC_SUBST(ocaml_options, "-unsafe-string")
+	AC_SUBST(ocaml_bytes_module_define, "-DOCAML_NO_BYTES_MODULE")
+	AC_SUBST(idl_ocaml_bytes_module_define, "-D OCAML_NO_BYTES_MODULE")
+	AC_SUBST(ocaml_options, "")
 else
+	AC_SUBST(ocaml_bytes_module_define, "")
+	AC_SUBST(idl_ocaml_bytes_module_define, "")
 	AC_SUBST(ocaml_options, "")
 fi
-
 
 # IDL generation handling
 ####
@@ -399,12 +401,28 @@ then
 else
 	WRITE_TO_FILE(summary, "client type", "Native C client (RPC generated with native rpcgen)")
 	AC_MSG_NOTICE([Using default C based client and RPC])
+	AC_CHECK_LIB(tirpc, getnetname, RPC_LIB=tirpc, RPC_LIB=c)
+
+	if test "$RPC_LIB" == "tirpc"
+	then
+		AC_MSG_NOTICE([Using the tirpc library])
+		CPPFLAGS="$CPPFLAGS -DWITH_TIRPC -I/usr/include/tirpc"
+		RPC_CPPFLAGS="-DWITH_TIRPC -I/usr/include/tirpc"
+		RPC_LDFLAGS="-ltirpc"
+	else
+		AC_MSG_NOTICE([Using the glibc RPC implementation])
+		RPC_CPPFLAGS=""
+		RPC_LDFLAGS=""
+	fi
 
 	AC_CHECK_HEADERS([rpc/rpc.h],,AC_MSG_ERROR(Could not find C RPC headers.))
 	AC_CHECK_HEADERS([rpc/clnt.h],,AC_MSG_ERROR(Could not find C RPC client headers.))
 
 	AC_SUBST(client_to_compile, "crpc")
 	AC_SUBST(client_to_compile_debug, "crpc_debug")
+
+	AC_SUBST(RPC_CPPFLAGS)
+	AC_SUBST(RPC_LDFLAGS)
 fi
 
 
@@ -483,12 +501,12 @@ then
         case $socket_type in
                 UNIX_SOCKET)
 			# Check the library against RPC unix client creation
-			AC_CHECK_LIB(c, clntunix_create, ,
+			AC_CHECK_LIB("$RPC_LIB", clntunix_create, ,
 			AC_MSG_ERROR(Cannot find RPC clntunix_create symbol in C library.))
 			;;
                 TCP_SOCKET)
 			# Check the library against RPC tcp client creation
-			AC_CHECK_LIB(c, clnttcp_create, ,
+			AC_CHECK_LIB("$RPC_LIB", clnttcp_create, ,
 			AC_MSG_ERROR(Cannot find RPC clnttcp_create symbol in C library.))
 			;;
                 *)

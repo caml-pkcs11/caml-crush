@@ -1,0 +1,35 @@
+# Override with --build-arg dist=ubuntu --build-arg flavor=bionic
+ARG dist=debian
+ARG flavor=sid
+
+FROM ${dist}:${flavor} as builder
+
+
+RUN apt-get update && apt-get install -y --no-install-recommends autoconf make gcc \
+                     automake autotools-dev \
+                     ocaml-nox camlidl coccinelle \
+                     libocamlnet-ocaml-dev libocamlnet-ocaml-bin \
+                     libocamlnet-ssl-ocaml libocamlnet-ssl-ocaml-dev \
+                     libssl-dev gnutls-dev \
+                     libconfig-file-ocaml-dev camlp4 \
+                     opensc libtool pkg-config unzip g++ wget
+
+WORKDIR /softhsm
+RUN wget --no-check-certificate https://github.com/opendnssec/SoftHSMv2/archive/refs/tags/2.6.1.zip && unzip 2.6.1.zip
+
+WORKDIR /softhsm/SoftHSMv2-2.6.1
+RUN ./autogen.sh && ./configure && make && make install
+
+FROM builder
+COPY . /build
+
+WORKDIR /build
+
+RUN ./autogen.sh
+RUN ./configure --with-idlgen --with-rpcgen --with-ssl --with-ssl-clientfiles='env' --with-libnames=foo
+RUN make
+RUN make install
+
+RUN softhsm2-util --init-token --slot 0 --label caml-crush-int-tests --pin 1234 --so-pin 123456
+
+ENTRYPOINT [ "/build/src/tests/run-tests.sh" ]
