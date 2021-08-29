@@ -32,4 +32,4 @@ RUN make install
 
 RUN softhsm2-util --init-token --slot 0 --label caml-crush-int-tests --pin 1234 --so-pin 123456
 
-ENTRYPOINT [ "/build/src/tests/run-tests.sh" ]
+ENTRYPOINT [ "/build/src/tests/integration/run-tests.sh" ]
