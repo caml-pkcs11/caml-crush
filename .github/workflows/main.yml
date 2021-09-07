@@ -7,21 +7,16 @@ jobs:
     strategy:
       matrix:
        include:
-         - os-flavor: sid
-           dist: "debian"
+         - dist: "debian"
            flavor: "sid"
-         - os-flavor: buster
-           dist: "debian"
+         - dist: "debian"
            flavor: "buster"
         #  Ubuntu Focal does not have coccinelle package, skip for now
-        #  - os-flavor: focal
-        #    dist: "ubuntu"
+        #  - dist: "ubuntu"
         #    flavor: "focal"
-         - os-flavor: bionic
-           dist: "ubuntu"
+         - dist: "ubuntu"
            flavor: "bionic"
-         - os-flavor: xenial
-           dist: "ubuntu"
+         - dist: "ubuntu"
            flavor: "xenial"
     steps:
     - name: Checkout code
