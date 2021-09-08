@@ -36,7 +36,7 @@ services:
     environment: 
       - PKCS11PROXY_LIBNAME=softhsm
       - PKCS11PROXY_SOCKET_PATH=pkcs11proxyd:4444
-    entrypoint: /build/src/tests/integration/run-tests.sh
+    entrypoint: "/build/src/tests/integration/wait-for-it.sh pkcs11proxyd:4444 -- /build/src/tests/integration/run-tests.sh"
   client-tls:
     image: "pkcs11proxydtls:${FLAVOR}"
     depends_on:
@@ -51,4 +51,4 @@ services:
       - ./src/tests/integration/certs/ca.pem:/tmp/ca.pem:ro
       - ./src/tests/integration/certs/client.pem:/tmp/client.pem:ro
       - ./src/tests/integration/certs/client-key.pem:/tmp/client-key.pem:ro
-    entrypoint: /build/src/tests/integration/run-tests.sh
+    entrypoint: "/build/src/tests/integration/wait-for-it.sh pkcs11proxydtls:4444 -- /build/src/tests/integration/run-tests.sh"
