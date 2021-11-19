@@ -284,7 +284,7 @@
  */
 #if defined(CRPC) && defined(UNIX_SOCKET) && defined(_CS_GNU_LIBC_VERSION)
 #define MCALL_MSG_SIZE 24
-
+#if !defined(WITH_TIRPC) && !defined(WITH_SSL)
 struct ct_data
   {
     int ct_sock;
@@ -297,6 +297,24 @@ struct ct_data
     u_int ct_mpos;
     XDR ct_xdrs;
   };
+#elif !defined(WITH_SSL)
+/* XXX FIXME: this ugly stuff is fragile as it does not take into consideration structure packing */
+ struct ct_data {
+	int             ct_sock;          /* connection's fd */
+	void            *ct_fd_lock;
+	bool_t          ct_closeit;     /* close it on destroy */
+	struct timeval  ct_wait;        /* wait interval in milliseconds */
+	bool_t          ct_waitset;     /* wait set by clnt_control? */
+	struct netbuf   ct_addr;
+	struct rpc_err  ct_error;
+	union {
+		char    ct_mcallc[MCALL_MSG_SIZE];      /* marshalled callmsg */
+		u_int32_t ct_mcalli;
+	} ct_u;
+	u_int           ct_mpos;        /* pos after marshal */
+	XDR             ct_xdrs;        /* XDR stream */
+ };
+#endif
 #endif
 
 /* gethostbyname include */
@@ -329,6 +347,8 @@ int readnet(char *, char *, int);
 int writenet(char *, char *, int);
 
 #define MCALL_MSG_SIZE 24
+#ifndef WITH_TIRPC
+/* XXX FIXME: this ugly stuff is fragile as it does not take into consideration structure packing */
 struct ct_data {
   int ct_sock;
   bool_t ct_closeit;
@@ -344,6 +364,24 @@ struct ct_data {
   u_int ct_mpos;		/* pos after marshal */
   XDR ct_xdrs;
 };
+#else
+/* XXX FIXME: this ugly stuff is fragile as it does not take into consideration structure packing */
+ struct ct_data {
+	int             ct_sock;          /* connection's fd */
+	void            *ct_fd_lock;
+	bool_t          ct_closeit;     /* close it on destroy */
+	struct timeval  ct_wait;        /* wait interval in milliseconds */
+	bool_t          ct_waitset;     /* wait set by clnt_control? */
+	struct netbuf   ct_addr;
+	struct rpc_err  ct_error;
+	union {
+		char    ct_mcallc[MCALL_MSG_SIZE];      /* marshalled callmsg */
+		u_int32_t ct_mcalli;
+	} ct_u;
+	u_int           ct_mpos;        /* pos after marshal */
+	XDR             ct_xdrs;        /* XDR stream */
+ };
+#endif
 
 int provision_certificates(void);
 

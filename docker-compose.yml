@@ -1,0 +1,54 @@
+version: '3.6'
+services:
+  pkcs11proxyd:
+    image: "pkcs11proxyd:${FLAVOR}"
+    build:
+      context: .
+      dockerfile: src/tests/integration/Dockerfile.debian-integration
+      args:
+        dist: "${DIST}"
+        flavor: "${FLAVOR}"
+    # ports:
+    #   - '4444:4444'
+    volumes:
+      - ./src/tests/integration/filter.conf:/build/src/tests/integration/filter.conf:ro
+      - ./src/tests/integration/pkcs11proxyd-tcp.conf:/build/src/tests/integration/pkcs11proxyd.conf:ro
+    entrypoint: '/usr/local/bin/pkcs11proxyd -fg -conf /build/src/tests/integration/pkcs11proxyd.conf'
+  pkcs11proxydtls:
+    image: "pkcs11proxydtls:${FLAVOR}"
+    build:
+      context: .
+      dockerfile: src/tests/integration/Dockerfile.debian-integration-tls
+      args:
+        dist: "${DIST}"
+        flavor: "${FLAVOR}"
+    volumes:
+      - ./src/tests/integration/filter.conf:/build/src/tests/integration/filter.conf:ro
+      - ./src/tests/integration/pkcs11proxyd-tcp-tls.conf:/build/src/tests/integration/pkcs11proxyd.conf:ro
+      - ./src/tests/integration/certs/ca.pem:/build/src/tests/integration/ca.pem:ro
+      - ./src/tests/integration/certs/server.pem:/build/src/tests/integration/server.pem:ro
+      - ./src/tests/integration/certs/server-key.pem:/build/src/tests/integration/server-key.pem:ro
+    entrypoint: '/usr/local/bin/pkcs11proxyd -fg -conf /build/src/tests/integration/pkcs11proxyd.conf'
+  client:
+    image: "pkcs11proxyd:${FLAVOR}"
+    depends_on:
+      - "pkcs11proxyd"
+    environment: 
+      - PKCS11PROXY_LIBNAME=softhsm
+      - PKCS11PROXY_SOCKET_PATH=pkcs11proxyd:4444
+    entrypoint: "/build/src/tests/integration/wait-for-it.sh pkcs11proxyd:4444 -- /build/src/tests/integration/run-tests.sh"
+  client-tls:
+    image: "pkcs11proxydtls:${FLAVOR}"
+    depends_on:
+      - "pkcs11proxydtls"
+    environment: 
+      - PKCS11PROXY_LIBNAME=softhsm
+      - PKCS11PROXY_SOCKET_PATH=pkcs11proxydtls:4444
+      - PKCS11PROXY_CA_FILE=/tmp/ca.pem
+      - PKCS11PROXY_CERT_FILE=/tmp/client.pem
+      - PKCS11PROXY_PRIVKEY_FILE=/tmp/client-key.pem
+    volumes:
+      - ./src/tests/integration/certs/ca.pem:/tmp/ca.pem:ro
+      - ./src/tests/integration/certs/client.pem:/tmp/client.pem:ro
+      - ./src/tests/integration/certs/client-key.pem:/tmp/client-key.pem:ro
+    entrypoint: "/build/src/tests/integration/wait-for-it.sh pkcs11proxydtls:4444 -- /build/src/tests/integration/run-tests.sh"
