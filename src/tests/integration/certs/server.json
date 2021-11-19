@@ -1,0 +1,17 @@
+{
+    "CN": "pkc11proxydtls",
+    "hosts": [
+        "pkc11proxydtls"
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C": "GB",
+            "L": "London"
+        }
+    ]
+}
+

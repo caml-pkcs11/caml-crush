@@ -52,11 +52,11 @@ This behavior is controlled using the `PKCS11PROXY_LIBNAME` variable.
 
 ### Client socket configuration
 The client library socket is defined at compile time.
-Use --with-socket to configure the client socket.
+Use --with-client-socket to configure the client socket.
 
-  * --with-socket=unix,/run/pkcs11-socket
+  * --with-client-socket=unix,/run/pkcs11-socket
     * (client will connect to UNIX domain socket located at /run/pkcs11-socket)
-  * --with-socket=tcp,127.0.0.1:4444
+  * --with-client-socket=tcp,127.0.0.1:4444
     * (client will establish a TCP socket with remote peer 127.0.0.1 and port 4444)
 
 However, an environment variable can be used to change the socket parameters.

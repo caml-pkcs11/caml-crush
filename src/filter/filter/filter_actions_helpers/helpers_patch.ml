@@ -75,7 +75,7 @@
 ************************** MIT License HEADER ***********************************)
 
 (* Use aliases if this is an old version (< 4.02) of OCaml without a Bytes module *)
-IFNDEF OCAML_WITH_BYTES_MODULE THEN
+IFDEF OCAML_NO_BYTES_MODULE THEN
 module Bytes = String
 ENDIF
 
@@ -463,13 +463,14 @@ let detect_conflicting_attributes_on_existing_object function_name sessionh obje
       (check)
 
 
+IFDEF OCAML_NO_BYTES_MODULE THEN
 let execute_external_command command data argvs env =
   let buffer_size = 2048 in
   let buffer_stdout = Buffer.create buffer_size in
   let buffer_stderr = Buffer.create buffer_size in
   (* Append the argvs to the command *)
   let command = String.concat " " (List.concat [ [command]; Array.to_list argvs ]) in
-  let string = Bytes.create buffer_size in
+  let str_buffer = Bytes.create buffer_size in
   let (in_channel_stdout, out_channel, in_channel_stderr) = Unix.open_process_full command [||] in
   (* Write data to out_channel *)
   output out_channel data 0 (String.length data);
@@ -479,16 +480,48 @@ let execute_external_command command data argvs env =
   (* Read result data on the in_channel stdout *)
   let chars_read_stdout = ref 1 in
   while !chars_read_stdout <> 0 do
-    chars_read_stdout := input in_channel_stdout string 0 buffer_size;
-    Buffer.add_substring buffer_stdout string 0 !chars_read_stdout
+    chars_read_stdout := input in_channel_stdout str_buffer 0 buffer_size;
+    Buffer.add_substring buffer_stdout str_buffer 0 !chars_read_stdout
   done;
   (* Command done, read stderr *)
   let chars_read_stderr = ref 1 in
   while !chars_read_stderr <> 0 do
-    chars_read_stderr := input in_channel_stderr string 0 buffer_size;
-    Buffer.add_substring buffer_stderr string 0 !chars_read_stderr
+    chars_read_stderr := input in_channel_stderr str_buffer 0 buffer_size;
+    Buffer.add_substring buffer_stderr str_buffer 0 !chars_read_stderr
   done;
   let ret_status = Unix.close_process_full (in_channel_stdout, out_channel, in_channel_stderr) in
   match ret_status with
     Unix.WEXITED(0) -> (true, Buffer.contents buffer_stdout, Buffer.contents buffer_stderr)
    | _ -> (false, "", Buffer.contents buffer_stderr)
+ENDIF
+IFNDEF OCAML_NO_BYTES_MODULE THEN
+let execute_external_command command data argvs env =
+  let buffer_size = 2048 in
+  let buffer_stdout = Buffer.create buffer_size in
+  let buffer_stderr = Buffer.create buffer_size in
+  (* Append the argvs to the command *)
+  let command = String.concat " " (List.concat [ [command]; Array.to_list argvs ]) in
+  let str_buffer = Bytes.create buffer_size in
+  let (in_channel_stdout, out_channel, in_channel_stderr) = Unix.open_process_full command [||] in
+  (* Write data to out_channel *)
+  output_string out_channel data;
+  (* Close out_channel to tell it's over *)
+  flush out_channel;
+  close_out out_channel;
+  (* Read result data on the in_channel stdout *)
+  let chars_read_stdout = ref 1 in
+  while !chars_read_stdout <> 0 do
+    chars_read_stdout := input in_channel_stdout str_buffer 0 buffer_size;
+    Buffer.add_subbytes buffer_stdout str_buffer 0 !chars_read_stdout
+  done;
+  (* Command done, read stderr *)
+  let chars_read_stderr = ref 1 in
+  while !chars_read_stderr <> 0 do
+    chars_read_stderr := input in_channel_stderr str_buffer 0 buffer_size;
+    Buffer.add_subbytes buffer_stderr str_buffer 0 !chars_read_stderr
+  done;
+  let ret_status = Unix.close_process_full (in_channel_stdout, out_channel, in_channel_stderr) in
+  match ret_status with
+    Unix.WEXITED(0) -> (true, Buffer.contents buffer_stdout, Buffer.contents buffer_stderr)
+   | _ -> (false, "", Buffer.contents buffer_stderr)
+ENDIF

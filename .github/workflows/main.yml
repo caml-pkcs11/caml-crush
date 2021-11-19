@@ -1,0 +1,43 @@
+name: CI
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+       include:
+         - dist: "debian"
+           flavor: "testing"
+         - dist: "debian"
+           flavor: "bullseye"
+         - dist: "debian"
+           flavor: "buster"
+        #  Ubuntu Focal does not have coccinelle package, skip for now
+        #  - dist: "ubuntu"
+        #    flavor: "focal"
+         - dist: "ubuntu"
+           flavor: "bionic"
+         - dist: "ubuntu"
+           flavor: "xenial"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: docker-build
+      env:
+          DIST: ${{ matrix.dist }}
+          FLAVOR: ${{ matrix.flavor }}
+      run: |
+        apt-get update && apt-get install -y --no-install-recommends docker docker-compose
+        docker-compose build
+        docker-compose -f docker-compose-unix.yml build
+    - name: run integration tests
+      env:
+          DIST: ${{ matrix.dist }}
+          FLAVOR: ${{ matrix.flavor }}
+      run: |
+        # important to use -p so that different compose-project name are used to avoid collision between CI-runs
+        docker-compose -p cc-test-${FLAVOR} up --force-recreate --exit-code-from client client
+        docker-compose -p cc-test-${FLAVOR} up --force-recreate --exit-code-from client-tls client-tls
+        docker-compose -p cc-test-${FLAVOR} -f docker-compose-unix.yml up --exit-code-from client-unix client-unix
+        docker-compose -p cc-test-${FLAVOR} -f docker-compose-unix.yml up --exit-code-from client-unix-tls client-unix-tls
