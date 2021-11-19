@@ -8,7 +8,9 @@ jobs:
       matrix:
        include:
          - dist: "debian"
-           flavor: "sid"
+           flavor: "testing"
+         - dist: "debian"
+           flavor: "bullseye"
          - dist: "debian"
            flavor: "buster"
         #  Ubuntu Focal does not have coccinelle package, skip for now
