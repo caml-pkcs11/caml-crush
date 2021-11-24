@@ -50,5 +50,5 @@ override_dh_auto_install-%:
 	dh_auto_install -Bbuild-$* --destdir=debian/tmp/build-$*
 
 %:
-	dh $@ --with autoreconf
+	dh $@ --with autoreconf --no-parallel
 override_dh_dwz:
