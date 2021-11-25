@@ -2,6 +2,8 @@
 
 ## [Unreleased][unreleased]
 
+## [1.0.12] - 2021-11-25
+* Build fixes
 ## [1.0.11] - 2021-11-19
 * TIRPC support
 * Ocaml > 4.10 support
@@ -75,7 +77,8 @@
 * correct conflicting attribute patch regarding.
 * GnuTLS ressource deallocation issue.
 
-[unreleased]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.11...HEAD
+[unreleased]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.12...HEAD
+[1.0.12]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/caml-pkcs11/caml-crush/compare/v1.0.8...v1.0.9
