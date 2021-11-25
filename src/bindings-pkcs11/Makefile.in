@@ -29,9 +29,9 @@ idl:
 	sed -i "s/* int/\* nativeint/g" @srcdir@/pkcs11.mli
 	sed -i "s/* int/\* nativeint/g" @srcdir@/pkcs11.ml
 	#Handle recent IDL (as they rename some functions and cocci patches will not be applied otherwise)
-	sed -i "s/caml_modify/modify/g" ./pkcs11_stubs.c
-	sed -i "s/caml_copy_nativeint/custom_copy_int/g" ./pkcs11_stubs.c
-	sed -i "s/caml_invalid_argument/invalid_argument/g" ./pkcs11_stubs.c
+	sed -i "s/caml_modify/modify/g" @srcdir@/pkcs11_stubs.c
+	sed -i "s/caml_copy_nativeint/custom_copy_int/g" @srcdir@/pkcs11_stubs.c
+	sed -i "s/caml_invalid_argument/invalid_argument/g" @srcdir@/pkcs11_stubs.c
 	# Patch the stubs with cocci
 	spatch --no-show-diff --in-place --sp-file @srcdir@/pkcs11_stubs.cocci @srcdir@/pkcs11_stubs.c
 	#Sed because spatch is not able to preprocess
