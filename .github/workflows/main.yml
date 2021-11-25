@@ -8,6 +8,8 @@ jobs:
       matrix:
        include:
          - dist: "debian"
+           flavor: "sid"
+         - dist: "debian"
            flavor: "testing"
          - dist: "debian"
            flavor: "bullseye"
