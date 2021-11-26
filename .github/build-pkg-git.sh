@@ -2,7 +2,7 @@
 
 OUTPUT=/tmp/output
 
-echo Generating package for ${BRANCH_NAME}
+echo Generating package for $BRANCH_NAME
 COMMIT_SHORT=1.0.x-$(git rev-parse --short HEAD)
 git archive --format=tar.gz --prefix=caml-crush-$COMMIT_SHORT/ master > ../caml-crush-$COMMIT_SHORT.tar.gz
 git checkout debian
