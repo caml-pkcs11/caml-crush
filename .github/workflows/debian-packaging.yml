@@ -61,7 +61,7 @@ jobs:
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
       run: |
         mkdir -p ${DEB_OUTPUT}
-        docker run --rm -it  -e BRANCH_NAME='${BRANCH_NAME}' -v ${DEB_OUTPUT}:${DEB_OUTPUT_CONTAINER}  caml-crush-pkg-${FLAVOR} bash .github/build-pkg-git.sh
+        docker run --rm -it  -e BRANCH_NAME=${BRANCH_NAME} -v ${DEB_OUTPUT}:${DEB_OUTPUT_CONTAINER}  caml-crush-pkg-${FLAVOR} bash .github/build-pkg-git.sh
     # - name: Upload artifacts
     #   uses: actions/upload-artifact@v2
     #   with:
