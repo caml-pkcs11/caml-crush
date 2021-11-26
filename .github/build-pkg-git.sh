@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #set parameters needed for gbp import
-git config user.email "calderon.thomas@gmail"
-git config user.name "Thomas Calderon"
+git config --global user.email "calderon.thomas@gmail"
+git config --global user.name "Thomas Calderon"
 
 echo Generating package for $BRANCH_NAME, will output in $DEB_OUTPUT_CONTAINER
 
@@ -22,4 +22,7 @@ export DEBEMAIL="calderon.thomas@gmail.com"
 export DEBFULLNAME="Thomas Calderon"
 gbp dch $GBP_SINCE_PARAM --snapshot --snapshot-number="${COMMIT_DATE}" --no-multimaint --ignore-branch
 
-gbp buildpackage -uc -us --git-no-sign-tags --git-debian-branch=debian --git-ignore-new --git-export-dir=$DEB_OUTPUT_CONTAINER
+gbp buildpackage -uc -us --git-no-sign-tags --git-debian-branch=debian --git-ignore-new
+
+#copy all artefacts in output directory
+mv ../caml-crush* $DEB_OUTPUT_CONTAINER/

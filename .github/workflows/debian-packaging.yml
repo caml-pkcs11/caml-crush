@@ -84,7 +84,8 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: deb
-        path: ${{env.DEB_OUTPUT}}/*.deb
+        path: ${{env.DEB_OUTPUT}}/
+        if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn` 
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
     # - name: Patch changelog (snapshot)
