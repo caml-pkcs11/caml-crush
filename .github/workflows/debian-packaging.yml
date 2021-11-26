@@ -1,0 +1,77 @@
+name: Debian
+on: push
+env:
+  CHANGELOG_AUTHOR_NAME: "Thomas Calderon"
+  CHANGELOG_AUTHOR_EMAIL: "calderon.thomas@gmail.com"
+
+jobs:
+  build-debian-package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+       include:
+         - dist: "debian"
+           flavor: "sid"
+        #  - dist: "debian"
+        #    flavor: "testing"
+        #  - dist: "debian"
+        #    flavor: "bullseye"
+        #  - dist: "debian"
+        #    flavor: "buster"
+        # #  Ubuntu Focal does not have coccinelle package, skip for now
+        # #  - dist: "ubuntu"
+        # #    flavor: "focal"
+        #  - dist: "ubuntu"
+        #    flavor: "bionic"
+        #  - dist: "ubuntu"
+        #    flavor: "xenial"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2.3.4
+      with:
+        fetch-depth: 0
+        # ref: debian
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    - name: Get branch name (merge)
+      if: github.event_name != 'pull_request'
+      shell: bash
+      run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -)" >> $GITHUB_ENV
+
+    - name: Get branch name (pull request)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      run: echo "BRANCH_NAME=$(echo ${GITHUB_HEAD_REF} | tr / -)" >> $GITHUB_ENV
+    - name: build docker container to build
+      env:
+          DIST: ${{ matrix.dist }}
+          FLAVOR: ${{ matrix.flavor }}
+      run: |
+        apt-get update && apt-get install -y --no-install-recommends docker.io
+        docker build -t caml-crush-pkg-${FLAVOR} --build-arg flavor=${DIST} --build-arg flavor=${FLAVOR}  -f Dockerfile.debian-pkg .
+    - name: build package in container
+      env:
+          DIST: ${{ matrix.dist }}
+          FLAVOR: ${{ matrix.flavor }}
+          DEB_OUTPUT: "/tmp/cc-output"
+          DEB_OUTPUT_CONTAINER: "/tmp/output"
+      run: |
+        mkdir -p ${DEB_OUTPUT}
+        docker run --rm -it  -e BRANCH_NAME='${BRANCH_NAME}' -v ${DEB_OUTPUT}:${DEB_OUTPUT_CONTAINER}  caml-crush-pkg-${FLAVOR} bash .github/build-pkg-git.sh
+    # - name: Upload artifacts
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: deb
+    #     path: $${{DEB_OUTPUT}}/*.deb
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    # - name: Patch changelog (snapshot)
+    #   uses: pi-top/git-debian-changelog-bump-action@master
+    #   with:
+    #     release: false
+    #     author_name: ${{ env.CHANGELOG_AUTHOR_NAME }}
+    #     author_email: ${{ env.CHANGELOG_AUTHOR_EMAIL }}
+    # - name: Determine current version
+    #   run: |
+    #     sudo apt install -y dpkg-dev
+    #     echo "CURRENT_VERSION=$(dpkg-parsechangelog -Sversion)" >> $GITHUB_ENV
