@@ -63,6 +63,8 @@ jobs:
           --build-arg flavor=${DIST} \
           --build-arg flavor=${FLAVOR} \
            -f Dockerfile.debian-pkg .
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: build package in container
       env:
           DIST: ${{ matrix.dist }}
