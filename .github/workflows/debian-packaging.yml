@@ -52,8 +52,8 @@ jobs:
           DIST: ${{ matrix.dist }}
           FLAVOR: ${{ matrix.flavor }}
       run: |
-        apt-get update
-        apt-get install -y --no-install-recommends docker.io
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends docker.io
         docker build -t caml-crush-pkg-${FLAVOR} --build-arg flavor=${DIST} --build-arg flavor=${FLAVOR}  -f Dockerfile.debian-pkg .
     - name: build package in container
       env:
