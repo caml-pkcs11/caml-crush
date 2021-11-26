@@ -1,8 +1,7 @@
 #!/bin/bash
 
-OUTPUT=/tmp/output
+echo Generating package for $BRANCH_NAME, will output in $DEB_OUTPUT_CONTAINER
 
-echo Generating package for $BRANCH_NAME
 COMMIT_SHORT=1.0.x-$(git rev-parse --short HEAD)
 git archive --format=tar.gz --prefix=caml-crush-$COMMIT_SHORT/ master > ../caml-crush-$COMMIT_SHORT.tar.gz
 git checkout debian
@@ -15,4 +14,4 @@ export DEBEMAIL="calderon.thomas@gmail.com"
 export DEBFULLNAME="Thomas Calderon"
 gbp dch $GBP_SINCE_PARAM --snapshot --snapshot-number="${COMMIT_DATE}" --no-multimaint --ignore-branch
 
-gbp buildpackage -uc -us --git-no-sign-tags --git-debian-branch=debian --git-ignore-new --git-export-dir=$OUTPUT
+gbp buildpackage -uc -us --git-no-sign-tags --git-debian-branch=debian --git-ignore-new --git-export-dir=$DEB_OUTPUT_CONTAINER
