@@ -70,11 +70,11 @@ jobs:
       run: |
         mkdir -p ${DEB_OUTPUT}
         docker run --rm -e BRANCH_NAME=${BRANCH_NAME} -e DEB_OUTPUT_CONTAINER=${DEB_OUTPUT_CONTAINER} -v ${DEB_OUTPUT}:${DEB_OUTPUT_CONTAINER} caml-crush-pkg-${FLAVOR} bash -x .github/build-pkg-git.sh
-    # - name: Upload artifacts
-    #   uses: actions/upload-artifact@v2
-    #   with:
-    #     name: deb
-    #     path: $${{DEB_OUTPUT}}/*.deb
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: deb
+        path: $${{env.DEB_OUTPUT}}/*.deb
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
     # - name: Patch changelog (snapshot)
