@@ -32,9 +32,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-        # ref: debian
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
     - name: Get branch name (merge)
       if: github.event_name != 'pull_request'
       shell: bash
@@ -63,8 +60,8 @@ jobs:
           --build-arg flavor=${DIST} \
           --build-arg flavor=${FLAVOR} \
            -f Dockerfile.debian-pkg .
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
+    # - name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
     - name: build package in container
       env:
           DIST: ${{ matrix.dist }}
@@ -86,15 +83,3 @@ jobs:
         name: deb
         path: ${{env.DEB_OUTPUT}}/
         if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn` 
-    # - name: Setup tmate session
-    #   uses: mxschmitt/action-tmate@v3
-    # - name: Patch changelog (snapshot)
-    #   uses: pi-top/git-debian-changelog-bump-action@master
-    #   with:
-    #     release: false
-    #     author_name: ${{ env.CHANGELOG_AUTHOR_NAME }}
-    #     author_email: ${{ env.CHANGELOG_AUTHOR_EMAIL }}
-    # - name: Determine current version
-    #   run: |
-    #     sudo apt install -y dpkg-dev
-    #     echo "CURRENT_VERSION=$(dpkg-parsechangelog -Sversion)" >> $GITHUB_ENV
