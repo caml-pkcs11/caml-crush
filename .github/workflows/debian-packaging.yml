@@ -52,8 +52,12 @@ jobs:
           DIST: ${{ matrix.dist }}
           FLAVOR: ${{ matrix.flavor }}
       run: |
+        sudo add-apt-repository \
+          "deb https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) \
+          stable"
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends docker
+        sudo apt-get install -y --no-install-recommends docker-ce
         docker build -t caml-crush-pkg-${FLAVOR} --build-arg flavor=${DIST} --build-arg flavor=${FLAVOR}  -f Dockerfile.debian-pkg .
     - name: build package in container
       env:
