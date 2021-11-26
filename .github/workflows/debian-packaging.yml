@@ -29,12 +29,14 @@ jobs:
         #    flavor: "xenial"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v2
       with:
         fetch-depth: 0
         # ref: debian
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Get branch name (merge)
       if: github.event_name != 'pull_request'
       shell: bash
@@ -74,7 +76,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: deb
-        path: $${{env.DEB_OUTPUT}}/*.deb
+        path: ${{env.DEB_OUTPUT}}/*.deb
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
     # - name: Patch changelog (snapshot)
