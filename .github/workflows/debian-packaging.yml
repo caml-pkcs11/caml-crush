@@ -61,7 +61,10 @@ jobs:
           stable"
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends docker-ce
-        docker build -t caml-crush-pkg-${FLAVOR} --build-arg flavor=${DIST} --build-arg flavor=${FLAVOR}  -f Dockerfile.debian-pkg .
+        docker build -t caml-crush-pkg-${FLAVOR} \
+          --build-arg flavor=${DIST} \
+          --build-arg flavor=${FLAVOR} \
+           -f Dockerfile.debian-pkg .
     - name: build package in container
       env:
           DIST: ${{ matrix.dist }}
@@ -71,7 +74,12 @@ jobs:
           DEB_OUTPUT_CONTAINER: ${{ env.DEB_OUTPUT_CONTAINER }}
       run: |
         mkdir -p ${DEB_OUTPUT}
-        docker run --rm -e BRANCH_NAME=${BRANCH_NAME} -e DEB_OUTPUT_CONTAINER=${DEB_OUTPUT_CONTAINER} -v ${DEB_OUTPUT}:${DEB_OUTPUT_CONTAINER} caml-crush-pkg-${FLAVOR} bash -x .github/build-pkg-git.sh
+        docker run --rm \
+          -e BRANCH_NAME=${BRANCH_NAME} \
+          -e DEB_OUTPUT_CONTAINER=${DEB_OUTPUT_CONTAINER} \
+          -v ${DEB_OUTPUT}:${DEB_OUTPUT_CONTAINER} \
+          caml-crush-pkg-${FLAVOR} \
+          bash -x .github/build-pkg-git.sh
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
