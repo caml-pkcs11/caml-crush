@@ -4,7 +4,8 @@ echo Generating package for $BRANCH_NAME, will output in $DEB_OUTPUT_CONTAINER
 
 COMMIT_SHORT=1.0.x-$(git rev-parse --short HEAD)
 git archive --format=tar.gz --prefix=caml-crush-$COMMIT_SHORT/ HEAD > ../caml-crush-$COMMIT_SHORT.tar.gz
-git checkout debian
+git checkout --track origin/upstream
+git checkout --track origin/debian
 gbp import-orig --debian-branch=debian -u $COMMIT_SHORT ../caml-crush-$COMMIT_SHORT.tar.gz
 
 COMMIT_TS=$(git show -s --pretty=format:%ct HEAD)
