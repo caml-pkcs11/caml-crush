@@ -35,8 +35,6 @@ jobs:
         # ref: debian
     # - name: Setup tmate session
     #   uses: mxschmitt/action-tmate@v3
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
     - name: Get branch name (merge)
       if: github.event_name != 'pull_request'
       shell: bash
