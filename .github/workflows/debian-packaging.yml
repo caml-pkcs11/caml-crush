@@ -60,12 +60,11 @@ jobs:
           DIST: ${{ matrix.dist }}
           FLAVOR: ${{ matrix.flavor }}
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          DEB_OUTPUT: ${{ env.DEB_OUTPUT }}
+          DEB_OUTPUT_CONTAINER: ${{ env.DEB_OUTPUT_CONTAINER }}
       run: |
         mkdir -p ${DEB_OUTPUT}
         docker run --rm -it  -e BRANCH_NAME=${BRANCH_NAME} -e DEB_OUTPUT_CONTAINER=${DEB_OUTPUT_CONTAINER} -v ${DEB_OUTPUT}:${DEB_OUTPUT_CONTAINER} caml-crush-pkg-${FLAVOR} bash -x .github/build-pkg-git.sh
-      with:
-          DEB_OUTPUT: ${{ env.DEB_OUTPUT }}
-          DEB_OUTPUT_CONTAINER: ${{ env.DEB_OUTPUT_CONTAINER }}
     # - name: Upload artifacts
     #   uses: actions/upload-artifact@v2
     #   with:
