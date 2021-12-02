@@ -1,3 +1,9 @@
+caml-crush (1.0.12-1~xenial~ppa2) xenial; urgency=medium
+
+  * add dh-autoreconf 
+
+ -- Thomas Calderon <calderon.thomas@gmail.com>  Thu, 02 Dec 2021 14:57:55 +0000
+
 caml-crush (1.0.12-1~xenial~ppa1) xenial; urgency=medium
 
   * N/A
