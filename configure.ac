@@ -669,12 +669,25 @@ then
 			# Check the library
 			AC_CHECK_LIB(ssl, SSL_read, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			# Check if we are in presence of openssl >= 3.0.0 or not
+			#AC_CHECK_LIB(ssl, OSSL_PROVIDER_load, OPENSSL_LIB="-lssl", openssl_3_0_0=no)
+      AC_MSG_CHECKING([if dealing with OpenSSL 3])
+      AC_TRY_COMPILE(
+        [#include <openssl/opensslv.h>],
+        [
+        #if OPENSSL_VERSION_MAJOR != 3
+        #error OpenSSL version is too old ...
+        #endif
+        ],
+      [AC_MSG_RESULT([yes]); openssl_3_0_0=yes],
+      [AC_MSG_RESULT([no]); openssl_3_0_0=no]
+      )
 			# Check if we are in presence of openssl >= 1.1.0 or not
-			AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl", new_openssl=no)
+			AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl", openssl_1_1_0=no)
 			# Check for used symbols
 			AC_CHECK_LIB(ssl, SSL_write, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			if test "$new_openssl" == "no"; then
+			if test "$openssl_1_1_0" == "no"; then
 				AC_MSG_NOTICE([Openssl < 1.1.0 detected])
 				# SSL_load_error_strings is deprecated in openssl >= 1.1.0
 				AC_CHECK_LIB(ssl, SSL_load_error_strings, OPENSSL_LIB="-lssl",
@@ -683,8 +696,12 @@ then
 				AC_CHECK_LIB(ssl, SSL_library_init, OPENSSL_LIB="-lssl",
 					AC_MSG_ERROR(Cannot find symbol in openssl library.))
 			else
-				AC_MSG_NOTICE([Openssl >= 1.1.0 detected])
-				AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl",
+			  if test "$openssl_3_0_0" == "no"; then
+			    AC_MSG_NOTICE([Openssl >= 1.1.0 detected])
+			  else
+			    AC_MSG_NOTICE([Openssl >= 3.0.0 detected])
+			  fi
+			  AC_CHECK_LIB(ssl, OPENSSL_init_ssl, OPENSSL_LIB="-lssl",
 					AC_MSG_ERROR(Cannot find symbol in openssl library.))
 			fi
 			AC_CHECK_LIB(ssl, SSL_CTX_new, OPENSSL_LIB="-lssl",
@@ -705,8 +722,13 @@ then
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
 			AC_CHECK_LIB(ssl, SSL_connect, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
-			AC_CHECK_LIB(ssl, SSL_get_peer_certificate, OPENSSL_LIB="-lssl",
-               			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			if test "$openssl_3_0_0" == "no"; then
+			  AC_CHECK_LIB(ssl, SSL_get_peer_certificate, OPENSSL_LIB="-lssl",
+                 			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			else
+			  AC_CHECK_LIB(ssl, SSL_get1_peer_certificate, OPENSSL_LIB="-lssl",
+                 			AC_MSG_ERROR(Cannot find symbol in openssl library.))
+			fi
 			AC_CHECK_LIB(ssl, SSL_get_verify_result, OPENSSL_LIB="-lssl",
                			AC_MSG_ERROR(Cannot find symbol in openssl library.))
 			AC_CHECK_LIB(ssl, SSL_shutdown, OPENSSL_LIB="-lssl",

@@ -9,6 +9,7 @@ then
   autoconf configure-win32.ac > configure
 else
   cp Makefile.Unix.in Makefile.in
+  autoupdate
   autoconf configure.ac > configure
 fi
 echo "  |-> Run ./configure with the desired options, and then make"
