@@ -15,7 +15,7 @@ jobs:
            flavor: "bullseye"
          - dist: "debian"
            flavor: "buster"
-        - dist: "ubuntu"
+         - dist: "ubuntu"
            flavor: "jammy"
         #  Ubuntu Focal does not have coccinelle package, skip for now
         #  - dist: "ubuntu"
