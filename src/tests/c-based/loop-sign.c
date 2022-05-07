@@ -78,9 +78,7 @@
 
 int main(int argc, char **argv)
 {
-  int result;
   int i = 0;
-  int j = 0;
   char *error;
   FILE *fp;
   void *handle;
@@ -134,15 +132,24 @@ int main(int argc, char **argv)
   (*pGetFunctionList) (&p11);
 
   ret = p11->C_Initialize(NULL);
-  printf("C_Init ret %d\n", ret);
+  printf("C_Initialize ret %d\n", ret);
 
   CK_ULONG p11t_slot_count = 0;
   CK_SLOT_ID_PTR pSlotList;
   ret = p11->C_GetSlotList(1, NULL, &p11t_slot_count);
   printf("C_GetSlotList token present: yes ret %d, slot count %d\n", ret,
          p11t_slot_count);
+  if (ret != CKR_OK) {
+    return 1;
+  }
+  if (p11t_slot_count < 1 ) {
+    printf("No slot found, exiting\n");
+    return 1;
+  }
+
 
   pSlotList = (CK_SLOT_ID_PTR) malloc(p11t_slot_count*sizeof(CK_SLOT_ID));
+  // Retrieve slot ID
   ret = p11->C_GetSlotList(1, pSlotList, &p11t_slot_count);
   printf("C_GetSlotList token present: yes ret %d, slot count %d\n", ret,
 	 p11t_slot_count);
@@ -153,7 +160,6 @@ int main(int argc, char **argv)
 			   NULL, NULL, &session);
   printf("C_OpenSession ret %d session %d\n", ret, session);
 
-  unsigned char buff[50] = { 0 };
   unsigned long classz = CKO_PRIVATE_KEY;
   CK_ATTRIBUTE template[] = {
     {CKA_CLASS, &classz, 8},
@@ -164,7 +170,7 @@ int main(int argc, char **argv)
 
   ret = p11->C_FindObjectsInit(session, template, 1);
   
-  unsigned long objcount = 1024;
+  unsigned long objcount = 0;
   int maxobjcount = 8;
   CK_OBJECT_HANDLE objlist[8];
   ret = p11->C_FindObjects(session, objlist, maxobjcount, &objcount);
@@ -178,29 +184,37 @@ int main(int argc, char **argv)
   };
 
   unsigned char tosign[] = "test";
-  unsigned long signed_len = 2;
+  unsigned long signed_len = 0;
   unsigned char *signed_data;
   unsigned char signed_data2[4] = { 0 };
 
   for (i = 0; i < 4096; ++i){ 
 
     ret = p11->C_SignInit(session, &mech, objlist[0]);
-    printf("C_SignInit ret %x\n", ret);
-
+    if (ret != CKR_OK) {
+      printf("C_SignInit ret %x\n", ret);
+      return 1;
+    }
     ret = p11->C_Sign(session, tosign, 4, NULL, &signed_len);
-    printf("C_Sign ret %x, needed len:%d\n", ret, signed_len);
-
+    if (ret != CKR_OK) {
+      printf("C_Sign ret %x, needed len:%d\n", ret, signed_len);
+      return 1;
+    }
     signed_data = malloc(signed_len * sizeof(unsigned char));
 
     ret = p11->C_Sign(session, tosign, 4, signed_data, &signed_len);
-    printf("C_Sign ret %x, needed len:%d\n", ret, signed_len);
+    if (ret != CKR_OK) {
+      printf("C_Sign ret %x, needed len:%d\n", ret, signed_len);
+      return 1;
+    }
 
   }
+  printf("Done signing\n");
   ret = p11->C_CloseSession(session);
   printf("C_CloseSession ret %d\n", ret);
 
   ret = p11->C_Finalize(NULL);
-  printf("C_Fini ret %d\n", ret);
+  printf("C_Finalize ret %d\n", ret);
 
   return 0;
 }
