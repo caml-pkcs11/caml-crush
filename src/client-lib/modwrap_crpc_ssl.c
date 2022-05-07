@@ -726,7 +726,10 @@ int start_openssl(int sock)
 #else
   OPENSSL_init_ssl(0, NULL);
 #endif
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+  /* Deprecated in openssl >= 3.0.0 */
   ERR_load_BIO_strings();
+#endif
   OpenSSL_add_all_algorithms();
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L

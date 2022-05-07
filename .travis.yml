@@ -23,6 +23,9 @@ jobs:
         name: Trusty
         script: docker build -t caml-crush-trusty -f Dockerfile.ubuntu-trusty .
       -  
+        name: Jammy
+        script: docker build -t caml-crush-jammy --build-arg dist=ubuntu --build-arg flavor=jammy -f Dockerfile.debian .
+      -  
         name: Xenial
         script: docker build -t caml-crush-xenial --build-arg dist=ubuntu --build-arg flavor=xenial -f Dockerfile.debian .
       -  

@@ -409,6 +409,10 @@ int start_openssl(int sock);
 int purge_openssl(void);
 SSL_CTX *ctx;
 SSL *ssl;
+// OpenSSL 3
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(SSL_get_peer_certificate))
+#define SSL_get_peer_certificate(s) SSL_get1_peer_certificate(s)
+#endif
 #endif
 
 /* Environment variable holding the socket path to override */
