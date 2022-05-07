@@ -7,10 +7,14 @@ bindings_dir = ../../bindings-pkcs11
 rpc_dir = ../rpc-pkcs11
 
 
-all : mainshared
+all : mainshared loop-sign
 
-mainshared: 
+mainshared:
 	$(CC) -g -o main-shared.opt main-shared.c -ldl $(c_include_dirs)
+
+
+loop-sign:
+	$(CC) -g -o loop-sign.opt loop-sign.c -ldl $(c_include_dirs)
 
 clean:
 	@rm -f *.o *~ *.opt
